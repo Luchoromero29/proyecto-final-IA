@@ -91,7 +91,7 @@ falta la entrevista con el experto Matías Romero).
   conocido o disponibilidad no relevada quedan FUERA de la lógica difusa.
 
 ## Estado actual y pendientes (noviembre de 2026)
-- [ ] **Probar contra Neo4j real**: los cambios del catálogo PG3 se probaron solo con el grafo simulado.
+- [x] **Probar contra Neo4j real** (9/11/2026): PG2+PG3 cargan sin errores y `--test` corre contra Neo4j real.
       Primero `actualizar.bat`, revisar `docker logs evaltic-neo4j-init`, después `probar.bat`.
 - [ ] **Deducir el año desde el procesador** (siguiente tarea acordada): agregar al script PG3 nodos
       `(:GeneracionProcesador {patron, anio, familia})` (ej. "i5 10ma gen"/"10210U" → 2020, "8550U" → 2018,
