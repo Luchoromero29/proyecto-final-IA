@@ -154,3 +154,51 @@ WHERE ce.version = 'v1'
 SET ce.valor_anterior = ce.valor, ce.valor = c.valor, ce.version = 'v2',
     ce.vigente_desde = date('2026-11-09'),
     ce.fuente = 'Actualización de precios, noviembre de 2026 (provisional)';
+
+
+// ---------------------------------------------------------------------
+// 27. GENERACIONES DE PROCESADOR
+//   Permiten estimar el año del equipo cuando el aviso no lo dice y el
+//   modelo no está en el catálogo. SM2 las usa DESPUÉS del modelo de
+//   referencia y el año queda registrado como dato INFERIDO.
+//   patron: regex sobre el texto del aviso en minúsculas.
+//   prioridad: si coinciden varias, gana la de mayor prioridad
+//              (Apple > Ryzen > Intel, para que "7520u" no se tome como Intel 7ma).
+//   anio: año de lanzamiento de la generación (aprox., a validar).
+// ---------------------------------------------------------------------
+CREATE CONSTRAINT gen_proc_id IF NOT EXISTS FOR (n:GeneracionProcesador) REQUIRE n.id IS UNIQUE;
+
+UNWIND [
+  {id:'GEN-INTEL-7',  familia:'Intel Core 7ma gen (Kaby Lake)',     anio:2017, pri:40,
+   patron:'(?s).*(\\b7\\s*(ma|°|º|th|a)?\\s*gen|\\bi[357]-?7\\d{3}(u|hq|h)\\b).*'},
+  {id:'GEN-INTEL-8',  familia:'Intel Core 8va gen (Kaby/Whiskey Lake)', anio:2018, pri:40,
+   patron:'(?s).*(\\b8\\s*(va|°|º|th|a)?\\s*gen|\\b(i[357]-?)?8\\d{3}(u|hq|h|y)\\b).*'},
+  {id:'GEN-INTEL-9',  familia:'Intel Core 9na gen (Coffee Lake H)', anio:2019, pri:40,
+   patron:'(?s).*(\\b9\\s*(na|°|º|th|a)?\\s*gen|\\b(i[579]-?)?9\\d{3}(h|hk)\\b).*'},
+  {id:'GEN-INTEL-10', familia:'Intel Core 10ma gen (Comet/Ice Lake)', anio:2020, pri:40,
+   patron:'(?s).*(\\b10\\s*(ma|°|º|th|a)?\\s*gen|\\b(i[3579]-?)?10\\d{3}(u|h|g\\d)\\b).*'},
+  {id:'GEN-INTEL-11', familia:'Intel Core 11va gen (Tiger Lake)',   anio:2021, pri:40,
+   patron:'(?s).*(\\b11\\s*(va|°|º|th|a)?\\s*gen|\\b(i[3579]-?)?11\\d{2}(g\\d|h)\\b).*'},
+  {id:'GEN-INTEL-12', familia:'Intel Core 12va gen (Alder Lake)',   anio:2022, pri:40,
+   patron:'(?s).*(\\b12\\s*(va|°|º|th|a)?\\s*gen|\\b(i[3579]-?)?12\\d{2}(u|h|p)\\b).*'},
+  {id:'GEN-INTEL-13', familia:'Intel Core 13ra gen (Raptor Lake)',  anio:2023, pri:40,
+   patron:'(?s).*(\\b13\\s*(ra|°|º|th|a)?\\s*gen|\\b(i[3579]-?)?13\\d{2}(u|h|p|hx)\\b).*'},
+  {id:'GEN-RYZEN-3000', familia:'AMD Ryzen 3000 móvil (Picasso)',   anio:2019, pri:60,
+   patron:'(?s).*\\bryzen\\s*[357]\\s*3\\d{2}0u\\b.*'},
+  {id:'GEN-RYZEN-4000', familia:'AMD Ryzen 4000 móvil (Renoir)',    anio:2020, pri:60,
+   patron:'(?s).*\\bryzen\\s*[3579]\\s*4\\d{2}0(u|h|hs)\\b.*'},
+  {id:'GEN-RYZEN-5000', familia:'AMD Ryzen 5000 móvil (Lucienne/Cezanne)', anio:2021, pri:60,
+   patron:'(?s).*\\bryzen\\s*[3579]\\s*5\\d{2}[05](u|h|hs)\\b.*'},
+  {id:'GEN-RYZEN-7020', familia:'AMD Ryzen 7020 (Mendocino)',       anio:2022, pri:60,
+   patron:'(?s).*\\bryzen\\s*[357]\\s*7\\d20u\\b.*'},
+  {id:'GEN-RYZEN-7030', familia:'AMD Ryzen 7030 (Barcelo-R)',       anio:2023, pri:60,
+   patron:'(?s).*\\bryzen\\s*[357]\\s*7\\d30u\\b.*'},
+  {id:'GEN-APPLE-M1', familia:'Apple M1',                            anio:2020, pri:70,
+   patron:'(?s).*\\b(macbook|apple)\\b.*\\bm1\\b.*|(?s).*\\bm1\\b.*\\b(macbook|apple)\\b.*'},
+  {id:'GEN-APPLE-M2', familia:'Apple M2',                            anio:2022, pri:70,
+   patron:'(?s).*\\b(macbook|apple)\\b.*\\bm2\\b.*|(?s).*\\bm2\\b.*\\b(macbook|apple)\\b.*'}
+] AS g
+MERGE (gp:GeneracionProcesador {id: g.id})
+SET gp.familia = g.familia, gp.anio = g.anio, gp.patron = g.patron, gp.prioridad = g.pri,
+    gp.fuente = 'Fechas de lanzamiento de los fabricantes (aprox.), noviembre de 2026',
+    gp.estado_validacion = 'Provisional', gp.version = 'v1';

@@ -47,6 +47,7 @@ docker-compose.yml, Dockerfile, *.bat, LEVANTAR.md, docs/ (informe PG3)
   service_termico, cargador, mano_de_obra. Se leen con `costo(tarea, traza)`.
 - `(:SegmentoMercado {precio_nuevo_ref_ars, dias_promedio_venta, indice_repuestos, patron, prioridad})`:
   SEG-APPLE, GAMER, CORPORATIVA, ALTA, MEDIA, ENTRADA, BASICA. `patron` = regex Java sobre el texto en minúsculas.
+- `(:GeneracionProcesador {patron, anio, familia, prioridad})`: estima el año si no lo da el aviso ni el modelo.
 - `(:ModeloReferencia {anio_lanzamiento, soporte_w11, dias_promedio_venta, indice_repuestos, patron, prioridad})`
   -[:PERTENECE_A_SEGMENTO]-> segmento (opcional; si no tiene, el segmento lo decide el procesador).
 - Reglas difusas `(:ReglaDifusa {base})` con bases SM1-BAT, SM1-TER, SM2-RIE, SM2-DEM, SM3-CONV;
@@ -67,7 +68,7 @@ falta la entrevista con el experto Matías Romero).
    si no hay datos → `datos_pendientes`. Temperatura: SM1-TER. Plan: RAM < CE ram_objetivo, HDD→SSD,
    pantalla, teclado, cargador, mano de obra (la mano de obra NO cuenta como intervención).
 5. **SM2** `ejecutar_motor_sm2`: `buscar_referencia_mercado` (modelo + segmento). Sin segmento o sin año
-   → `Verificacion_pendiente` (R3.3b). Año: aviso → modelo de referencia. W11: aviso → modelo → año ≥ CE anio_min_w11.
+   → `Verificacion_pendiente` (R3.3b). Año: aviso → modelo de referencia → `(:GeneracionProcesador)` (dato inferido). W11: aviso → modelo → año ≥ CE anio_min_w11.
    Riesgo SM2-RIE → demanda SM2-DEM (encadenada, rotación del catálogo). VMA = precio_nuevo × factor
    depreciación (CE-21..24) × factor riesgo (CE-25/26) + revalorización por upgrades de SM1 (R2.3, CE reval_ssd/ram).
 6. **SM3** `ejecutar_motor_sm3`: R3.7 ratio > CE ratio_reparacion_max; R3.8 riesgo Alto + demanda Baja;
@@ -93,10 +94,8 @@ falta la entrevista con el experto Matías Romero).
 ## Estado actual y pendientes (noviembre de 2026)
 - [x] **Probar contra Neo4j real** (9/11/2026): PG2+PG3 cargan sin errores y `--test` corre contra Neo4j real.
       Primero `actualizar.bat`, revisar `docker logs evaltic-neo4j-init`, después `probar.bat`.
-- [ ] **Deducir el año desde el procesador** (siguiente tarea acordada): agregar al script PG3 nodos
-      `(:GeneracionProcesador {patron, anio, familia})` (ej. "i5 10ma gen"/"10210U" → 2020, "8550U" → 2018,
-      "Ryzen 5 7520U" → 2022, "M1" → 2020), usarlos en SM2 después del modelo de referencia y antes de
-      quedar en verificación pendiente; registrar el año como dato inferido.
+- [x] **Deducir el año desde el procesador**: nodos `(:GeneracionProcesador {patron, anio, familia, prioridad})`
+      en la sección 27 del script PG3 (Intel 7ma–13ra, Ryzen 3000–7030, Apple M1/M2); SM2 los usa después del modelo.
 - [ ] Los 5 casos de `CASOS_INTEGRADOS_PG3` tienen precios de la escala vieja del PG1 (ej. Acer a $115.000);
       con el catálogo nuevo probablemente no den la decisión de `DECISION_ESPERADA`. Actualizar los precios
       pedidos a valores de hoy o las decisiones esperadas.

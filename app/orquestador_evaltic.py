@@ -476,6 +476,20 @@ def buscar_referencia_mercado(texto: str) -> dict:
     return {"modelo": r["modelo"] if r else None, "segmento": r["segmento"] if r else None}
 
 
+def buscar_generacion_procesador(texto: str) -> dict | None:
+    """Busca en Neo4j la :GeneracionProcesador que coincide con el aviso (para estimar el año)."""
+    driver = obtener_driver_neo4j()
+    q = """
+    WITH toLower($texto) AS t
+    MATCH (g:GeneracionProcesador) WHERE t =~ g.patron
+    RETURN g {.id, .familia, .anio, .estado_validacion} AS gen
+    ORDER BY g.prioridad DESC LIMIT 1
+    """
+    with driver.session(database=NEO4J_DATABASE) as s:
+        r = s.run(q, texto=texto).single()
+    return r["gen"] if r else None
+
+
 # ------------------------------------------------------------------------------
 # 4. Módulo SM1: Diagnóstico Técnico y Reacondicionamiento (Álvaro Tapia)
 # ------------------------------------------------------------------------------
@@ -576,11 +590,17 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
                 "dato_faltante": "Procesador o línea del equipo (no coincide con ningún segmento del catálogo de Neo4j)",
                 "vma_estimado_ars": 0}
 
-    # Año: del aviso o del modelo de referencia
+    # Año: del aviso → modelo de referencia → generación del procesador
     anio = datos.get("anio_fabricacion")
     if anio is None and modelo and modelo.get("anio_lanzamiento"):
         anio = modelo["anio_lanzamiento"]
         traza["datos_inferidos"].append(f"Año tomado del modelo de referencia {modelo['nombre']}: {anio}")
+    if anio is None:
+        gen = buscar_generacion_procesador(texto_busqueda)
+        if gen:
+            anio = gen["anio"]
+            traza["datos_inferidos"].append(
+                f"Año estimado por la generación del procesador ({gen['familia']}, Neo4j {gen['id']}): {anio}")
     if anio is None:
         traza["reglas"].append("R3.3b: año de fabricación desconocido → Verificacion_pendiente")
         return {"estado": "Verificacion_pendiente", "dato_faltante": "Año de fabricación del equipo",
