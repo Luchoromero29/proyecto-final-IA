@@ -89,6 +89,39 @@ Si ya tienen Ollama instalado en Windows: `COMPOSE_PROFILES=` y `OLLAMA_URL_DOCK
 
 Después de cambiar `.env`: `docker compose up -d`.
 
+### OpenRouter
+
+`openai` identifica el **protocolo** compatible, no el proveedor de facturación. Para OpenRouter,
+editar `.env` con valores ficticios reemplazables:
+
+```env
+LLM_PROVIDER=openai
+OPENAI_BASE_URL=https://openrouter.ai/api/v1
+OPENAI_API_KEY=TU_CLAVE_DE_OPENROUTER
+OPENAI_MODEL=nvidia/nemotron-3.5-lightning:free
+```
+
+Presupuestos y razonamiento implementados en el cliente compartido:
+
+| Tema | Comportamiento |
+|---|---|
+| Extracción | 1024 tokens por intento, incluido el reintento de parseo |
+| Síntesis | 768 tokens |
+| Piso de OpenRouter | 4096 tokens para cualquier llamada a `openrouter.ai`; se conservan los pedidos mayores |
+| Razonamiento | `reasoning.enabled=false` solo con host `openrouter.ai` y modelo exacto `nvidia/nemotron-3.5-lightning:free` |
+| Otros modelos y proveedores | Reciben los presupuestos de etapa (1024 extracción / 768 síntesis) o el límite explícito del llamador; no se les aplica el piso 4096 ni el override de razonamiento |
+
+- El piso es un techo de generación, no un consumo fijo; el razonamiento cuenta dentro del mismo límite.
+- Si la respuesta se corta (`finish_reason=length`) la llamada falla con un error que informa solo
+  metadatos seguros. No se usa texto parcial, no se fabrica JSON y no se usa el razonamiento como salida.
+- La síntesis tiene respaldo determinístico: si el LLM falla, el dictamen se arma con los datos del
+  grafo y se avisa por consola con un `[Aviso Síntesis LLM]`.
+- Reiniciar la app después de cambiar `.env` o el código Python: la configuración se lee al arrancar.
+- Un **429** en modelos gratuitos suele ser saturación del proveedor upstream (pool compartido), no una
+  clave inválida ni un problema de Neo4j. No hay reintentos automáticos ni fallback pago.
+- No se afirma disponibilidad actual del modelo ni razonamiento en cero: eso depende del proveedor y
+  solo se comprueba con una llamada real.
+
 ## Desarrollo (cambiar el código)
 
 El código está en `app/`. Después de editarlo: `docker compose up -d --build app`.

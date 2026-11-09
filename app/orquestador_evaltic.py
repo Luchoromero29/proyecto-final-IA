@@ -33,6 +33,7 @@ import re
 import requests
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # ------------------------------------------------------------------------------
@@ -445,6 +446,14 @@ _FINISH_REASON_CONOCIDOS = frozenset({
     "stop", "length", "content_filter", "tool_calls", "function_call", "error",
 })
 
+# Piso de generación exclusivo de OpenRouter: el razonamiento consume el mismo
+# presupuesto de tokens, así que los pedidos chicos no alcanzan para el JSON o el texto.
+OPENROUTER_HOST = "openrouter.ai"
+OPENROUTER_MAX_TOKENS_MINIMO = 4096
+
+# Desactivación real de razonamiento: solo para el host y el modelo verificados.
+OPENROUTER_MODELO_SIN_RAZONAMIENTO = "nvidia/nemotron-3.5-lightning:free"
+
 
 def _entero_no_negativo(valor) -> Any:
     """Devuelve el conteo si es un entero no negativo; en otro caso 'unknown'."""
@@ -577,14 +586,23 @@ def consultar_llm(system_prompt: str, user_content: str, json_mode: bool = False
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content}
         ]
+        host = urlparse(OPENAI_BASE_URL).hostname
+        # Piso solo para OpenRouter: conserva los presupuestos mayores que pida el llamador
+        # y no altera a Ollama ni a otros proveedores compatibles.
+        max_tokens_efectivo = (
+            max(max_tokens, OPENROUTER_MAX_TOKENS_MINIMO) if host == OPENROUTER_HOST else max_tokens
+        )
         payload = {
             "model": OPENAI_MODEL,
             "messages": messages,
             "temperature": 0.1,
-            "max_tokens": max_tokens
+            "max_tokens": max_tokens_efectivo
         }
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
+        if host == OPENROUTER_HOST and OPENAI_MODEL == OPENROUTER_MODELO_SIN_RAZONAMIENTO:
+            # Desactivación real del razonamiento (no solo ocultarlo) para el modelo verificado.
+            payload["reasoning"] = {"enabled": False}
 
         endpoint = f"{OPENAI_BASE_URL.rstrip('/')}/chat/completions"
         try:

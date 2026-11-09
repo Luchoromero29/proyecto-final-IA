@@ -120,6 +120,26 @@ class ClienteOpenRouterTest(unittest.TestCase):
             resultado = oe.consultar_llm("system de prueba", "contenido de usuario", **kwargs)
         return resultado, post.call_args
 
+    # --- presupuesto -----------------------------------------------------------
+    def test_presupuesto_minimo_openrouter_eleva_limites_chicos(self):
+        for pedido in (1, 260, 768, 1024):
+            with self.subTest(pedido=pedido):
+                _, llamada = self._consultar(respuesta_chat(), max_tokens=pedido)
+                self.assertEqual(4096, llamada.kwargs["json"]["max_tokens"])
+
+    def test_presupuesto_minimo_openrouter_conserva_limites_mayores(self):
+        for pedido in (4096, 5000, 8000):
+            with self.subTest(pedido=pedido):
+                _, llamada = self._consultar(respuesta_chat(), max_tokens=pedido)
+                self.assertEqual(pedido, llamada.kwargs["json"]["max_tokens"])
+
+    # --- razonamiento ----------------------------------------------------------
+    def test_razonamiento_desactivado_para_nemotron_en_extraccion_y_sintesis(self):
+        for json_mode in (False, True):
+            with self.subTest(json_mode=json_mode):
+                _, llamada = self._consultar(respuesta_chat(), json_mode=json_mode, max_tokens=1024)
+                self.assertEqual({"enabled": False}, llamada.kwargs["json"]["reasoning"])
+
     # --- respuesta válida ------------------------------------------------------
     def test_respuesta_valida_se_recorta_y_conserva_mensajes_y_formato_json(self):
         resultado, llamada = self._consultar(
@@ -231,6 +251,48 @@ class ClienteOpenRouterTest(unittest.TestCase):
                 oe.consultar_llm("sistema", "usuario")
         self.assertIn("[ERROR API REMOTA]", str(ctx.exception))
         self.assertIn("429", str(ctx.exception))
+        self.assertEqual(60, post.call_args.kwargs["timeout"])
+
+
+class AlcanceRazonamientoTest(unittest.TestCase):
+    """El override de razonamiento no se generaliza a otros modelos ni proveedores."""
+
+    def _payload(self, base_url, modelo):
+        with mock.patch.object(oe, "LLM_PROVIDER", "openai"), \
+                mock.patch.object(oe, "OPENAI_API_KEY", "clave-ficticia-de-prueba"), \
+                mock.patch.object(oe, "OPENAI_BASE_URL", base_url), \
+                mock.patch.object(oe, "OPENAI_MODEL", modelo):
+            with mock.patch.object(oe.requests, "post", return_value=respuesta_falsa(respuesta_chat())) as post:
+                oe.consultar_llm("sistema", "usuario", json_mode=False, max_tokens=260)
+        return post.call_args.kwargs["json"]
+
+    def test_otro_modelo_en_openrouter_conserva_presupuesto_y_no_desactiva_razonamiento(self):
+        payload = self._payload(URL_OPENROUTER, "otro/modelo:free")
+        self.assertNotIn("reasoning", payload)
+        self.assertEqual(4096, payload["max_tokens"])
+
+    def test_nemotron_fuera_de_openrouter_no_recibe_override_de_razonamiento(self):
+        for base_url in (URL_GROQ, "https://api.openai.com/v1", "http://localhost:1234/v1"):
+            with self.subTest(base_url=base_url):
+                payload = self._payload(base_url, MODELO_NEMOTRON)
+                self.assertNotIn("reasoning", payload)
+                self.assertEqual(260, payload["max_tokens"])
+
+    def test_otro_proveedor_compatible_conserva_payload_y_presupuesto(self):
+        with mock.patch.object(oe, "LLM_PROVIDER", "openai"), \
+                mock.patch.object(oe, "OPENAI_API_KEY", "clave-ficticia-de-prueba"), \
+                mock.patch.object(oe, "OPENAI_BASE_URL", URL_GROQ), \
+                mock.patch.object(oe, "OPENAI_MODEL", "llama-3.1-8b-instant"):
+            with mock.patch.object(oe.requests, "post", return_value=respuesta_falsa(respuesta_chat())) as post:
+                resultado = oe.consultar_llm("sistema", "usuario", json_mode=True, max_tokens=768)
+        payload = post.call_args.kwargs["json"]
+        self.assertEqual("texto de respuesta", resultado)
+        self.assertEqual(768, payload["max_tokens"])
+        self.assertEqual("llama-3.1-8b-instant", payload["model"])
+        self.assertEqual(0.1, payload["temperature"])
+        self.assertEqual({"type": "json_object"}, payload["response_format"])
+        self.assertNotIn("reasoning", payload)
+        self.assertEqual(URL_GROQ + "/chat/completions", post.call_args.args[0])
         self.assertEqual(60, post.call_args.kwargs["timeout"])
 
 
