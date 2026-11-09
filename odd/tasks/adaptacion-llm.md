@@ -12,9 +12,9 @@ Esta nueva version tiene muchas mejoras en la logica del negocio, Neo4J.» Compr
 - S6: «Si hace falta pregúntame algo o busca la información que necesites. Luego una vez este plan manda a un worker a qué implemente todo» Comprobación: implementación completa delegada a un worker acotado; padre valida resultados y cierra.
 
 ## Tasks
-- T1 [S1–S6] inline — done — Plan y entorno comprobados; commit: pendiente de unidad final.
-- T2 [S1–S6] delegated (`gentle-ai-worker`, pedido explícito y context backstop) — done — RED inicial exit 1; corrección con RED 29 tests/2 errores exit 1, GREEN final repetido por padre 29 tests exit 0 y compilación exit 0; commits por slice pendientes.
-- T3 [S1–S6] inline (slicing delegado al mismo worker) — in_progress — Cadena local: entorno/presupuestos → validación → política OpenRouter, cada slice con pruebas/docs; evaluación nativa y commits pendientes.
+- T1 [S1–S6] inline — done — Plan y entorno comprobados; commit del tracker: a9f154d.
+- T2 [S1–S6] delegated (`gentle-ai-worker`, pedido explícito y context backstop) — done — RED inicial exit 1; corrección con RED 29 tests/2 errores exit 1, GREEN final repetido por padre 29 tests exit 0 y compilación exit 0; commits: 7c3ac6f (entorno/presupuestos), f6b565f (validación), 4ed1953 (OpenRouter).
+- T3 [S1–S6] inline (slicing delegado al mismo worker) — done — Cadena local guardada y comprobada; tres slices 333/225/115 líneas; ASSESS no evaluable por untracked, sin aprobación nativa; plan exige self-verification cumplida; cierre en este registro.
 
 ## Log
 ### L1 — Pedido original
@@ -40,10 +40,26 @@ Perfecto, arma un plan de implementación y hacelo. Tené en cuenta que el .env 
 - Padre reprodujo por consultar_llm con transporte/dotenv simulados: finish_reason=['length'] y content=None produce TypeError, exit 1, en vez del RuntimeError previsto. Una corrección acotada al mismo worker más test de regresión.
 - ASSESS invocado una vez sobre diff: herramienta falló sin diagnóstico útil; evaluación indisponible, no aprobación ni evidencia de reviewDue. Sin reintento automático.
 - Tamaño real: 647 líneas de código/pruebas/docs (más tracker), mayor que estimación. Antes del commit se requiere decisión de estrategia de entrega; no eliminar pruebas por cuota.
-- APIs, Neo4j y Streamlit reales siguen sin ejecutar por alcance. Carpeta temporal del worker /tmp/evaltic-diff-NaY0Pg contiene solo sondas y copias sin secretos; pendiente limpiar al cerrar.
+- APIs, Neo4j y Streamlit reales siguen sin ejecutar por alcance. Carpeta temporal del worker /tmp/evaltic-diff-NaY0Pg contenía solo sondas y copias sin secretos; eliminada al cerrar.
 
 ### L5 — Corrección y estrategia de entrega
 - Corrección mw9n8y25-3-qo58: finish_reason malformado se valida por tipo antes de la whitelist; regresión observó RED (29 tests, 2 errores, exit 1) y GREEN (29 tests, exit 0). Padre repitió 29 tests y compilación, ambos exit 0.
 - Decisión humana en selector: «Cadena sobre una rama de funcionalidad — recomendada», token feature-branch-chain. No autoriza push ni PR.
 - Una única pasada de partición: tracker local con plan; slice 1 configuración .env + presupuestos por etapa + sus tests/docs; slice 2 validación de respuestas/metadatos + sus tests/docs; slice 3 piso/razonamiento OpenRouter + sus tests/docs. Dependencias lineales en ese orden; cada rama futura apunta a su padre inmediato, primera al tracker.
 - No se descartan pruebas ni se comprime el código. Mismo worker prepara patches de índice y comprueba los snapshots aislados; padre conserva estado final y hace los commits locales, sin publicar.
+- Tracker local creado: a9f154d (49 líneas, solo plan). ASSESS de este nuevo candidato committedOnly: nativeRisk=unassessable por archivos no rastreados sin declaración explícita; plan nativo: writerSelfVerification=true, independentVerifier=false. Sin aprobación nativa; la verificación propia sigue siendo la exigida. No cambiar autoridad ni iniciar review sin reviewDue/continuación.
+
+### L6 — Slices locales y comprobaciones
+- Worker mw9ndw8r-4-m6f9 preparó snapshots aislados: s1 13 tests, s2 23 tests, s3 29 tests; suites y compilaciones exit 0. Los tres patches acumulados son byte-idénticos al estado final probado. No hay cambios de motores, prompts, pipeline, UI o Cypher.
+- Slice 1: feat/adaptacion-llm-01-entorno → feat/adaptacion-llm, commit 7c3ac6f, 333 líneas autoradas; configuración, presupuestos y arranque Linux, 13 tests. Rollback: selección previa de .env y presupuestos 260.
+- Slice 2: feat/adaptacion-llm-02-validacion → feat/adaptacion-llm-01-entorno, commit f6b565f, 225 líneas; validación y metadatos, 23 tests acumulados. Rollback: retorno previo .strip() sin validación. Las funciones documentan su contrato; el resumen de usuario en LEVANTAR se incorpora con slice 3.
+- ASSESS committedOnly por cada slice, contra su padre inmediato: unassessable por archivo no rastreado sin declaración explícita; writerSelfVerification=true, independentVerifier=false. Sin reviewDue ofrecido ni aprobación nativa. No se reintenta el mismo candidato ni se muta autoridad.
+- Slice 3: feat/adaptacion-llm-03-openrouter → feat/adaptacion-llm-02-validacion, commit 4ed1953; política OpenRouter y documentación; 115 líneas, 29 tests acumulados. Rollback: elimina piso y override, conserva presupuesto por etapa y validación. La cadena elegida resuelve el exceso acumulado: ninguna slice supera 400. Sin push/PR.
+
+### L7 — Cierre verificado
+- Estado final del worktree de los tres archivos de implementación idéntico al HEAD 4ed1953 y a snapshots probados. Padre comprobó AST contra base: todas las funciones previas sin cambios salvo cliente y literales 1024/768 de los dos llamadores. Cypher, UI, Docker y dependencias sin cambios (`git diff --exit-code`, exit 0).
+- Resultado: 29 tests offline OK y compilación OK; comparación diferencial del worker sin diferencias no solicitadas. Cada snapshot intermedio tiene suite y compilación exit 0. .env preservado e ignorado; no se leyeron/imprimieron credenciales.
+- Evaluación nativa por cada nuevo candidato: nativeRisk=unassessable, requiere declaración explícita de untracked; sin reviewDue/continuación ofrecida y sin aprobación. Plan emitido: writerSelfVerification=true, independentVerifier=false; cumplido. No se modificó autoridad ni se habilitó review por cuenta del agente.
+- Temporales generados /tmp/evaltic-diff-NaY0Pg y /tmp/evaltic-slices-gV9YlF eliminados. CONTEXTO_Y_MEJORAS_EVALTIC.md permanece untracked, como al inicio, y no se incluyó en commits.
+- Risk: none. Los cambios de contrato del cliente y presupuestos están expresamente solicitados; funciones de negocio compartidas, prompts y parser no cambiaron.
+- Pendiente opcional externo, no bloqueante del portado offline: prueba humana con la API y el Neo4j configurados. No se verifica disponibilidad del proveedor, razonamiento cero, datos cargados ni funcionamiento E2E hasta esa prueba. No ejecutar recargas destructivas para probar estos cambios de Python.
