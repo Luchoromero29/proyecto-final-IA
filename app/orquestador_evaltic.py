@@ -954,24 +954,24 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
 CASOS_INTEGRADOS_PG3 = {
     "Caso 1 (Acer Aspire 5 2020 — Caso Integral con Contraoferta)":
         "Publicación: Vendo Acer Aspire 5 año 2020 con Intel i5 10ma gen (soporte Windows 11). "
-        "Precio pedido: $115.000. Detalles: enciende pero la batería dura 20 minutos (salud 42%, 780 ciclos), "
+        "Precio pedido: $250.000. Detalles: enciende pero la batería dura 20 minutos (salud 42%, 780 ciclos), "
         "calienta a 92°C con cuelgues térmicos. Trae 4GB de RAM y disco HDD de 500GB muy lento. "
-        "El teclado tiene teclas que no responden. Pantalla y cargador impecables.",
+        "El teclado y la pantalla funcionan perfecto y trae el cargador original.",
 
     "Caso 2 (Lenovo ThinkPad T490 2019 — Compra Directa Aprobada)":
-        "Oportunidad ThinkPad T490 2019 Core i5 8va gen, Windows 11 oficial. Piden $230.000. "
+        "Oportunidad ThinkPad T490 2019 Core i5 8va gen, Windows 11 oficial. Piden $280.000. "
         "Equipo en estado excelente, batería al 91% con 110 ciclos, temperatura bajo carga 68°C sin throttling. "
         "Viene con 16GB RAM y SSD NVMe 512GB rápido. Pantalla y teclado perfectos con cargador original. Alta demanda corporativa.",
 
     "Caso 3 (Dell Inspiron 15 — Descarte por Inviabilidad Catastrófica)":
-        "Dell Inspiron 15 piden $60.000 pero no da video, tiene la CPU quemada en corto insalvable y pista de placa perforada.",
+        "Dell Inspiron 15 piden $150.000 pero no da video, tiene la CPU quemada en corto insalvable y pista de placa perforada.",
 
     "Caso 4 (Lenovo ThinkPad T440p 2014 — Descarte por Obsolescencia e Iliquidez)":
-        "Vendo ThinkPad T440p año 2014 piden $95.000. Batería agotada al 30% con 900 ciclos que requiere cambio. "
+        "Vendo ThinkPad T440p año 2014 piden $180.000. Batería agotada al 30% con 900 ciclos que requiere cambio. "
         "Sin soporte para Windows 11, equipo antiguo.",
 
     "Caso 5 (HP 15 Ryzen 3 2021 — Compra Aprobada con Upgrades Menores)":
-        "HP 15 modelo 2021 Ryzen 3 pide $140.000. Batería al 85% y temperaturas normales. "
+        "HP 15 modelo 2021 Ryzen 3 pide $240.000. Batería al 85% y temperaturas normales. "
         "Tiene 4GB de RAM y disco HDD de 1TB. Requiere service de limpieza y upgrades estándar de memoria y SSD."
 }
 

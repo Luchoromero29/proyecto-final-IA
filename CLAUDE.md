@@ -96,9 +96,8 @@ falta la entrevista con el experto Matías Romero).
       Primero `actualizar.bat`, revisar `docker logs evaltic-neo4j-init`, después `probar.bat`.
 - [x] **Deducir el año desde el procesador**: nodos `(:GeneracionProcesador {patron, anio, familia, prioridad})`
       en la sección 27 del script PG3 (Intel 7ma–13ra, Ryzen 3000–7030, Apple M1/M2); SM2 los usa después del modelo.
-- [ ] Los 5 casos de `CASOS_INTEGRADOS_PG3` tienen precios de la escala vieja del PG1 (ej. Acer a $115.000);
-      con el catálogo nuevo probablemente no den la decisión de `DECISION_ESPERADA`. Actualizar los precios
-      pedidos a valores de hoy o las decisiones esperadas.
+- [x] Precios de los 5 casos de `CASOS_INTEGRADOS_PG3` llevados a valores de hoy (5/5 coinciden). Al Caso 1 se le quitó
+      el teclado dañado: con los costos actuales daba ratio 0,51 y R3.7 lo descartaba con cualquier precio.
 - [ ] R1.4 `NoAmpliable` (RAM soldada) — no implementado.
 - [ ] R3.1b rechazo comercial directo (equipo Frankenstein / arquitectura propietaria) — no implementado en Python.
 - [ ] SM2: el riesgo pesa tres veces (factor en el VMA, demanda y margen requerido). Charlar con Leonel.
