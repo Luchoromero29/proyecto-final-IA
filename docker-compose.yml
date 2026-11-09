@@ -1,0 +1,80 @@
+# EvalTIC — Grupo 20 (5K09) — entorno local completo
+#   docker compose up -d --build
+# Servicios: neo4j (grafo), neo4j-init (carga del PG2), ollama + ollama-pull (LLM local), app (Streamlit).
+
+services:
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: neo4j-evaltic
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-evaltic2026}
+      NEO4J_server_memory_heap_max__size: 1G
+      NEO4J_server_memory_pagecache_size: 512M
+    ports:
+      - "7474:7474"   # Neo4j Browser: http://localhost:7474
+      - "7687:7687"   # Bolt (por si se corre el orquestador fuera de Docker)
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p ${NEO4J_PASSWORD:-evaltic2026} 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+
+  neo4j-init:
+    image: neo4j:5.26-community
+    container_name: evaltic-neo4j-init
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    environment:
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-evaltic2026}
+      RECARGAR: ${RECARGAR:-0}
+    volumes:
+      - ./cypher:/cypher:ro
+      - ./scripts/cargar_grafo.sh:/cargar_grafo.sh:ro
+    entrypoint: ["sh", "/cargar_grafo.sh"]
+    restart: "no"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: evaltic-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    profiles: ["ollama"]
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    container_name: evaltic-ollama-pull
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_HOST: ollama:11434
+    entrypoint: ["sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-qwen2.5:1.5b}"]
+    restart: "no"
+    profiles: ["ollama"]
+
+  app:
+    build: .
+    container_name: evaltic-app
+    env_file: .env
+    environment:
+      # Dentro de Docker los servicios se llaman por nombre, no por localhost
+      NEO4J_TARGET: local
+      NEO4J_LOCAL_URI: bolt://neo4j:7687
+      NEO4J_LOCAL_PASSWORD: ${NEO4J_PASSWORD:-evaltic2026}
+      OLLAMA_URL: ${OLLAMA_URL_DOCKER:-http://ollama:11434/api/generate}
+    ports:
+      - "8501:8501"   # App: http://localhost:8501
+    depends_on:
+      neo4j-init:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  neo4j_data:
+  ollama_data:

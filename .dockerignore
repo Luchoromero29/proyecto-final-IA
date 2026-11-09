@@ -1,0 +1,5 @@
+docs/
+cypher/
+scripts/
+.env
+**/__pycache__

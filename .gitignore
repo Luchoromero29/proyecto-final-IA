@@ -1,0 +1,12 @@
+# Secretos y configuración local
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Respaldos locales
+_respaldo_original/
+*.zip
