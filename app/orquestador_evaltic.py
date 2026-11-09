@@ -39,14 +39,39 @@ from dotenv import load_dotenv
 # 1. Configuración de Entorno (.env)
 # ------------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
-ENV_PATH = BASE_DIR / ".env"
-if not ENV_PATH.exists():
-    ENV_PATH = BASE_DIR.parent / "PI4" / ".env"
 
-if ENV_PATH.exists():
-    load_dotenv(ENV_PATH)
-else:
-    load_dotenv()
+# Orden explícito de búsqueda: .env de la app, .env de la raíz de este repositorio,
+# fallback histórico PI4/.env y, si ninguno existe, la búsqueda preexistente de dotenv.
+ENV_PATH_CANDIDATOS = (
+    BASE_DIR / ".env",
+    BASE_DIR.parent / ".env",
+    BASE_DIR.parent / "PI4" / ".env",
+)
+
+
+def _resolver_env_path(candidatos=None) -> Optional[Path]:
+    """Devuelve el primer archivo .env existente según el orden de precedencia."""
+    for candidato in (ENV_PATH_CANDIDATOS if candidatos is None else candidatos):
+        ruta = Path(candidato)
+        if ruta.exists():
+            return ruta
+    return None
+
+
+def _cargar_configuracion_entorno() -> Optional[Path]:
+    """
+    Carga el .env elegido sin `override`: las variables ya exportadas en el entorno
+    tienen prioridad sobre el archivo, para no pisar la configuración del usuario.
+    """
+    ruta = _resolver_env_path()
+    if ruta is not None:
+        load_dotenv(ruta)
+    else:
+        load_dotenv()
+    return ruta
+
+
+ENV_PATH = _cargar_configuracion_entorno()
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
@@ -903,12 +928,12 @@ def extraer_datos_llm(texto: str) -> dict:
     Extracción con el LLM. El LLM se encarga ÚNICA Y EXCLUSIVAMENTE de parsear el JSON.
     Garantiza que 'fallas' contenga la lista de todas las fallas reportadas.
     """
-    raw = consultar_llm(PROMPT_EXTRACTOR_INTEGRAL, texto, json_mode=False, max_tokens=260)
+    raw = consultar_llm(PROMPT_EXTRACTOR_INTEGRAL, texto, json_mode=False, max_tokens=1024)
     try:
         datos = _parsear_json_llm(raw)
     except (json.JSONDecodeError, ValueError):
         raw2 = consultar_llm(PROMPT_EXTRACTOR_INTEGRAL + "\nIMPORTANTE: Devolvé solo el objeto JSON, sin texto adicional.",
-                             texto, json_mode=False, max_tokens=260)
+                             texto, json_mode=False, max_tokens=1024)
         try:
             datos = _parsear_json_llm(raw2)
         except (json.JSONDecodeError, ValueError) as e:
@@ -951,7 +976,7 @@ def generar_sintesis_gerencial_llm(resumen: dict) -> str:
             PROMPT_SINTESIS_GERENCIAL,
             prompt_usuario,
             json_mode=False,
-            max_tokens=260
+            max_tokens=768
         )
         if dictamen_llm and len(dictamen_llm.strip()) > 20:
             return dictamen_llm.strip()

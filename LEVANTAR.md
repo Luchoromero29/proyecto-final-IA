@@ -33,6 +33,37 @@ docker logs -f evaltic-app            # la app
 
 Después abrir http://localhost:8501.
 
+## Local en Linux (app fuera de Docker)
+
+Si ya tenés el entorno virtual del proyecto con todas las dependencias instaladas, reutilizá ese
+intérprete: no hay que crear otro entorno ni ejecutar `pip install`.
+
+| Dato | Valor |
+|---|---|
+| Intérprete | `/home/alvaro/Universidad/IA/Proyecto/.venv/bin/python` |
+| Repositorio que se ejecuta | `/home/alvaro/Universidad/IA/Proyecto-IA-Final` |
+
+```
+cd /home/alvaro/Universidad/IA/Proyecto-IA-Final
+/home/alvaro/Universidad/IA/Proyecto/.venv/bin/python -m streamlit run app/app_web.py
+```
+
+Reutilizar el intérprete **no** reutiliza el código ni el `.env` del proyecto anterior: se ejecuta el
+`app/app_web.py` de **este** repositorio y la configuración se lee de su `.env` (ver abajo). Neo4j
+tiene que estar disponible antes de abrir la app; la app no levanta la base por su cuenta.
+
+### Qué archivo `.env` se usa
+
+| Orden | Archivo | Nota |
+|---|---|---|
+| 1 | `app/.env` | Tiene prioridad si existe |
+| 2 | `.env` de la raíz del repositorio | Es el que se usa hoy en este repo |
+| 3 | `PI4/.env` | Fallback histórico; no hace falta en este repositorio |
+| 4 | Búsqueda de `python-dotenv` | Solo si ninguno de los anteriores existe |
+
+La carga no usa `override`: las variables ya exportadas en la terminal tienen prioridad sobre el
+archivo. El `.env` no se versiona y no hace falta mostrarlo para trabajar.
+
 ## Scripts
 
 | Archivo | Qué hace |
@@ -61,6 +92,8 @@ Después de cambiar `.env`: `docker compose up -d`.
 ## Desarrollo (cambiar el código)
 
 El código está en `app/`. Después de editarlo: `docker compose up -d --build app`.
+Los cambios **solo de Python** no requieren recargar el grafo: alcanza con reiniciar la app. El grafo
+solo se recarga cuando cambia un script `.cypher`.
 También se puede correr fuera de Docker con Neo4j en el contenedor (el puerto 7687 queda publicado):
 
 ```
@@ -68,6 +101,9 @@ cd app
 pip install -r requirements.txt
 python orquestador_evaltic.py --test
 ```
+
+Si usás el intérprete del entorno virtual que ya tenés (ver “Local en Linux”), ese `pip install` no es
+necesario: las dependencias ya están instaladas.
 
 ## Problemas comunes
 
