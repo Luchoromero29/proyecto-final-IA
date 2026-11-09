@@ -101,6 +101,139 @@ RESUMEN_PRUEBA = {
 }
 
 
+class ClienteOpenRouterTest(unittest.TestCase):
+    """Piso de presupuesto, razonamiento desactivado y validación de respuesta."""
+
+    def setUp(self):
+        for objetivo, valor in (
+            ("LLM_PROVIDER", "openai"),
+            ("OPENAI_API_KEY", "clave-ficticia-de-prueba"),
+            ("OPENAI_BASE_URL", URL_OPENROUTER),
+            ("OPENAI_MODEL", MODELO_NEMOTRON),
+        ):
+            parche = mock.patch.object(oe, objetivo, valor)
+            parche.start()
+            self.addCleanup(parche.stop)
+
+    def _consultar(self, payload=None, **kwargs):
+        with mock.patch.object(oe.requests, "post", return_value=respuesta_falsa(payload)) as post:
+            resultado = oe.consultar_llm("system de prueba", "contenido de usuario", **kwargs)
+        return resultado, post.call_args
+
+    # --- respuesta válida ------------------------------------------------------
+    def test_respuesta_valida_se_recorta_y_conserva_mensajes_y_formato_json(self):
+        resultado, llamada = self._consultar(
+            respuesta_chat(content="  {\"marca\": \"Acer\"}  \n"), json_mode=True, max_tokens=1024)
+        self.assertEqual('{"marca": "Acer"}', resultado)
+        payload = llamada.kwargs["json"]
+        self.assertEqual(MODELO_NEMOTRON, payload["model"])
+        self.assertEqual(0.1, payload["temperature"])
+        self.assertEqual({"type": "json_object"}, payload["response_format"])
+        self.assertEqual([
+            {"role": "system", "content": "system de prueba"},
+            {"role": "user", "content": "contenido de usuario"},
+        ], payload["messages"])
+        self.assertTrue(llamada.kwargs["headers"]["Authorization"].startswith("Bearer "))
+        self.assertEqual(URL_OPENROUTER + "/chat/completions", llamada.args[0])
+
+    def test_respuesta_valida_sin_json_mode_no_agrega_response_format(self):
+        _, llamada = self._consultar(respuesta_chat(content="dictamen"), json_mode=False)
+        self.assertNotIn("response_format", llamada.kwargs["json"])
+
+    # --- rechazo por truncamiento ---------------------------------------------
+    def test_longitud_con_contenido_nulo_produce_error_con_metadatos_seguros(self):
+        payload = respuesta_chat(
+            content=None,
+            finish_reason="length",
+            usage={"completion_tokens": 4096, "completion_tokens_details": {"reasoning_tokens": 4096}},
+            razonamiento="RAZONAMIENTO-INTERNO-NO-EXPUESTO",
+        )
+        with self.assertRaises(RuntimeError) as ctx:
+            self._consultar(payload, max_tokens=4096)
+        mensaje = str(ctx.exception)
+        self.assertIn("finish_reason=length", mensaje)
+        self.assertIn("completion_tokens=4096", mensaje)
+        self.assertIn("reasoning_tokens=4096", mensaje)
+        self.assertNotIn("RAZONAMIENTO-INTERNO-NO-EXPUESTO", mensaje)
+
+    def test_longitud_con_texto_parcial_no_se_acepta(self):
+        payload = respuesta_chat(content='{"marca": "Acer", "mode', finish_reason="length")
+        with self.assertRaises(RuntimeError) as ctx:
+            self._consultar(payload, max_tokens=4096)
+        self.assertIn("finish_reason=length", str(ctx.exception))
+
+    def test_metadatos_desconocidos_se_informan_como_unknown(self):
+        payload = {
+            "choices": [{"message": {"content": None}, "finish_reason": "motivo-raro"}],
+            "usage": {"completion_tokens": -3, "completion_tokens_details": {"reasoning_tokens": "muchos"}},
+        }
+        with self.assertRaises(RuntimeError) as ctx:
+            self._consultar(payload)
+        mensaje = str(ctx.exception)
+        self.assertIn("finish_reason=unknown", mensaje)
+        self.assertIn("completion_tokens=unknown", mensaje)
+        self.assertIn("reasoning_tokens=unknown", mensaje)
+
+    def test_metadatos_sin_usage_se_informan_como_unknown(self):
+        payload = respuesta_chat(content=None, finish_reason="length")
+        with self.assertRaises(RuntimeError) as ctx:
+            self._consultar(payload)
+        self.assertIn("completion_tokens=unknown", str(ctx.exception))
+        self.assertIn("reasoning_tokens=unknown", str(ctx.exception))
+
+    def test_finish_reason_no_textual_no_rompe_el_error_controlado(self):
+        """Un finish_reason malformado (lista, dict, número) debe dar RuntimeError, no TypeError."""
+        for finish_reason in (["length"], {"motivo": "length"}, 123, True, None):
+            with self.subTest(finish_reason=finish_reason):
+                payload = respuesta_chat(
+                    content=None,
+                    finish_reason=finish_reason,
+                    razonamiento="RAZONAMIENTO-INTERNO-NO-EXPUESTO",
+                )
+                with mock.patch.object(oe.requests, "post", return_value=respuesta_falsa(payload)) as post:
+                    with self.assertRaises(RuntimeError) as ctx:
+                        oe.consultar_llm("sistema", "usuario")
+                mensaje = str(ctx.exception)
+                self.assertIn("[ERROR RESPUESTA LLM]", mensaje)
+                self.assertIn("finish_reason=unknown", mensaje)
+                self.assertNotIn("RAZONAMIENTO-INTERNO-NO-EXPUESTO", mensaje)
+                self.assertNotIn("['length']", mensaje)
+                self.assertNotIn("{'motivo'", mensaje)
+                self.assertEqual(1, post.call_count)
+
+    # --- rechazo de contenido ------------------------------------------------
+    def test_contenido_nulo_blanco_o_no_textual_se_rechaza(self):
+        for contenido in (None, "", "   \n\t", 123, ["texto"], {"texto": "x"}, True):
+            with self.subTest(contenido=contenido):
+                with self.assertRaises(RuntimeError):
+                    self._consultar(respuesta_chat(content=contenido))
+
+    # --- rechazo de estructura ----------------------------------------------
+    def test_estructura_invalida_se_rechaza_de_forma_controlada(self):
+        casos = {
+            "cuerpo_no_objeto": ["no", "es", "un", "objeto"],
+            "sin_choices": {"usage": {"completion_tokens": 1}},
+            "choices_no_lista": {"choices": "texto"},
+            "choices_vacio": {"choices": []},
+            "choice_no_objeto": {"choices": ["texto"]},
+            "sin_message": {"choices": [{"finish_reason": "stop"}]},
+            "message_no_objeto": {"choices": [{"message": "texto", "finish_reason": "stop"}]},
+        }
+        for nombre, payload in casos.items():
+            with self.subTest(caso=nombre):
+                with self.assertRaises(RuntimeError) as ctx:
+                    self._consultar(payload)
+                self.assertIn("[ERROR RESPUESTA LLM]", str(ctx.exception))
+
+    def test_error_http_previo_se_conserva(self):
+        with mock.patch.object(oe.requests, "post", return_value=respuesta_falsa(status_code=429, texto="limite")) as post:
+            with self.assertRaises(RuntimeError) as ctx:
+                oe.consultar_llm("sistema", "usuario")
+        self.assertIn("[ERROR API REMOTA]", str(ctx.exception))
+        self.assertIn("429", str(ctx.exception))
+        self.assertEqual(60, post.call_args.kwargs["timeout"])
+
+
 class ClienteOllamaTest(unittest.TestCase):
     """Ollama conserva exactamente el payload y el presupuesto previos."""
 
