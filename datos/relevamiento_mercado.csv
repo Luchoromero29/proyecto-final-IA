@@ -1,0 +1,290 @@
+id,fuente,fecha,busqueda,titulo,marca,linea,procesador,ram_gb,disco_tipo,disco_gb,gpu,precio_ars
+ML-001,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Hp 250 G7 Intel Core I3 10ma Gen 1tb 15.6 C/lector,HP,HP 15/240/250,Core i3 10ma gen,,,1000,,650000
+ML-002,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Banghó Max L5 I3 1115g4 8gb Ssd 240gb Gris,Bangho,Bangho,Core i3 11va gen,8,SSD,240,,750000
+ML-003,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Asus Vivobook X1404va De 14 Full Hd Intel Core I3,Asus,VivoBook,Core i3,,,,,700000
+ML-004,Mercado Libre,2026-11-09,notebook i3 10ma gen,Lenovo Ideapad 5 I3 10a Gen 4gb 256gb Ssd Windows 11,Lenovo,IdeaPad,Core i3 10ma gen,4,SSD,256,,500000
+ML-005,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Asus X515 I3 15.6 I3 8gb 256gb Oficial Esp Tecnobox,Asus,VivoBook,Core i3,8,,256,,550000
+ML-006,Mercado Libre,2026-11-09,notebook i3 10ma gen,Lenovo Thinkpad L15 Gen 1 Core I3 Negro,Lenovo,ThinkPad,Core i3,,,,,900000
+ML-007,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Gadnic 14 I3-1215u 8gb 512gb Gris,Gadnic,Gadnic,Core i3 12va gen,8,,512,,590000
+ML-008,Mercado Libre,2026-11-09,notebook i3 10ma gen,Lenovo Ideapad 3 Intel Core I3 11th Gen 4gb Ram Ssd 256gb,Lenovo,IdeaPad,Core i3 11va gen,4,SSD,256,,420000
+ML-009,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Lenovo Ideapad 3 Intel I3,Lenovo,IdeaPad,Core i3,,,,,498000
+ML-010,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Hp 15.6 Intel I3 11va Gen 4gb Ram 256gb Ssd Win,HP,HP 15/240/250,Core i3 11va gen,4,SSD,256,,500000
+ML-011,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Hp Dw3021wm 15.6 Intel I3 4gb 256gb Ssd Negro,HP,HP 15/240/250,Core i3,4,SSD,256,,418320
+ML-012,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Enova Intel Core I3 11va Gen Windows 11,Enova,Enova,Core i3 11va gen,,,,,450000
+ML-013,Mercado Libre,2026-11-09,notebook i3 10ma gen,"Notebook Asus Laptop 15,6"" Core I3 8gb 256gb Win11 Gris",Asus,VivoBook,Core i3,8,,256,,650000
+ML-014,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Asus X515ea Core I3 4gb Ssd 256gb 15.6 Win11 1,Asus,VivoBook,Core i3,4,SSD,256,,500000
+ML-015,Mercado Libre,2026-11-09,notebook i3 10ma gen,Enova 14 Core I3 11va Gen 8gb Ram 740gb + Accesorios,Enova,Enova,Core i3 11va gen,8,,740,,615999
+ML-016,Mercado Libre,2026-11-09,notebook i3 10ma gen,Notebook Enova Intel Core I3 8ram 240gb 11va Gen W11 Negro,Enova,Enova,Core i3 11va gen,8,,240,,630000
+ML-017,Mercado Libre,2026-11-09,notebook i5 8va gen,"Notebook Cx231xx Cx 15 Intel Core I5, 16gb Ram, 512gb",CX,CX,Core i5,16,,512,,600000
+ML-018,Mercado Libre,2026-11-09,notebook i5 8va gen,"Laptop Dell Vostro 3480 14 ,intel I5 8va Gen 8ram Hdd 1tb",Dell,Vostro,Core i5 8va gen,8,HDD,1000,,470000
+ML-019,Mercado Libre,2026-11-09,notebook i5 8va gen,Notebook Hp Probook 640 G5 I5 8va 16gb 256gb 14,HP,ProBook,Core i5 8va gen,16,,256,,899999
+ML-020,Mercado Libre,2026-11-09,notebook i5 8va gen,Lenovo Core I5 8va - 8gb Ram,Lenovo,,Core i5 8va gen,8,,,,360000
+ML-021,Mercado Libre,2026-11-09,notebook i5 8va gen,Notebook Dell Latitude 7490 I5 8va Gen 8gb Ram 128gb Ssd,Dell,Latitude,Core i5 8va gen,8,SSD,128,,349990
+ML-022,Mercado Libre,2026-11-09,notebook i5 8va gen,Dell Latitude 5490 Core I5 8va 16gb 256ssd Fhd,Dell,Latitude,Core i5 8va gen,16,SSD,256,,460000
+ML-023,Mercado Libre,2026-11-09,notebook i5 8va gen,Notebook Lenovo V330-15ikb - I7 8va.gen - Mem 8g - Ssd 240,Lenovo,Lenovo V,Core i7 8va gen,8,SSD,240,,550000
+ML-024,Mercado Libre,2026-11-09,notebook i5 8va gen,Notebook Asus I7 7ma Gen,Asus,,Core i7 7ma gen,,,,,650000
+ML-025,Mercado Libre,2026-11-09,notebook i5 8va gen,Notebook Asus X515ea 15.6 Intel Core I7 1165g7 12gb Ram,Asus,VivoBook,Core i7 11va gen,12,,,,1550000
+ML-026,Mercado Libre,2026-11-09,notebook i5 8va gen,Notebook Dell Inspiron 3520 Ram 8gb 15.6 500gb I5 12th Gen,Dell,Inspiron,Core i5 12va gen,8,,500,,886440
+ML-027,Mercado Libre,2026-11-09,notebook i5 8va gen,Notebook Bangho B240- I5.2450m- 6gb- 500gb- Cargador (3),Bangho,Bangho,Core i5 2da gen,6,,500,,124999
+ML-028,Mercado Libre,2026-11-09,notebook i5 8va gen,Notebook Dell Latitude E6430 I5 3340m 4gb De Ram,Dell,Latitude,Core i5 3ra gen,4,,,,179000
+ML-029,Mercado Libre,2026-11-09,notebook i5 10ma gen,Dell Latitude 5410 I5 10ma Gen 32gb Ram 256gb Ssd,Dell,Latitude,Core i5 10ma gen,32,SSD,256,,600000
+ML-030,Mercado Libre,2026-11-09,notebook i5 10ma gen,Lenovo T490 - Core I5 10ma Gen + 8gb Ddr4 + 256ssd Full Hd!!,Lenovo,ThinkPad,Core i5 10ma gen,8,SSD,256,,649999
+ML-031,Mercado Libre,2026-11-09,notebook i5 10ma gen,Notebook Dell 3410 / I5 10ma Gen/40gb Ram Ddr4 2666mhz,Dell,Latitude,Core i5 10ma gen,40,,,,647400
+ML-032,Mercado Libre,2026-11-09,notebook i5 10ma gen,Notebook Dell Latitude 3510 I5 10ma 32gb Ram 1.5tb Ssd,Dell,Latitude,Core i5 10ma gen,32,SSD,1500,,850000
+ML-033,Mercado Libre,2026-11-09,notebook i5 10ma gen,Notebook Hp I5 10ma Gen. 8gb Ram Ssd 512gb Full Hd Win 10,HP,,Core i5 10ma gen,8,SSD,512,,732617
+ML-034,Mercado Libre,2026-11-09,notebook i5 10ma gen,Notebook Exo Smart Pro Q5 I5 10ma Gen 8gb Hdd 500 Gb,Exo,Exo,Core i5 10ma gen,8,HDD,500,,720000
+ML-035,Mercado Libre,2026-11-09,notebook i5 10ma gen,Notebook Core I5 Aiwa 15.6,Aiwa,Aiwa,Core i5,,,,,996000
+ML-036,Mercado Libre,2026-11-09,notebook i5 10ma gen,"Notebook Asus 15 . Intel I5, 8gb De Ram, Disco Ssd De 500gb",Asus,,Core i5,8,SSD,500,,600000
+ML-037,Mercado Libre,2026-11-09,notebook i5 10ma gen,Ultrabook Hp 15 Core I5 1035g1 8gb 256gb Ssd Win 10,HP,HP 15/240/250,Core i5 10ma gen,8,SSD,256,,600000
+ML-038,Mercado Libre,2026-11-09,notebook i5 10ma gen,Lenovo Thinkpad E14 I5 16gb 240ssd Windows 10 Pro,Lenovo,ThinkPad,Core i5,16,SSD,240,,500000
+ML-039,Mercado Libre,2026-11-09,notebook i5 10ma gen,Lenovo Thinkpad E15 2da Gen I5 16gb Ram,Lenovo,ThinkPad,Core i5,16,,,,1150000
+ML-040,Mercado Libre,2026-11-09,notebook i5 10ma gen,Lenovo 15 Iml Thinkbook 8gb Ssd 25615.6 Core I5 10 Gen,Lenovo,ThinkBook,Core i5 10ma gen,8,SSD,256,,439900
+ML-041,Mercado Libre,2026-11-09,notebook i5 10ma gen,Laptop Macbook Pro 2020 13 I5 2ghz 10ma 512gb Ssd 16gb,Apple,MacBook Pro,Core i5 10ma gen,16,SSD,512,,800000
+ML-042,Mercado Libre,2026-11-09,notebook i5 10ma gen,Notebook Dell Latitude 54 Core I5 Con 16gb De Ram 512gb Ssd,Dell,Latitude,Core i5,16,SSD,512,,600000
+ML-043,Mercado Libre,2026-11-09,notebook i5 10ma gen,Notebook Dell Latitude 15 5511 | I7-10850h | 15.6 | Ssd 512,Dell,Latitude,Core i7 10ma gen,,SSD,512,,1294800
+ML-044,Mercado Libre,2026-11-09,notebook i5 11va gen,"Dell Inspiron 3511, Intel I5 11va Gen, 16gb Ram, 1tb Ssd",Dell,Inspiron,Core i5 11va gen,16,SSD,1000,,750000
+ML-045,Mercado Libre,2026-11-09,notebook i5 11va gen,Notebook Asus X515ea Intel Core I5 11va Gen 8gb Ssd 256gb 15,Asus,VivoBook,Core i5 11va gen,8,SSD,256,,750000
+ML-046,Mercado Libre,2026-11-09,notebook i5 11va gen,Notebook Hp 250 G8 I5 11va Gen 8gb 256gb Ssd,HP,HP 15/240/250,Core i5 11va gen,8,SSD,256,,700000
+ML-047,Mercado Libre,2026-11-09,notebook i5 11va gen,Computadora Netbook (usada) Laptop Huawei Series Pro I5,Huawei,MateBook,Core i5,,,,,800000
+ML-048,Mercado Libre,2026-11-09,notebook i5 11va gen,Note Compatible Con Vjfe54f11uar I5-1235u 8gb Nvme 256gb W11,Generica,Generica,Core i5 12va gen,8,SSD,256,,580000
+ML-049,Mercado Libre,2026-11-09,notebook i5 11va gen,Note Compatible Con Bes T5 I5-1155g7 8gb Ram Nvme 240gb W11,Generica,Generica,Core i5 11va gen,8,SSD,240,,500000
+ML-050,Mercado Libre,2026-11-09,notebook i5 11va gen,Notebook Msi Intel I5-1155g7 16gb 512gb Nvme Ssd Win 11,MSI,MSI,Core i5 11va gen,16,SSD,512,,899000
+ML-051,Mercado Libre,2026-11-09,notebook i5 11va gen,Notebook Enova Intel Core I5 (décima Generación) Windows 11,Enova,Enova,Core i5 10ma gen,,,,,340000
+ML-052,Mercado Libre,2026-11-09,notebook i5 11va gen,"Dell Inspiron 3511, Intel I5 11va Gen, 16gb Ram, 1tb Ssd",Dell,Inspiron,Core i5 11va gen,16,SSD,1000,,620000
+ML-053,Mercado Libre,2026-11-09,notebook i5 11va gen,Lenovo Ideapad Flex I5-1235u 8gb Ram 512gb Ssd Táctil,Lenovo,IdeaPad,Core i5 12va gen,8,SSD,512,,680000
+ML-054,Mercado Libre,2026-11-09,notebook i5 11va gen,Asus Zenbook 14 Oled I5-12va 8gb 256gb,Asus,ZenBook,Core i5 12va gen,8,,256,,785700
+ML-055,Mercado Libre,2026-11-09,notebook i5 11va gen,Notebook Asus X515ea I7 8gb Ssd 512gb Fhd Win11 Gris,Asus,VivoBook,Core i7,8,SSD,512,,1294800
+ML-056,Mercado Libre,2026-11-09,notebook i5 11va gen,Note Compatible Con Vjfe54f11uar I7-1255u 8gb Nvme 256gb W11,Generica,Generica,Core i7 12va gen,8,SSD,256,,630000
+ML-057,Mercado Libre,2026-11-09,notebook i5 11va gen,Note Compatible Con Vjfe54f11uar I3-1215u 4gb Nvme 128gb W11,Generica,Generica,Core i3 12va gen,4,SSD,128,,500000
+ML-058,Mercado Libre,2026-11-09,notebook i5 11va gen,Laptop Hp Pantalla 15.6 Intel I5 11va 512gb Ssd,HP,HP 15/240/250,Core i5 11va gen,,SSD,512,,891021
+ML-059,Mercado Libre,2026-11-09,notebook i5 12va gen,Notebook Hp Envy Intel Core I5 12va Gen 8gb Ssd 512gb 13,HP,Envy,Core i5 12va gen,8,SSD,512,,800000
+ML-060,Mercado Libre,2026-11-09,notebook i5 12va gen,Notebook Hp 15.6 Intel Core I5,HP,HP 15/240/250,Core i5,,,,,677280
+ML-061,Mercado Libre,2026-11-09,notebook i5 12va gen,Notebook Lenovo Thinkpad L15 Core I5 1235u 16gb Ram Ssd 240g,Lenovo,ThinkPad,Core i5 12va gen,16,SSD,240,,1211900
+ML-062,Mercado Libre,2026-11-09,notebook i5 12va gen,Notebook Hp 15.6 Full Hd Intel Core I5 12va Gen 8gb Ram Ssd,HP,HP 15/240/250,Core i5 12va gen,8,SSD,,,800000
+ML-063,Mercado Libre,2026-11-09,notebook i5 12va gen,Notebook Asus Vivobook X1504za Intel Core I5 11°va 12gb Ram,Asus,VivoBook,Core i5 11va gen,12,,,,649900
+ML-064,Mercado Libre,2026-11-09,notebook i5 12va gen,"Dell Laptop Inspiron 5510 15.6 Ci5 11a.gen, 8gb Ram, 512gb",Dell,Inspiron,Core i5 11va gen,8,,512,,900000
+ML-065,Mercado Libre,2026-11-09,notebook i5 12va gen,Notebook Compatible Con Max G5 I7-7500u 8gb 128gb Ssd W11,Generica,Generica,Core i7 7ma gen,8,SSD,128,,400000
+ML-066,Mercado Libre,2026-11-09,notebook i5 12va gen,Notebook Compatible Con Max G5 I5-7002u 4gb 128gb Ssd W10,Generica,Generica,Core i5 7ma gen,4,SSD,128,,380000
+ML-067,Mercado Libre,2026-11-09,notebook i5 12va gen,Notebook Compatible Con X541u I5-7200u 8gb Ram 240gb Ssd W11,Generica,Generica,Core i5 7ma gen,8,SSD,240,,600000
+ML-068,Mercado Libre,2026-11-09,notebook i7 8va gen,Notebook Hp 440 G5 I7 8va Gen 8gb Disco M2 240gb,HP,ProBook,Core i7 8va gen,8,SSD,240,,530000
+ML-069,Mercado Libre,2026-11-09,notebook i7 8va gen,Notebook Hp Probook 440 G5 Intel Core I7 8va Gen 8+128 M2,HP,ProBook,Core i7 8va gen,8,SSD,128,,540000
+ML-070,Mercado Libre,2026-11-09,notebook i7 8va gen,Notebook Hp 440 G5 I7 8va Gen 8gb Disco M2 128gb,HP,ProBook,Core i7 8va gen,8,SSD,128,,500000
+ML-071,Mercado Libre,2026-11-09,notebook i7 8va gen,Lenovo Thinkpad L14 Gen 2 I7 1165g7 + Nvme 512gb + 32gb Ram,Lenovo,ThinkPad,Core i7 11va gen,32,SSD,512,,1550000
+ML-072,Mercado Libre,2026-11-09,notebook i7 8va gen,Lenovo Thinkpad E14 Intel I7 2.8ghz 11gen 16gb Ram 480gb Ssd,Lenovo,ThinkPad,Core i7 11va gen,16,SSD,480,,1490000
+ML-073,Mercado Libre,2026-11-09,notebook i7 8va gen,"Lenovo Thinkpad T14 Gen 1, I7 10510u, 512gb Nvme Y 32gb Ram",Lenovo,ThinkPad,Core i7 10ma gen,32,SSD,512,,1175000
+ML-074,Mercado Libre,2026-11-09,notebook i7 8va gen,Lenovo Legion 7 15imh05 I7 16gb Ram 512gb Ssd Rtx2026,Lenovo,Legion,Core i7,16,SSD,512,RTX,1700000
+ML-075,Mercado Libre,2026-11-09,notebook i7 8va gen,Notebook Hp Elitebook 840 G8 I7 16gb 500gb Ssd Windows 11,HP,EliteBook,Core i7,16,SSD,500,,699999
+ML-076,Mercado Libre,2026-11-09,notebook i7 8va gen,Notebook Hp Elitebook 840 G8 I7 16gb 512gb Ssd Windows 11,HP,EliteBook,Core i7,16,SSD,512,,609999
+ML-077,Mercado Libre,2026-11-09,notebook i7 8va gen,Lenovo Yoga 9i 14 I7-1185g7 Gen - P 360 16gb 512ssd,Lenovo,Yoga,Core i7 11va gen,16,SSD,512,,1199999
+ML-078,Mercado Libre,2026-11-09,notebook i7 8va gen,Lenovo Thinkpad Usado T14 Gen 2 Core I7 16gb Ram 256gb Ssd,Lenovo,ThinkPad,Core i7,16,SSD,256,,1500000
+ML-079,Mercado Libre,2026-11-09,notebook i7 8va gen,Macbook Pro I7,Apple,MacBook Pro,Core i7,,,,,950000
+ML-080,Mercado Libre,2026-11-09,notebook i7 8va gen,Lenovo Thinkpad L15 Gen2 I7 1165g7 16gb 256gb Ssd,Lenovo,ThinkPad,Core i7 11va gen,16,SSD,256,,1293000
+ML-081,Mercado Libre,2026-11-09,notebook i7 8va gen,Notebook Dell Intel Core I7 16gb 2tb W11 Táctil,Dell,,Core i7,16,,2000,,690000
+ML-082,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Lenovo 15 Fhd I7 11va Gen 256 Notebook Touch Win Color Azul,Lenovo,,Core i7 11va gen,,,256,,1290000
+ML-083,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Lenovo Thinkpad L14 Gen 2 - Core I7 11va - 16gb Ram,Lenovo,ThinkPad,Core i7 11va gen,16,,,,1800000
+ML-084,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Laptop Hp 17-cn0xxx Core I7 Gen 11th Graphics Iris Xe,HP,HP 15/240/250,Core i7 11va gen,,,,,900000
+ML-085,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Asus Vivobook X1605za Intel Core I7 16 Gb Ram 512 G,Asus,VivoBook,Core i7,16,,512,,1600000
+ML-086,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,"Notebook Asus Vivobook 15 X1504va, I7 8gb Ram 2tb Ssd",Asus,VivoBook,Core i7,8,SSD,2000,,1700000
+ML-087,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Bangho L7 Max( Intel I7 1165g7 Octa-core),Bangho,Bangho,Core i7 11va gen,,,,,950000
+ML-088,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Hp 15 Intel I7-10510u 1tb 128 Ssd 16gb 15.6 2gb,HP,HP 15/240/250,Core i7 10ma gen,16,SSD,128,dedicada 2GB,849000
+ML-089,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Haier Core I7 Ram 8gb Ssd 512gb Windows 11 14 Fhd,Haier,Haier,Core i7,8,SSD,512,,530000
+ML-090,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Msi Intel Core I5 8va Gen Hdd1tb Ssd256gb Ram 8gb,MSI,MSI,Core i5 8va gen,8,SSD,256,,1450000
+ML-091,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,"Notebook Msi Intel Core I5-1155g7 8gb 512gb 14"" Win11 Black",MSI,MSI,Core i5 11va gen,8,,512,,900000
+ML-092,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Asus X515ea Intel Core I7 | 8gb Ram | 512gb Ssd,Asus,VivoBook,Core i7,8,SSD,512,,1000000
+ML-093,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Hp Core I5 10ma Gen 16gb Ram Windows 11 + Mouse Gam,HP,,Core i5 10ma gen,16,,,,750000
+ML-094,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Dell Intel Core I5 10° Gen 512gb Ssd 4gb Win 11 Pro,Dell,,Core i5 10ma gen,4,SSD,512,,469000
+ML-095,Mercado Libre,2026-11-09,notebook i7 10ma gen / 11va gen,Notebook Dell Latitude 5410 I7 10ma Gen,Dell,Latitude,Core i7 10ma gen,,,,,630000
+ML-096,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,"Notebook Hp - Laptop / 15,6 / Ryzen 3+ram 8gb+ssd 475gb",HP,HP 15/240/250,Ryzen 3,8,SSD,475,,580000
+ML-097,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp 255 G10 15.6 Amd Ryzen 3 7330u 32gb 1tb Fdos,HP,HP 15/240/250,Ryzen 3 7030,32,,1000,,800000
+ML-098,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp 14 Amd Ryzen 3 7320u 8gb Ram 256gb Ssd,HP,HP 15/240/250,Ryzen 3 7020,8,SSD,256,,700000
+ML-099,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Lenovo Ideapad 1 Ryzen 3 7320u 4gb 128gb Ssd,Lenovo,IdeaPad,Ryzen 3 7020,4,SSD,128,,694000
+ML-100,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp 255 G10 Ryzen 3 8gb Ram 256gb Ssd,HP,HP 15/240/250,Ryzen 3,8,SSD,256,,800000
+ML-101,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp 255 G10 Ryzen 5 32gb Ram 1tb Ssd 15.6 Hd,HP,HP 15/240/250,Ryzen 5,32,SSD,1000,,1200000
+ML-102,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp 255 G10 Amd Ryzen 5 7530u 32gb Ram 1tb Ssd Nvme,HP,HP 15/240/250,Ryzen 5 7030,32,SSD,1000,,1100000
+ML-103,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp 255 G10 Ryzen 7 7730u | 16gb | 512gb | 15.6,HP,HP 15/240/250,Ryzen 7 7030,16,,512,,1380000
+ML-104,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,"Notebook Exo 15,6 Amd Ryzen 3 8gb 256gb Ssd Windows 11",Exo,Exo,Ryzen 3,8,SSD,256,,450000
+ML-105,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Enova Ne14r310-08240w11h Ryzen 3 8gb 240gb,Enova,Enova,Ryzen 3,8,,240,,450000
+ML-106,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Asus Vivobook Ryzen 3 12 Gb Ram 119 Gb (usado),Asus,VivoBook,Ryzen 3,12,,128,,430000
+ML-107,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp 14-em0252la Amd Ryzen 5 7520u 8gb Ram 512gb Ssd,HP,HP 15/240/250,Ryzen 5 7020,8,SSD,512,,739999
+ML-108,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp 255 G10 Ryzen 7 7730u 16gb 512gb Funda Incluida,HP,HP 15/240/250,Ryzen 7 7030,16,,512,,1250000
+ML-109,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp Ryzen 3 3250u Ssd 128gb 4gb 14 Windows 10,HP,HP 15/240/250,Ryzen 3 3000,4,SSD,128,,990000
+ML-110,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Hp 255 G10 Ryzen 5 7530u 32gb Ram 1tb Ssd Gris,HP,HP 15/240/250,Ryzen 5 7030,32,SSD,1000,,1100000
+ML-111,Mercado Libre,2026-11-09,notebook ryzen 3 3250u / 5300u / 7320u,Notebook Lenovo Ryzen 7 8gb 512ssd,Lenovo,,Ryzen 7,8,SSD,512,,820000
+ML-112,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Asus Zenbook Ryzen 5 3500ul8 Gb Ram | Ssd 512 Gb,Asus,ZenBook,Ryzen 5 3000,8,SSD,512,,750000
+ML-113,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Lenovo Ip5 15alc05 Ryzen 5 5500u 8gb 512gb 14,Lenovo,IdeaPad,Ryzen 5 5000,8,,512,,1050000
+ML-114,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Dell Inspiron 15 Con Ryzen 5 7520 (am5),Dell,Inspiron,Ryzen 5 7020,,,,,700000
+ML-115,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Hp 245 G7 Ryzen 5-3500u Ram 8gb Hdd 1tb Win10 Ctman,HP,HP 15/240/250,Ryzen 5 3000,8,HDD,1000,,800000
+ML-116,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Lenovo Ideapad 1 Amd Ryzen 5 5500u 512gb Ssd,Lenovo,IdeaPad,Ryzen 5 5000,,SSD,512,,800000
+ML-117,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Enova 14 Ryzen 5 3500u 8 Gb Ram 240 Gb Ssd W11,Enova,Enova,Ryzen 5 3000,8,SSD,240,,790000
+ML-118,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Lenovo 15alc7 16 Ryzen 5 512gb 8gb W11h Pcreg Color,Lenovo,IdeaPad,Ryzen 5,8,,512,,896400
+ML-119,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Asus Vivobook 15 M1502naq Ryzen 5 24gb 1tb Ssd,Asus,VivoBook,Ryzen 5,24,SSD,1000,,1000000
+ML-120,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Hp 14 Ryzen 5 7520u 8gb Lpddr5 256gb 14-em0057 Gris,HP,HP 15/240/250,Ryzen 5 7020,8,,256,,620000
+ML-121,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Lenovo Ideapad Slim 3 Ryzen 5 7520u 8gb,Lenovo,IdeaPad,Ryzen 5 7020,8,,,,850000
+ML-122,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,"Notebook Dell Inspiron 3535 Amd Ryzen 5 7520u, 16gram, 512g",Dell,Inspiron,Ryzen 5 7020,16,,512,,800000
+ML-123,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Lenovo V15 Ryzen 5 7520u 16gb Ssd 512gb Wind 11 Pro,Lenovo,Lenovo V,Ryzen 5 7020,16,SSD,512,,1095600
+ML-124,Mercado Libre,2026-11-09,notebook ryzen 5 3500u / 5500u / 7520u,Notebook Lenovo Ideapad 15.6 Amd Ryzen 5 Serie 7520u Touch,Lenovo,IdeaPad,Ryzen 5 7020,,,,,650000
+ML-125,Mercado Libre,2026-11-09,notebook ryzen 7,Notebook Hp 15.6 Hdled Touch Ryzen 7 12gb 256ssd Ñ Numérico,HP,HP 15/240/250,Ryzen 7,12,SSD,256,,990000
+ML-126,Mercado Libre,2026-11-09,notebook ryzen 7,Acer Aspire 3 Ryzen 7 5700u 16gb 512gb Fhd Plateado,Acer,Aspire,Ryzen 7 5000,16,,512,,800000
+ML-127,Mercado Libre,2026-11-09,notebook ryzen 7,Notebook Acer Aspire 3 Ryzen 7 16gb 512gb Fhd Plateado,Acer,Aspire,Ryzen 7,16,,512,,1100000
+ML-128,Mercado Libre,2026-11-09,notebook ryzen 7,Lenovo Amd Razón 7 5700u 1.8ghz 12gb Ram 256gbssd Abyss_blue,Lenovo,,Ryzen 7 5000,12,SSD,256,,1100000
+ML-129,Mercado Libre,2026-11-09,notebook ryzen 7,"Notebook Acer Aspire Ryzen 7 5700u 16gb 512gb 15,6' Fhd Gris",Acer,Aspire,Ryzen 7 5000,16,,512,,1500000
+ML-130,Mercado Libre,2026-11-09,notebook ryzen 7,Acer Aspire Lite Ryzen 7 16gb 512gb 15.6 Fhd Silver,Acer,Aspire,Ryzen 7,16,,512,,1300000
+ML-131,Mercado Libre,2026-11-09,notebook ryzen 7,Lenovo Yoga 6 13alc6 Ryzen 7 16gb Ram 512gb Ssd Touch,Lenovo,Yoga,Ryzen 7,16,SSD,512,,575000
+ML-132,Mercado Libre,2026-11-09,notebook ryzen 7,"Notebook Acer Aspire Ryzen 7 5700u 16gb 512gb 15,6'",Acer,Aspire,Ryzen 7 5000,16,,512,,800000
+ML-133,Mercado Libre,2026-11-09,notebook ryzen 7,Notebook Dell Inspiron 3525 Ryzen 7 32gb Ram Ssd 1tb,Dell,Inspiron,Ryzen 7,32,SSD,1000,,849999
+ML-134,Mercado Libre,2026-11-09,notebook ryzen 7,Lenovo Thinkpad E15 Gen 3 Amd Ryzen 7 5700u 16gb De Ram,Lenovo,ThinkPad,Ryzen 7 5000,16,,,,1100000
+ML-135,Mercado Libre,2026-11-09,notebook ryzen 7,Notebook Acer Aspire 3 Ryzen 7 5700u 16gb 512gb Plateado,Acer,Aspire,Ryzen 7 5000,16,,512,,929999
+ML-136,Mercado Libre,2026-11-09,notebook ryzen 7,Notebook Hp 15.6 Ryzen 7 8gb 512gb Ssd Plata,HP,HP 15/240/250,Ryzen 7,8,SSD,512,,1300000
+ML-137,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,Notebook Hdc Celeron N4020 4gb 128gb Ssd Win11 Azul,HDC,HDC,Celeron N4020,4,SSD,128,,390000
+ML-138,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,Notebook Hp Celeron N4020 4gb 128gb Ssd 14 Windows 10 Pro,HP,HP 15/240/250,Celeron N4020,4,SSD,128,,450000
+ML-139,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,"Notebook Lenovo Celeron N4020 4gb 128gb 14"" Win 11 Blue",Lenovo,,Celeron N4020,4,,128,,500000
+ML-140,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,Notebook Asus Intel E410m Celeron N4020 128gb (bat Agotada),Asus,,Celeron N4020,,,128,,220000
+ML-141,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,Notebook Exo Intel Pentium,Exo,Exo,Pentium,,,,,160000
+ML-142,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,Notebook Hp 14-cf2531la Intel Celeron N4020,HP,HP 15/240/250,Celeron N4020,,,,,95000
+ML-143,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,Laptop Hp 240 G8 Celeron N4020 Dual Core 8gb 500gb 14,HP,HP 15/240/250,Celeron N4020,8,,500,,300000
+ML-144,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,Notebook Philco N14p4020 14.1 Pulgadas Intel Celeron 4gb,Philco,Philco,Celeron,4,,,,250000
+ML-145,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,"Notebook Hyundai Hybook-14,1 Celeron N4020 Ram 4gb/ssd 128gb",Hyundai,Hyundai,Celeron N4020,4,SSD,128,,280000
+ML-146,Mercado Libre,2026-11-09,notebook celeron / pentium / n4020,Notebook Hp 14-dq0xxx Intel Celeron N4120 8gb Ram,HP,HP 15/240/250,Celeron N4120,8,,,,650000
+ML-147,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Notebook Thinkpad T480 I5 7ma Gen 16gb Ram 256gb M.2,Lenovo,ThinkPad,Core i5 7ma gen,16,SSD,256,,780000
+ML-148,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Lenovo Thinkpad L14 Intel I5-1135 16gb Ddr4 Ram 238gb Ssd,Lenovo,ThinkPad,Core i5 11va gen,16,SSD,240,,620000
+ML-149,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Notebook Lenovo T14 Gen2 I5 - Ram 16 Gb - 512gb Nvme,Lenovo,ThinkPad,Core i5,16,SSD,512,,900000
+ML-150,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Notebook Lenovo Thinkpad L14 Amd Ryzen7 Pro 16gb 512gb Negro,Lenovo,ThinkPad,Ryzen 7,16,,512,,650000
+ML-151,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Notebook Lenovo T14 Gen2 I5 - Ram 16 Gb - Disco 512gb Nvme,Lenovo,ThinkPad,Core i5,16,SSD,512,,1100000
+ML-152,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Notebook Lenovo Thinkpad E14 Gen 4 Ryzen 7 5825u 16gb 512gb,Lenovo,ThinkPad,Ryzen 7 5000,16,,512,,919000
+ML-153,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Notebook Lenovo Thinkpad E14 Gen6 Intel I5 Ultra 16gb 240gb,Lenovo,ThinkPad,Core Ultra 5,16,,240,,1450000
+ML-154,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Lenovo Thinkpad E14 Gen4 Ryzen 5 5625u 40gb Ram 750ssd,Lenovo,ThinkPad,Ryzen 5 5000,40,SSD,750,,1800000
+ML-155,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Notebook Thinkpad T480 I5 7ma Gen 8gb Ram 128 Ssd,Lenovo,ThinkPad,Core i5 7ma gen,8,SSD,128,,550000
+ML-156,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Lenovo Thinkpad T470p I7 7820hq/256ssd/16ram/940mx/14 2k Ne,Lenovo,ThinkPad,Core i7 7ma gen,16,SSD,256,MX940,650000
+ML-157,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Notebook Lenovo 14 Thinkpad E470 I3 6006u 8gb Ssd 480gb,Lenovo,ThinkPad,Core i3 6ta gen,8,SSD,480,,480000
+ML-158,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14",Laptop Lenovo Thinkpad T14 Gen 2 I7 16gb Ram 512gb Ssd,Lenovo,ThinkPad,Core i7,16,SSD,512,,999000
+ML-159,Mercado Libre,2026-11-09,"thinkpad t480, t490, t14, e14, l14","Lenovo Thinkpad T14 Gen 1 I7 10510u, 16gb Ram Y 512gb Nvme",Lenovo,ThinkPad,Core i7 10ma gen,16,SSD,512,,920000
+ML-160,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Notebook Lenovo Ideapad Slim 3 Intel N100 8gb 128gb 15.6 Tz,Lenovo,IdeaPad,Intel N100,8,,128,,699999
+ML-161,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Lenovo Ideapad Slim Snapdragon X 16 Gb 512 Win 11 15.3,Lenovo,IdeaPad,Snapdragon X,16,,512,,938000
+ML-162,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Notebook Lenovo Ideapad Slim 3 Ryzen 5 8gb 512gb + Cargador,Lenovo,IdeaPad,Ryzen 5,8,,512,,869999
+ML-163,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Notebook Lenovo Rizen 5 Color Azul,Lenovo,,Ryzen 5,,,,,650000
+ML-164,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Notebook Lenovo Ideapad Slim3 15.6fhd Ryzen5 8gb Ram Y 512gb,Lenovo,IdeaPad,Ryzen 5,8,,512,,800000
+ML-165,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Notebook Lenovo Ryzen 5 Slim3,Lenovo,IdeaPad,Ryzen 5,,,,,950000
+ML-166,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Notebook Lenovo Ideapad Slim 3 15arp10 Amd Ryzen 7 7735hs,Lenovo,IdeaPad,Ryzen 7 7035,,,,,1000000
+ML-167,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Notebook Lenovo Ideapad Slim 3 De 15.6 Full Hd Ryzen 7.,Lenovo,IdeaPad,Ryzen 7,,,,,1000000
+ML-168,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Lenovo Ideapad Slim 3 Ryzen 7 7730u 16gb 1tb Touch,Lenovo,IdeaPad,Ryzen 7 7030,16,,1000,,1099000
+ML-169,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Lenovo Ideapad Slim 3 15 Core I3 8gb 256gb Ssd Win 11,Lenovo,IdeaPad,Core i3,8,SSD,256,,680000
+ML-170,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Notebook Lenovo Ideapad Slim 3i 8va Gen 15 Intel Core 3 Gris,Lenovo,IdeaPad,Core 3,,,,,700000
+ML-171,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,"Notebook Lenovo Ideapad Slim3 Ryzen 5, 8gb Ram Y 512gb Ssd",Lenovo,IdeaPad,Ryzen 5,8,SSD,512,,700000
+ML-172,Mercado Libre,2026-11-09,lenovo ideapad 3 / slim 3,Notebook Lenovo Ideapad Slim 3 Con Core I7,Lenovo,IdeaPad,Core i7,,,,,800000
+ML-173,Mercado Libre,2026-11-09,hp pavilion 15 y hp 15 / 240 / 250,Notebook Hp 255 G7 Gris 8gb Ssd 240 Gb Athlon 3150u,HP,HP 15/240/250,Athlon 3150U,8,SSD,240,,420000
+ML-174,Mercado Libre,2026-11-09,hp pavilion 15 y hp 15 / 240 / 250,Notebook Hp 255 G7 Amd A9-9425 4gb 1tb 15.6 Buen Estadp,HP,HP 15/240/250,AMD A9,4,,1000,,499999
+ML-175,Mercado Libre,2026-11-09,hp pavilion 15 y hp 15 / 240 / 250,Hp Pavilion Ryzen 5 Gtx 1650 8gb 512gb Ssd,HP,Pavilion,Ryzen 5,8,SSD,512,GTX 1650,1150000
+ML-176,Mercado Libre,2026-11-09,hp pavilion 15 y hp 15 / 240 / 250,Notebook Hp 250 G8 Intel I7-1165g7 32gb Ddr4 512gb Ssd,HP,HP 15/240/250,Core i7 11va gen,32,SSD,512,,1237530
+ML-177,Mercado Libre,2026-11-09,hp pavilion 15 y hp 15 / 240 / 250,Notebook Hp Amd A9-9420,HP,HP 15/240/250,AMD A9,,,,,285000
+ML-178,Mercado Libre,2026-11-09,hp pavilion 15 y hp 15 / 240 / 250,Hp 15-fd0002 / I3-n305 / 8gb / Ssd 256 Gb / 15.6,HP,HP 15/240/250,Core i3 N305,8,SSD,256,,746004
+ML-179,Mercado Libre,2026-11-09,hp pavilion 15 y hp 15 / 240 / 250,Notebook Hp 250 G8 I3- Excelente Estado,HP,HP 15/240/250,Core i3,,,,,730000
+ML-180,Mercado Libre,2026-11-09,hp pavilion 15 y hp 15 / 240 / 250,Notebook Hp 250 G8 I3,HP,HP 15/240/250,Core i3,,,,,380000
+ML-181,Mercado Libre,2026-11-09,hp probook / elitebook,Hp Elitebook 840 G5 14 8 Gb Ram 256gb Ssd Intel Core I7,HP,EliteBook,Core i7,8,SSD,256,,679900
+ML-182,Mercado Libre,2026-11-09,hp probook / elitebook,Hp Elitebook 840 G5 - I7 - 512gb - Ram 16 (usado),HP,EliteBook,Core i7,16,,512,,800000
+ML-183,Mercado Libre,2026-11-09,hp probook / elitebook,Hp Elitebook 845 G7 16gb Ram 256gb Ssd Amd Ryzen 5 Pro Tz,HP,EliteBook,Ryzen 5,16,SSD,256,,689999
+ML-184,Mercado Libre,2026-11-09,hp probook / elitebook,Notebook Hp Probook 6560b - Core I3 / Ram 2gb / 320gb,HP,ProBook,Core i3,2,,320,,234999
+ML-185,Mercado Libre,2026-11-09,hp probook / elitebook,Notebook Hp 440 G9 Intel(r) I5-1235u Gen 16gb Ram 512gb Ssd,HP,ProBook,Core i5 12va gen,16,SSD,512,,725000
+ML-186,Mercado Libre,2026-11-09,hp probook / elitebook,Notebook Hp Probook 4530s I3 500 Gb (ssd Kingston) 4gb Ram,HP,ProBook,Core i3,4,SSD,500,,345000
+ML-187,Mercado Libre,2026-11-09,hp probook / elitebook,Notebook Hp Elitebook Intel Core I5 Usada Plateada Y Negra,HP,EliteBook,Core i5,,,,,160000
+ML-188,Mercado Libre,2026-11-09,hp probook / elitebook,Hp Probook 430 G2 I5-4310u 13.3 Hd,HP,ProBook,Core i5 4ta gen,,,,,380000
+ML-189,Mercado Libre,2026-11-09,hp probook / elitebook,"Hp Probook 640 G2, I5 8gb Ram, 500gb Hdd, 256gb Ssd",HP,ProBook,Core i5,8,SSD,256,,358750
+ML-190,Mercado Libre,2026-11-09,hp probook / elitebook,Notebook Hp Pro Book G2 4gb I5 512gb Ssd,HP,ProBook,Core i5,4,SSD,512,,280000
+ML-191,Mercado Libre,2026-11-09,dell latitude,Notebook Dell Latitude 5450 I3 Ddr3 4gb 120gb Ssd,Dell,Latitude,Core i3,4,SSD,120,,249000
+ML-192,Mercado Libre,2026-11-09,dell latitude,Portátil Dell Latitude 7420 Core I5,Dell,Latitude,Core i5,,,,,400000
+ML-193,Mercado Libre,2026-11-09,dell latitude,"Dell Latitude 3420 16gb Ram, I5 1135g7, 256 Ssd, 1tb Hdd",Dell,Latitude,Core i5 11va gen,16,SSD,256,,800000
+ML-194,Mercado Libre,2026-11-09,dell latitude,Dell Latitude 5510 / Intel Core I5 / 8 Gb Ram / Ssd 512 Gb,Dell,Latitude,Core i5,8,SSD,512,,500000
+ML-195,Mercado Libre,2026-11-09,dell latitude,Notebook Dell Latitude 5490 Intel Core I5 16gb Ram 256gb Ssd,Dell,Latitude,Core i5,16,SSD,256,,480000
+ML-196,Mercado Libre,2026-11-09,dell latitude,Notebook Dell 7410 Intel I5 16gb Ram 256gb Ssd 14 Color Gris,Dell,Latitude,Core i5,16,SSD,256,,750000
+ML-197,Mercado Libre,2026-11-09,dell latitude,Laptop Dell Latitude 5420 Corei7-1165g7 8gb Ram 256gb,Dell,Latitude,Core i7 11va gen,8,,256,,700000
+ML-198,Mercado Libre,2026-11-09,dell latitude,Dell Latitude 7420 I7-1185g7 16gb 256gb 14 Fhd Win11,Dell,Latitude,Core i7 11va gen,16,,256,,890000
+ML-199,Mercado Libre,2026-11-09,dell latitude,Notebook Dell Latitude 3520- I7-11ava- M2.240gb- 8gb- Bat-ca,Dell,Latitude,Core i7 11va gen,8,SSD,240,,574999
+ML-200,Mercado Libre,2026-11-09,dell inspiron / vostro,"Dell Vostro 5490. Core I5, 16 Gb, 1,25 Tb, 14 Fhd.",Dell,Vostro,Core i5,16,,1250,,1100000
+ML-201,Mercado Libre,2026-11-09,dell inspiron / vostro,"Laptop Dell Vostro 14 3000 Series 3468 - Intel Core I5, 8 G",Dell,Vostro,Core i5,8,,,,350000
+ML-202,Mercado Libre,2026-11-09,dell inspiron / vostro,"Notebook Dell Vostro 15 3000 I5core 8gb 1,14tb Ssd Negro",Dell,Vostro,Core i5,8,SSD,1140,,1250000
+ML-203,Mercado Libre,2026-11-09,dell inspiron / vostro,Notebook Dell Vostro 14 Core I3 11va 8gb 256gb Ssd M2+1tera,Dell,Vostro,Core i3 11va gen,8,SSD,256,,650000
+ML-204,Mercado Libre,2026-11-09,dell inspiron / vostro,Notebook Dell Vostro 5410 I5 11th 16gb 256gb+ Cargador- Leer,Dell,Vostro,Core i5 11va gen,16,,256,,439999
+ML-205,Mercado Libre,2026-11-09,dell inspiron / vostro,Notebook Vostro 5410 I5 11th 16gb Ram 256gb+ Cargador - Leer,Dell,Vostro,Core i5 11va gen,16,,256,,419999
+ML-206,Mercado Libre,2026-11-09,dell inspiron / vostro,Notebook Dell Vostro 5410 Core I5 11th 16gb 256gb - Leer!,Dell,Vostro,Core i5 11va gen,16,,256,,429999
+ML-207,Mercado Libre,2026-11-09,dell inspiron / vostro,Notebook Dell Vostro 5410 Core I5 11th 16gb 256gb- Leer Desc,Dell,Vostro,Core i5 11va gen,16,,256,,449999
+ML-208,Mercado Libre,2026-11-09,dell inspiron / vostro,Notebook Dell Vostro 3405 Amd Athlon Silver,Dell,Vostro,Athlon Silver,,,,,325000
+ML-209,Mercado Libre,2026-11-09,dell inspiron / vostro,Notebook Dell Vostro 3468 I5 8250u 16gb Ssd 224gb + 1tb,Dell,Vostro,Core i5 8va gen,16,SSD,224,,835000
+ML-210,Mercado Libre,2026-11-09,dell inspiron / vostro,Notebook Dell N5010 Intel Core I5 6gb Ram Windows 7,Dell,Inspiron,Core i5,6,,,,150000
+ML-211,Mercado Libre,2026-11-09,dell inspiron / vostro,"Notebook Dell Vostro 3405 Ryzen 5 3450u, 12gb, Ssd 256gb",Dell,Vostro,Ryzen 5 3000,12,SSD,256,,560000
+ML-212,Mercado Libre,2026-11-09,acer aspire 3 / 5,Notebook Acer Aspire 5 Core I3 12gb Ssd 256gb 15.6 Full Hd,Acer,Aspire,Core i3,12,SSD,256,,440000
+ML-213,Mercado Libre,2026-11-09,acer aspire 3 / 5,Notebook Acer Aspire 5 A515-56 I3 1115g4 8gb 256gb Ssd,Acer,Aspire,Core i3 11va gen,8,SSD,256,,599000
+ML-214,Mercado Libre,2026-11-09,acer aspire 3 / 5,Acer Aspire 5 N4000c 4gb 1366x768 Windows 11 Home,Acer,Aspire,Celeron N4000,4,,,,500000
+ML-215,Mercado Libre,2026-11-09,acer aspire 3 / 5,Notebook Acer Aspire 14' I5 3ra 6gb 128gb Ssd Win 10 Pro,Acer,Aspire,Core i5 3ra gen,6,SSD,128,,239000
+ML-216,Mercado Libre,2026-11-09,acer aspire 3 / 5,"Notebook Acer Aspire Go Ag15-31p-3947, Intel Core I3 N305",Acer,Aspire,Core i3 N305,,,,,647400
+ML-217,Mercado Libre,2026-11-09,acer aspire 3 / 5,Acer Aspire 5 A514-54 14 Intel Core I3 1115g4 8 Gb De Ram,Acer,Aspire,Core i3 11va gen,8,,,,690000
+ML-218,Mercado Libre,2026-11-09,acer aspire 3 / 5,Notebook Acer I3 6006u 4gb Ssd 480gb (leer Detalles),Acer,,Core i3 6ta gen,4,SSD,480,,200000
+ML-219,Mercado Libre,2026-11-09,asus vivobook / zenbook,Notebook Asus Vivobook Intel Core 13,Asus,VivoBook,Core i3,,,,,550000
+ML-220,Mercado Libre,2026-11-09,asus vivobook / zenbook,Asus Zenbook Ux310 512ssd 8gram Intel I5,Asus,ZenBook,Core i5,8,SSD,512,,600000
+ML-221,Mercado Libre,2026-11-09,asus vivobook / zenbook,Notebook Asus Vivobook Icore7,Asus,VivoBook,Core i7,,,,,990024
+ML-222,Mercado Libre,2026-11-09,asus vivobook / zenbook,Notebook Asus Vivobook X1605 Core I3 1215u 24gb 512gb Gris,Asus,VivoBook,Core i3 12va gen,24,,512,,1215000
+ML-223,Mercado Libre,2026-11-09,asus vivobook / zenbook,Asus Vivobook X512 - I7 - 24gb - 512gb Ssd,Asus,VivoBook,Core i7,24,SSD,512,,790000
+ML-224,Mercado Libre,2026-11-09,asus vivobook / zenbook,Notebook Asus Vivobook I3 8gb Ssd 128gb Fhd Negro,Asus,VivoBook,Core i3,8,SSD,128,,698000
+ML-225,Mercado Libre,2026-11-09,asus vivobook / zenbook,Notebook Asus Vivobook F510qa 15 /128gb Ssd/4gb Ram/amd A12,Asus,VivoBook,AMD A12,4,SSD,128,,380000
+ML-226,Mercado Libre,2026-11-09,asus vivobook / zenbook,"Asus Vivobook S410u. I78550, 24 Ram Y 250 Ssd",Asus,VivoBook,Core i7 8va gen,24,SSD,250,,650000
+ML-227,Mercado Libre,2026-11-09,asus vivobook / zenbook,Notebook Asus Vivobook X1504za-nj041w I5/1235u-8g-512-15.6,Asus,VivoBook,Core i5 12va gen,8,,512,,750000
+ML-228,Mercado Libre,2026-11-09,asus vivobook / zenbook,"Notebook Laptop Asus Vivobook S14 S432 I7 (no Hp, No Dell)",Asus,VivoBook,Core i7,,,,,1095600
+ML-229,Mercado Libre,2026-11-09,asus vivobook / zenbook,Asus Vivobook 15 I5 11a Gen 8gb 512gb Ssd Impecable + Caja,Asus,VivoBook,Core i5 11va gen,8,SSD,512,,949000
+ML-230,Mercado Libre,2026-11-09,asus vivobook / zenbook,Notebook Asus Vivobook X1404za I3 12va Gen / 24gb Ram / Ss,Asus,VivoBook,Core i3 12va gen,24,,,,925000
+ML-231,Mercado Libre,2026-11-09,asus vivobook / zenbook,Notebook Asus Vivobook Intel I5 16gb Ram 512gb Ssd 15.6 Azul,Asus,VivoBook,Core i5,16,SSD,512,,1150000
+ML-232,Mercado Libre,2026-11-09,macbook air m1 / m2,Macbook Air M2 Color Midnight 8gb De Ram 256gb Ssd - Apple M,Apple,MacBook Air,Apple M2,8,SSD,256,,1680000
+ML-233,Mercado Libre,2026-11-09,macbook air m1 / m2,Macbook Air M2 De 13.6 Pulgadas,Apple,MacBook Air,Apple M2,,,,,1450000
+ML-234,Mercado Libre,2026-11-09,macbook air m1 / m2,Apple Macbook Air M2 (2022) Silver 13.6,Apple,MacBook Air,Apple M2,,,,,1550000
+ML-235,Mercado Libre,2026-11-09,macbook air m1 / m2,Apple Macbook Air M2 (2022) Silver 13.6 256 8gb Silver,Apple,MacBook Air,Apple M2,8,,256,,1350000
+ML-236,Mercado Libre,2026-11-09,macbook air m1 / m2,Apple Macbook Air M2 (2022) Silver 13.6,Apple,MacBook Air,Apple M2,,,,,1499999
+ML-237,Mercado Libre,2026-11-09,macbook air m1 / m2,Macbook Air M2 2022 Space Grey Ssd 512gb 8gb A2681 Bat %100,Apple,MacBook Air,Apple M2,8,SSD,512,,1790000
+ML-238,Mercado Libre,2026-11-09,macbook air m1 / m2,Macbook Air M3 Gris Espacial 13.6 256ssd 8gb De Ram,Apple,MacBook Air,Apple M3,8,SSD,256,,1650000
+ML-239,Mercado Libre,2026-11-09,macbook air m1 / m2,Macbook Air M3 512gb Ssd,Apple,MacBook Air,Apple M3,,SSD,512,,1500000
+ML-240,Mercado Libre,2026-11-09,macbook air m1 / m2,Macbook Air A2941 Color Gris 8gb De Am - 256gb Apple M2,Apple,MacBook Air,Apple M2,8,,256,,1499000
+ML-241,Mercado Libre,2026-11-09,macbook air m1 / m2,Macbook Air 15 M2 2023 8gb 256gb Liquid Retina,Apple,MacBook Air,Apple M2,8,,256,,1450000
+ML-242,Mercado Libre,2026-11-09,macbook air m1 / m2,"Macbook Air M3 (2024), 8gb Ram, 512gb Ssd, Gris Espacial",Apple,MacBook Air,Apple M3,8,SSD,512,,1800000
+ML-243,Mercado Libre,2026-11-09,macbook air m1 / m2,"Macbook Air M1 2020 13,3 8 Gb Ram 256 Gb Ssd Plata",Apple,MacBook Air,Apple M1,8,SSD,256,,1190000
+ML-244,Mercado Libre,2026-11-09,macbook air m1 / m2,"Apple Macbook Air (13, 2020, M1, 256 Gb Ssd) - Gris Espacial",Apple,MacBook Air,Apple M1,,SSD,256,,900000
+ML-245,Mercado Libre,2026-11-09,macbook air m1 / m2,Macbook Air M1 2020 13.3 Color Oro 8gb De Ram-256gb Ssd,Apple,MacBook Air,Apple M1,8,SSD,256,,1898066
+ML-246,Mercado Libre,2026-11-09,macbook air m1 / m2,"Apple Macbook Air 13 Pulgadas, 2020, M1, 512 Gb Rose Gold",Apple,MacBook Air,Apple M1,,,512,,1500000
+ML-247,Mercado Libre,2026-11-09,macbook air m1 / m2,Apple Macbook Air A1466 13.3 I5-5250u@1.60gh 4gb/256gb M.2,Apple,MacBook Air,Core i5 5ta gen,4,SSD,256,,419999
+ML-248,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,"Macbook Pro 15 2017 Intel Core I7, 512 Gb Ssd, 16 Gb Ram",Apple,MacBook Pro,Core i7,16,SSD,512,,1180000
+ML-249,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,"Apple Macbook Air 2017, I5, 8gb Ram, 512gb Ssd",Apple,MacBook Air,Core i5,8,SSD,512,,500000
+ML-250,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,Macbook Pro 2019 Touchbar | I5 8gb 256gb | Bateria Nueva,Apple,MacBook Pro,Core i5,8,,256,,1320000
+ML-251,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,"Macbook Pro 13-inca, 2019 2,4 Ghz Intel Corre I5 De 4 Núcleo",Apple,MacBook Pro,Core i5,,,,,1195200
+ML-252,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,Macbook Pro 15 2019 I7 16gb 256gb Ssd Radeon Pro 555x 4gb,Apple,MacBook Pro,Core i7,16,SSD,256,Radeon Pro 555X,780000
+ML-253,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,"Macbook Pro 15 2015, I7, 16 Gb De Ram, Ssd 1tb",Apple,MacBook Pro,Core i7,16,SSD,1000,,1982040
+ML-254,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,Mac Book Pro 15 2015 Intel I7,Apple,MacBook Pro,Core i7,,,,,715000
+ML-255,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,Macbook Pro I7 2017,Apple,MacBook Pro,Core i7,,,,,900000
+ML-256,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,"Macbook Pro 2017, 13,3, Intel Core I5, 8 Gb, Ssd+128 Gb",Apple,MacBook Pro,Core i5,8,SSD,128,,600000
+ML-257,Mercado Libre,2026-11-09,macbook pro / air intel 2015-2019,Macbook Air 2017 A1466 13.3 Intel Core I5 8gb 128gb En Caja,Apple,MacBook Air,Core i5,8,,128,,649999
+ML-258,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Laptop Gamer Acer Nitro 5 I5 16gb 1tb 500gb M.2 Gtx 1050 4gb,Acer,Nitro,Core i5,16,SSD,500,GTX 1050,949000
+ML-259,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Notebook Gamer Acer Nitro Core I5 16gb Ssd 512gb Gtx Mexx 1,Acer,Nitro,Core i5,16,SSD,512,GTX,1190000
+ML-260,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus","Notebook Gamer Lenovo Legion Intel Core I5 Gtx Rgb 15,6",Lenovo,Legion,Core i5,,,,GTX,1450000
+ML-261,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Notebook Asus Tuf Gaming F15 Core I5 32gb Ram 512gb Ssd,Asus,TUF,Core i5,32,SSD,512,,1700000
+ML-262,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Notebook Gamer Hp Victus 15 Ryzen 5 7535hs 16gb 512gb 2050,HP,Victus,Ryzen 5 7035,16,,512,RTX 2050,1550000
+ML-263,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Laptop/notebook Asus Tuf F15 | Rtx 3050 | I5 12va,Asus,TUF,Core i5 12va gen,,,,RTX 3050,1900000
+ML-264,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Notebook Gamer Acer Nitro 5 I5 - 16ram Gtx1650 144hz (fotos),Acer,Nitro,Core i5,16,,,GTX 1650,1668300
+ML-265,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Notebook Gamer Acer Nitro 5 An515-57 I5 8gb Gtx 1650,Acer,Nitro,Core i5,8,,,GTX 1650,1500000
+ML-266,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Notebook Acer Nitro 5 I7 7700hq Gtx1050 128gb Ssd+tb Hdd 8gb,Acer,Nitro,Core i7 7ma gen,8,SSD,128,GTX 1050,1100000
+ML-267,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Notebook Lenovo Ideapad Gaming 3 I5 8gb 475gb Ssd Gtx 1650,Lenovo,IdeaPad Gaming,Core i5,8,SSD,475,GTX 1650,950000
+ML-268,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus","Lenovo Gamer Legion 5 15.6 I7 10g 8gb 512gb,gtx1660ti",Lenovo,Legion,Core i7 10ma gen,8,,512,GTX 1660 Ti,1500000
+ML-269,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Notebook Gamer Asus Tuf Fx505g Intel I7 8th Gen 16gb 256 Ssd,Asus,TUF,Core i7 8va gen,16,SSD,256,,990000
+ML-270,Mercado Libre,2026-11-09,"gamer: acer nitro, asus tuf, lenovo legion / loq, hp victus",Lenovo Legion Y7000p Irx9 Corei7-14700hx Gf4060 16gb 1t Ssd,Lenovo,Legion,Core i7 14va gen,16,SSD,1000,RTX 4060,2900000
+ML-271,Mercado Libre,2026-11-09,"marcas nacionales: bangho, exo, noblex, bgh / positivo",Notebook Banghó Bes Pro T5 I5 Negra,Bangho,Bangho,Core i5,,,,,600000
+ML-272,Mercado Libre,2026-11-09,"marcas nacionales: bangho, exo, noblex, bgh / positivo","Banghó Max G04, Intel Celeron, 4gb Ram, 240 Ssd",Bangho,Bangho,Celeron,4,SSD,240,,350000
+ML-273,Mercado Libre,2026-11-09,"marcas nacionales: bangho, exo, noblex, bgh / positivo",Netbook Modelo Juana Manso Marca Celeron,Juana Manso,Juana Manso,Celeron,,,,,290000
+ML-274,Mercado Libre,2026-11-09,"marcas nacionales: bangho, exo, noblex, bgh / positivo",Notebook Cx Negro Pentium N5030 4gb Ssd 480gb Win11 Touch360,CX,CX,Pentium N5030,4,SSD,480,,650000
+ML-275,Mercado Libre,2026-11-09,"marcas nacionales: bangho, exo, noblex, bgh / positivo",Netbook Bangho Intel Atom 2gb Ram,Bangho,Bangho,Intel Atom,2,,,,72600
+ML-276,Mercado Libre,2026-11-09,"marcas nacionales: bangho, exo, noblex, bgh / positivo",Notebooksmart R34 Intel N4020 4gb Ssd 128 Gb Windows 11 Gris,Generica,Generica,Celeron N4020,4,SSD,128,,200000
+ML-277,Mercado Libre,2026-11-09,"marcas nacionales: bangho, exo, noblex, bgh / positivo","Notebook Enova De 14 Con Intel Celeron N, 4 Gb Gb",Enova,Enova,Celeron,4,,,,190000
+ML-278,Mercado Libre,2026-11-09,samsung galaxy book,"Samsung Galaxy Book 3 Pro 360 16 ,i7,32gb,1tb",Samsung,Galaxy Book,Core i7,32,,1000,,3000000
+ML-279,Mercado Libre,2026-11-09,samsung galaxy book,Samsung Galaxy Book3 Pro 14 Core I5 16gb Plata Remato,Samsung,Galaxy Book,Core i5,16,,,,900000
+ML-280,Mercado Libre,2026-11-09,samsung galaxy book,Notebook Samsung Galaxy Book3 15.6 I5 13th 8gb 512gb,Samsung,Galaxy Book,Core i5 13va gen,8,,512,,1100000
+ML-281,Mercado Libre,2026-11-09,samsung galaxy book,Notebook Samsung Book3 15.6 Intel Core I3,Samsung,Galaxy Book,Core i3,,,,,750000
+ML-282,Mercado Libre,2026-11-09,samsung galaxy book,Samsung Galaxy Book3 15.6 I3 8gb Ram 256gb Ssd Color Silver,Samsung,Galaxy Book,Core i3,8,SSD,256,,850000
+ML-283,Mercado Libre,2026-11-09,samsung galaxy book,Notebook Samsung Galaxy Book3 15.6 Intel Core I3 8gb 256gb,Samsung,Galaxy Book,Core i3,8,,256,,780000
+ML-284,Mercado Libre,2026-11-09,samsung galaxy book,Remato! Samsung Galaxybook 3 Pro 16gb Ram I5 1340p,Samsung,Galaxy Book,Core i5 13va gen,16,,,,1000000
+ML-285,Mercado Libre,2026-11-09,samsung galaxy book,Samsung Galaxy Book3 Pro I5 1340p 16gb 1tb Windows 11 Pro,Samsung,Galaxy Book,Core i5 13va gen,16,,1000,,1050000
+ML-286,Mercado Libre,2026-11-09,samsung galaxy book,Notebook Samsung Galaxy Book3 Np750xft I5-1335u 8gb 512gb,Samsung,Galaxy Book,Core i5 13va gen,8,,512,,1000000
+ML-287,Mercado Libre,2026-11-09,samsung galaxy book,Notebook Samsung Galaxy Book3 15.6 Intel Core I5 8gb 512gb,Samsung,Galaxy Book,Core i5,8,,512,,990000
+ML-288,Mercado Libre,2026-11-09,samsung galaxy book,Notebook Samsung Galaxy Book 3 I3,Samsung,Galaxy Book,Core i3,,,,,1000000
+ML-289,Mercado Libre,2026-11-09,samsung galaxy book,"Samsung Galaxy Book3 360 I7 13.3"" 16gb",Samsung,Galaxy Book,Core i7,16,,,,1500000
