@@ -1,30 +1,29 @@
 $ python orquestador_evaltic.py "¿Cuánto vale una Lenovo ThinkPad con Intel Core i5 10ma gen y 16GB de RAM?"
 
 [Enrutador] Intención: valuacion_comercial (LLM) — ¿Cuánto vale una Lenovo ThinkPad con Intel Core i5 10ma gen y 16GB de RAM?
-      [Cypher Neo4j SM2] Core i5 10ma gen · ThinkPad · 16 GB → VMA $735,000
-      Datos extraídos (SM2): {"marca": "Lenovo", "modelo": "ThinkPad", "procesador": "intel core i5 10ma gen", "ram_gb": 16, "tipo_disco": null, "anio_fabricacion": null, "soporte_windows_11": null}
-      Resultado SM2: Tasado | VMA $735,000 ARS
+      [Cypher Neo4j SM2] Core i5 10ma gen · ThinkPad · 16 GB → VMA $714,000
+      Datos extraídos (SM2): {"marca": "Lenovo", "modelo": "ThinkPad", "procesador": "intel core i5 10ma gen", "ram_gb": 16, "tipo_disco": "SSD", "anio_fabricacion": null, "soporte_windows_11": null}
+      Resultado SM2: Tasado | VMA $714,000 ARS
 
 ================================================================================
   RESPUESTA
 ================================================================================
-El notebook tiene un valor de mercado de 816,000 ARS, debido a su procesador Core i5 10ma gen, línea ThinkPad, RAM de 16 GB, antigüedad de 6 años, riesgo de obsolescencia medio, demanda comercial alta, y un índice de repuestos de 9.0.
+El notebook es un ThinkPad Core i5 10ma gen con 16 GB de RAM, vendido por $793,000 en Mercado Libre. Su valor en el mercado de usados es de $714,000, considerando descuentos del 10% y factores de línea y RAM.
 ================================================================================
 
 ################################################################################
 
-$ python orquestador_evaltic.py "¿A cuánto se revende una Dell Latitude con Core i5 8va gen y 8GB?"
+$ python orquestador_evaltic.py "¿Cuánto vale una Lenovo ThinkPad con Intel Core Ultra 5 y 16GB de RAM?"
 
-[Enrutador] Intención: valuacion_comercial (LLM) — ¿A cuánto se revende una Dell Latitude con Core i5 8va gen y 8GB?
-      [Cypher Neo4j SM2] Core i5 8va gen · Latitude · 8 GB → VMA $383,000
-      [Control anti-alucinación] La explicación del LLM traía números que no están en Neo4j; se usa la respuesta de respaldo.
-      Datos extraídos (SM2): {"marca": "Dell", "modelo": "Latitude", "procesador": "core i5 8va gen", "ram_gb": 8, "tipo_disco": "null", "anio_fabricacion": null, "soporte_windows_11": null}
-      Resultado SM2: Tasado | VMA $383,000 ARS
+[Enrutador] Intención: valuacion_comercial (LLM) — ¿Cuánto vale una Lenovo ThinkPad con Intel Core Ultra 5 y 16GB de RAM?
+      [Cypher Neo4j SM2] Core Ultra 5 · ThinkPad · 16 GB → VMA $861,000
+      Datos extraídos (SM2): {"marca": "Lenovo", "modelo": "ThinkPad", "procesador": "intel core ultra 5", "ram_gb": 16, "tipo_disco": "SSD", "anio_fabricacion": null, "soporte_windows_11": null}
+      Resultado SM2: Tasado | VMA $861,000 ARS
 
 ================================================================================
   RESPUESTA
 ================================================================================
-Core i5 8va gen en línea Latitude: valor de mercado $426,000 ARS; VMA $383,000 ARS. Riesgo Medio, demanda Alta (valores provisionales).
+El notebook es un ThinkPad Core Ultra 5 de 2023, con Core i5 12va gen, 16 GB RAM, 3 años de antigüedad, bajo riesgo de obsolescencia, alta demanda comercial, y un valor estimado de mercado de 957,000 ARS.
 ================================================================================
 
 ################################################################################
@@ -48,14 +47,15 @@ Apple M2 en línea MacBook Air: valor de mercado $1,499,000 ARS; VMA $1,349,000 
 $ python orquestador_evaltic.py "¿Qué valor tiene una Bangho con Intel Core i5 10ma gen y 8GB?"
 
 [Enrutador] Intención: valuacion_comercial (LLM) — ¿Qué valor tiene una Bangho con Intel Core i5 10ma gen y 8GB?
-      [Cypher Neo4j SM2] Core i5 10ma gen · Bangho · 8 GB → VMA $561,000
+      [Cypher Neo4j SM2] Core i5 10ma gen · Bangho · 8 GB → VMA $633,000
+      [Control anti-alucinación] La explicación del LLM traía números que no están en Neo4j; se usa la respuesta de respaldo.
       Datos extraídos (SM2): {"marca": "Bangho", "modelo": "Intel Core i5 10ma gen 8GB", "procesador": "intel core i5 10ma gen", "ram_gb": 8, "tipo_disco": "null", "anio_fabricacion": null, "soporte_windows_11": null}
-      Resultado SM2: Tasado | VMA $561,000 ARS
+      Resultado SM2: Tasado | VMA $633,000 ARS
 
 ================================================================================
   RESPUESTA
 ================================================================================
-El notebook se valora en 561,000 ARS en el mercado de usados debido a su procesador Core i5 10ma gen, factor de línea Bangho, RAM 8 GB, y antigüedad de 6 años. Los datos provisorios de Mercado Libre, normalizados por línea y RAM, dan un valor de mercado de 624,000 ARS.
+Core i5 10ma gen en línea Bangho: valor de mercado $703,000 ARS; VMA $633,000 ARS. Riesgo Medio, demanda Media (valores provisionales).
 ================================================================================
 
 ################################################################################

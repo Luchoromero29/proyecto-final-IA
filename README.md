@@ -62,7 +62,7 @@ app/tests/                   pruebas offline de la capa LLM (sin API ni Neo4j)
 cypher/Grupo_20_PG2_U1_carga.cypher       base del PG2: esquema, reglas, frames y difusa
 cypher/Grupo_20_PG3_mercado.cypher        componentes, líneas, RAM, avisos, costos y criterios (incluye CE-29 v2)
 cypher/Grupo_20_PG2_U1_consultas.cypher   consultas de ejemplo
-datos/relevamiento_mercado.csv            289 avisos de Mercado Libre (9/11/2026), seed del PG3
+datos/relevamiento_mercado.csv            333 avisos de Mercado Libre (9/11/2026), seed del PG3
 scripts/cargar_grafo.sh                   carga automática usado por el contenedor neo4j-init
 docs/                                     entregables PG3 y PI4 (ver docs/README.md)
 odd/tasks/                                registro de la adaptación de la capa LLM
@@ -109,7 +109,7 @@ cada lectura queda registrada en la traza.
 
 - Las reglas difusas (SM1-BAT 5, SM1-TER 6, SM2-RIE 7, SM2-DEM 4, SM3-CONV 5) se evalúan **siempre** en
   Cypher; SM2-DEM consume el centroide continuo de riesgo, no solo su etiqueta.
-- El PG3 calibra el valor del procesador y el factor de cada línea con **medianas** sobre los 289 avisos
+- El PG3 calibra el valor del procesador y el factor de cada línea con **medianas** sobre los 333 avisos
   (sección 31 de `cypher/Grupo_20_PG3_mercado.cypher`). Si una línea tiene menos de
   `CE min_muestras_mercado` avisos, usa el factor de su grupo. Ese criterio es **CE-29 en versión v2 = 5
   avisos**: la v1 usaba 3 y la calibración guarda `valor_anterior` para la trazabilidad.
@@ -307,7 +307,7 @@ Ajustes posteriores a la primera calibración; las salidas y tablas completas es
 
 - [x] Evaluación integral, enrutador y submódulos sueltos funcionando contra Neo4j real, según las corridas
       registradas en `docs/ejecuciones/` (este README no ejecuta una corrida E2E nueva).
-- [x] Valuación por componentes con calibración por medianas sobre los 289 avisos (sección 31 del PG3;
+- [x] Valuación por componentes con calibración por medianas sobre los 333 avisos (sección 31 del PG3;
       valores provisionales), con 217 avisos tasables con CE-29 = 5.
 - [x] Capa LLM adaptada: presupuestos por etapa, validación de respuestas y razonamiento desactivado para
       el modelo verificado en OpenRouter; cubierto por las 29 pruebas offline de `app/tests/`.

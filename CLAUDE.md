@@ -91,8 +91,8 @@ Evaluación integral (`evaluar_publicacion_integral`):
 
 ## Estado (9/11/2026)
 - [x] Probado contra Neo4j real. `--test`: 5/5 casos integrales + 4/4 enrutador.
-- [x] Valuación por componentes calibrada con 333 avisos; error mediano 14,9 % contra el precio publicado
-      (67,7 % dentro de ±25 %, CE-29 = 5; medido sobre los mismos datos de la calibración).
+- [x] Valuación por componentes calibrada con 333 avisos; error mediano 14,7 % contra el precio publicado
+      (66,2 % dentro de ±25 %, CE-29 = 5; medido sobre los mismos datos de la calibración).
 - [x] Se quitó el atajo de Leonel que devolvía decisiones guardadas de casos del PG2 (matcheaba mal: HP 15 → Dell Inspiron 15).
 - [ ] Entregables: PI4 de cada integrante y PG3 (informe PDF, diagramas, zip con export de Neo4j, video/infografía).
 - [ ] R1.4 `NoAmpliable`; R3.1b rechazo comercial directo.

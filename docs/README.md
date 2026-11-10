@@ -19,7 +19,7 @@
 ## Implementación (raíz del repositorio)
 - `app/` — código Python (`orquestador_evaltic.py`, `app_web.py`) y `requirements.txt`.
 - `cypher/` — scripts de carga (PG2 y PG3) y consultas de ejemplo.
-- `datos/relevamiento_mercado.csv` — 289 avisos de Mercado Libre (9/11/2026), seed de la base.
+- `datos/relevamiento_mercado.csv` — 333 avisos de Mercado Libre (9 y 10/11/2026), seed de la base.
 - `docker-compose.yml`, `Dockerfile`, `.env.example`, `*.bat`, `scripts/` — configuración y arranque.
 
 ## Uso rápido
