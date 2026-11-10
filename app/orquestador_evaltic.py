@@ -650,8 +650,13 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
                                       "vma_estimado_ars": 0})[1]
 
     proc_txt = str(datos.get("procesador") or "").strip()
+    proc_desde_modelo = False
     if not proc_txt or proc_txt.lower() in ("null", "none"):
-        return pendiente("R3.3b: procesador no informado", "Procesador del equipo (no figura en el aviso)")
+        # A veces el procesador viene dentro del modelo ("MacBook Air M1"): se prueba con el modelo
+        proc_txt = str(datos.get("modelo") or "").strip()
+        proc_desde_modelo = True
+        if not proc_txt:
+            return pendiente("R3.3b: procesador no informado", "Procesador del equipo (no figura en el aviso)")
 
     # RAM final: la que queda después del plan de SM1 (si se amplía, la de CE ram_objetivo)
     ram_objetivo = int(CE("ram_objetivo", traza))
@@ -674,6 +679,10 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
     proc, linea, grupo = ref.get("procesador"), ref.get("linea"), ref.get("grupo")
 
     # Lo que el aviso menciona y no está en la base de conocimiento → error explícito
+    if not proc and proc_desde_modelo:
+        return pendiente("R3.3b: procesador no informado", "Procesador del equipo (no figura en el aviso)")
+    if proc and proc_desde_modelo:
+        traza["datos_inferidos"].append(f"Procesador tomado del modelo '{proc_txt}': {proc['nombre']}")
     if not proc:
         raise ConocimientoFaltante(
             f"El procesador '{proc_txt}' no está en la base de conocimiento (Neo4j :Procesador).")
@@ -928,7 +937,10 @@ def generar_sintesis_gerencial_llm(resumen: dict) -> str:
             max_tokens=260
         )
         if dictamen_llm and len(dictamen_llm.strip()) > 20:
-            return dictamen_llm.strip()
+            if respuesta_sin_inventos(dictamen_llm, resumen):
+                return dictamen_llm.strip()
+            print("      [Control anti-alucinación] El dictamen del LLM traía números que no están en el resultado "
+                  "de Neo4j; se usa el dictamen determinístico.", flush=True)
     except Exception as e:
         print(f"      [Aviso Síntesis LLM] Falla al generar síntesis con LLM ({e}), recurriendo a síntesis determinística de respaldo.", flush=True)
 
@@ -1284,12 +1296,26 @@ def _llm_json(prompt: str, texto: str) -> dict:
     raise ValueError("[ERROR PARSEO] El LLM no devolvió un JSON válido.")
 
 
+def _numeros(texto: str) -> set:
+    """Números de 2 o más cifras de un texto, sin separadores de miles ni decimales (1.500 / 1,500 → 1500)."""
+    return {re.sub(r"[.,]", "", n).lstrip("0") for n in re.findall(r"\d[\d.,]*\d", texto)} - {""}
+
+
+def respuesta_sin_inventos(texto_llm: str, resultado) -> bool:
+    """Control anti-alucinación: todo número de la respuesta del LLM tiene que estar en el resultado de Neo4j."""
+    return _numeros(texto_llm) <= _numeros(json.dumps(resultado, ensure_ascii=False, default=str))
+
+
 def _explicar(prompt: str, resultado: dict, respaldo: str) -> str:
-    """Prompt de explicación: el LLM redacta solo a partir del resultado de Neo4j."""
+    """Prompt de explicación: el LLM redacta solo a partir del resultado de Neo4j.
+    Si la respuesta trae un número que no está en el resultado, se descarta y se usa el respaldo determinístico."""
     try:
         txt = consultar_llm(prompt, json.dumps(resultado, ensure_ascii=False, default=str), max_tokens=220)
         if txt and len(txt.strip()) > 20:
-            return txt.strip()
+            if respuesta_sin_inventos(txt, resultado):
+                return txt.strip()
+            print("      [Control anti-alucinación] La explicación del LLM traía números que no están en Neo4j; "
+                  "se usa la respuesta de respaldo.", flush=True)
     except Exception as e:
         print(f"      [Aviso LLM] No se pudo redactar la explicación ({e}); se usa la respuesta de respaldo.", flush=True)
     return respaldo
@@ -1356,7 +1382,8 @@ def consultar_sm2(texto: str, verbose: bool = True) -> dict:
                     f"{res['demanda_comercial']} (valores provisionales).")
     else:
         respaldo = f"No se pudo tasar: {res.get('error') or res.get('dato_faltante')}."
-    explicacion = _explicar(PROMPT_EXPLICACION_SM2, resultado, respaldo)
+    # Pendiente o error: la respuesta es el motivo, sin pasar por el LLM (no hay números que explicar)
+    explicacion = _explicar(PROMPT_EXPLICACION_SM2, resultado, respaldo) if res["estado"] == "Tasado" else respaldo
     if verbose:
         print("      Datos extraídos (SM2):", json.dumps(datos, ensure_ascii=False))
         print(f"      Resultado SM2: {res.get('estado')} | VMA ${res.get('vma_estimado_ars', 0):,} ARS")
