@@ -1,0 +1,2 @@
+# Intento de comparación fallido, salida 1; cero comparaciones completadas.
+Invalid input for function 'toString()': Expected a String, Float, Integer, Boolean, Temporal or Duration, got: StringArray[SM1-BAT, SM1-TER]
