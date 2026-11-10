@@ -191,7 +191,7 @@ fabrica JSON.
 
 | Qué | Comando | Requiere servicios |
 |---|---|---|
-| Offline (cliente LLM y publicaciones, 69 tests) | `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s app/tests -v` | No |
+| Offline (cliente LLM y publicaciones, 71 tests) | `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s app/tests -v` | No |
 | Oficiales (5 casos integrales + 4 de enrutador) | `probar.bat` o `docker compose exec app python orquestador_evaltic.py --test` | Sí: Neo4j cargado y LLM disponible |
 
 Las pruebas oficiales comparan la decisión calculada con la esperada e informan el enrutamiento correcto.
@@ -317,7 +317,7 @@ Ajustes posteriores a la primera calibración; las salidas y tablas completas es
       valores provisionales), con 217 avisos tasables con CE-29 = 5.
 - [x] Capa LLM adaptada: presupuestos por etapa, validación de respuestas y razonamiento desactivado para
       el modelo verificado en OpenRouter y para NVIDIA Lightning en su propio host; 34 pruebas del cliente
-      dentro de las 69 pruebas offline de `app/tests/`.
+      dentro de las 71 pruebas offline de `app/tests/`.
 - [ ] Validación de criterios, costos y factores con el experto (todo sigue `Provisional`).
 - [ ] R1.4 (RAM soldada sin expansión) como limitación `NoAmpliable` y R3.1b (rechazo comercial directo).
 - [ ] Pasar al grafo las listas de palabras clave que todavía viven en Python.

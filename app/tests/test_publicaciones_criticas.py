@@ -128,14 +128,18 @@ def _mercado_falso(procesador, texto, ram_informada, ram_final, hdd_a_ssd):
     proc = CATALOGO_PROCESADORES.get(str(procesador or "").strip().lower())
     linea = next((l for l in LINEAS_FALSAS if l[0] in str(texto or "").lower()), None)
     factor_ram = FACTORES_RAM.get(ram_final)
+    # Igual que el Cypher: coalesce(p.valor_ref_ars, generación anterior). Acá no se simula R2.4.
+    valor_proc = proc["valor_ref_ars"] if proc else None
     valor = None
-    if proc and proc["valor_ref_ars"] is not None and linea and factor_ram:
-        valor = proc["valor_ref_ars"] * linea[2] * factor_ram
+    if valor_proc is not None and linea and factor_ram:
+        valor = valor_proc * linea[2] * factor_ram
     vma = None
     if valor is not None:
         vma = int(round((valor * 0.9 + (CRITERIOS_PRUEBA["reval_ssd"] if hdd_a_ssd else 0)) / 1000.0)) * 1000
     return {
         "procesador": dict(proc) if proc else None,
+        "generacion_anterior": None,
+        "valor_proc": valor_proc,
         "linea": {"nombre": linea[1], "marca": linea[0], "factor_precio": linea[2],
                   "origen_factor": "fixture", "estado_validacion": "Provisional"} if linea else None,
         "grupo": {"nombre": linea[3], "dias_promedio_venta": linea[4], "indice_repuestos": linea[5]}
@@ -145,6 +149,11 @@ def _mercado_falso(procesador, texto, ram_informada, ram_final, hdd_a_ssd):
         "valor_mercado": valor,
         "vma": vma,
     }
+
+
+# Campos que devuelve la consulta Cypher de componentes (contrato público de SM2).
+CAMPOS_MERCADO = {"procesador", "generacion_anterior", "valor_proc", "linea", "grupo",
+                  "ram_informada_existe", "ram", "valor_mercado", "vma"}
 
 
 # Las inferencias difusas devuelven (centroide, categoría), como el Cypher real.
@@ -291,6 +300,29 @@ class CorpusTest(unittest.TestCase):
             with self.subTest(caso=caso["id"]):
                 self.assertIn("observado_hoy", caso)
                 self.assertNotEqual(caso["espera"], caso["observado_hoy"])
+
+
+class ContratoMercadoTest(unittest.TestCase):
+    """El fixture de mercado expone la misma forma que la consulta Cypher del motor."""
+
+    def test_el_fixture_devuelve_los_campos_de_la_consulta_publica(self):
+        for procesador, texto in (("i5 10ma gen", "ThinkPad T14"), ("ryzen 7 5700u", "hp 250 g8"),
+                                  ("celeron n4020", "sin marca")):
+            with self.subTest(procesador=procesador):
+                self.assertEqual(CAMPOS_MERCADO, set(_mercado_falso(procesador, texto, 8, 8, False)))
+
+    def test_valor_proc_calca_al_procesador_y_queda_vacio_cuando_no_hay_precio(self):
+        con_precio = _mercado_falso("i5 10ma gen", "ThinkPad T14", 16, 16, False)
+        self.assertEqual(con_precio["procesador"]["valor_ref_ars"], con_precio["valor_proc"])
+        self.assertIsNone(con_precio["generacion_anterior"])
+        # Procesador relevado con menos avisos que CE min_muestras_mercado: sin precio propio.
+        sin_precio = _mercado_falso("ryzen 7 5700u", "hp 250 g8", 8, 8, False)
+        self.assertIsNone(sin_precio["valor_proc"])
+        self.assertIsNone(sin_precio["generacion_anterior"])
+        # Procesador que no está en la base de conocimiento: nada que tasar.
+        desconocido = _mercado_falso("celeron n4020", "hp 250 g8", 8, 8, False)
+        self.assertIsNone(desconocido["procesador"])
+        self.assertIsNone(desconocido["valor_proc"])
 
 
 class AceptacionTest(unittest.TestCase):

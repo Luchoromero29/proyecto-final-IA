@@ -146,7 +146,10 @@ host y ese modelo exactos el cliente envía `chat_template_kwargs: {"enable_thin
 `max_tokens` como lo pide cada llamador (sin piso). No es un interruptor genérico: otros modelos en ese
 host y el mismo modelo en otros hosts no reciben el campo.
 
-Esa adaptación está cubierta por 5 pruebas nuevas del cliente (69 pruebas offline en total).
+Esa adaptación está cubierta por 5 pruebas nuevas del cliente. La suite integrada tiene
+71 pruebas offline: las 69 anteriores más 2 del contrato de la consulta de mercado. El fixture
+incluye `valor_proc` y `generacion_anterior`, sin simular el fallback R2.4 ni relajar las
+expectativas del corpus.
 El [smoke real NVIDIA](ejecuciones/publicaciones_criticas_nvidia_smoke.log) verificó los 9 campos
 esperados y una evaluación integral: 4 respuestas HTTP 200, finalización `stop` y 0 tokens de
 razonamiento. La [tanda de 32 pendientes con NVIDIA](ejecuciones/publicaciones_criticas_nvidia_pendientes.log)
