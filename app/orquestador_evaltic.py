@@ -33,20 +33,46 @@ import re
 import requests
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # ------------------------------------------------------------------------------
 # 1. Configuración de Entorno (.env)
 # ------------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
-ENV_PATH = BASE_DIR / ".env"
-if not ENV_PATH.exists():
-    ENV_PATH = BASE_DIR.parent / "PI4" / ".env"
 
-if ENV_PATH.exists():
-    load_dotenv(ENV_PATH)
-else:
-    load_dotenv()
+# Orden explícito de búsqueda: .env de la app, .env de la raíz de este repositorio,
+# fallback histórico PI4/.env y, si ninguno existe, la búsqueda preexistente de dotenv.
+ENV_PATH_CANDIDATOS = (
+    BASE_DIR / ".env",
+    BASE_DIR.parent / ".env",
+    BASE_DIR.parent / "PI4" / ".env",
+)
+
+
+def _resolver_env_path(candidatos=None) -> Optional[Path]:
+    """Devuelve el primer archivo .env existente según el orden de precedencia."""
+    for candidato in (ENV_PATH_CANDIDATOS if candidatos is None else candidatos):
+        ruta = Path(candidato)
+        if ruta.exists():
+            return ruta
+    return None
+
+
+def _cargar_configuracion_entorno() -> Optional[Path]:
+    """
+    Carga el .env elegido sin `override`: las variables ya exportadas en el entorno
+    tienen prioridad sobre el archivo, para no pisar la configuración del usuario.
+    """
+    ruta = _resolver_env_path()
+    if ruta is not None:
+        load_dotenv(ruta)
+    else:
+        load_dotenv()
+    return ruta
+
+
+ENV_PATH = _cargar_configuracion_entorno()
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
@@ -414,6 +440,104 @@ def inferir_sm3_conv_cypher(brecha: float, descuento: float) -> tuple:
 # ------------------------------------------------------------------------------
 # 2. Cliente Unificado de Modelos de Lenguaje (Solo para Parsear JSON)
 # ------------------------------------------------------------------------------
+# Motivos de finalización que se informan tal cual; cualquier otro se reporta como
+# 'unknown' para no exponer texto arbitrario del proveedor en los errores.
+_FINISH_REASON_CONOCIDOS = frozenset({
+    "stop", "length", "content_filter", "tool_calls", "function_call", "error",
+})
+
+# Piso de generación exclusivo de OpenRouter: el razonamiento consume el mismo
+# presupuesto de tokens, así que los pedidos chicos no alcanzan para el JSON o el texto.
+OPENROUTER_HOST = "openrouter.ai"
+OPENROUTER_MAX_TOKENS_MINIMO = 4096
+
+# Desactivación real de razonamiento: solo para el host y el modelo verificados.
+OPENROUTER_MODELO_SIN_RAZONAMIENTO = "nvidia/nemotron-3.5-lightning:free"
+
+
+def _entero_no_negativo(valor) -> Any:
+    """Devuelve el conteo si es un entero no negativo; en otro caso 'unknown'."""
+    if isinstance(valor, bool) or not isinstance(valor, int) or valor < 0:
+        return "unknown"
+    return valor
+
+
+def _metadatos_respuesta(data) -> str:
+    """
+    Resume SOLO metadatos seguros de la respuesta: motivo de finalización de un
+    conjunto conocido y conteos de tokens de completion/razonamiento. Nunca incluye
+    el texto ni el razonamiento devuelto por el modelo.
+    """
+    choices = data.get("choices") if isinstance(data, dict) else None
+    choice = choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
+    finish_reason = choice.get("finish_reason")
+    # Se verifica el tipo antes de consultar el conjunto: un valor malformado (lista, dict,
+    # número) no debe romper el manejo controlado ni exponerse en el mensaje.
+    finish_seguro = (
+        finish_reason
+        if isinstance(finish_reason, str) and finish_reason in _FINISH_REASON_CONOCIDOS
+        else "unknown"
+    )
+    usage = data.get("usage") if isinstance(data, dict) else None
+    usage = usage if isinstance(usage, dict) else {}
+    detalles = usage.get("completion_tokens_details")
+    detalles = detalles if isinstance(detalles, dict) else {}
+    reasoning_tokens = detalles.get("reasoning_tokens", usage.get("reasoning_tokens"))
+    return (
+        f"finish_reason={finish_seguro}; "
+        f"completion_tokens={_entero_no_negativo(usage.get('completion_tokens'))}; "
+        f"reasoning_tokens={_entero_no_negativo(reasoning_tokens)}"
+    )
+
+
+def _validar_respuesta_chat(data) -> str:
+    """
+    Valida la estructura choices/message/content de una respuesta compatible OpenAI.
+
+    - Rechaza `finish_reason=length` siempre, incluso si llegó texto parcial.
+    - Rechaza contenido nulo, blanco o no textual; no lo convierte en cadena vacía
+      ni fabrica JSON.
+    - Nunca usa el razonamiento del modelo como respuesta.
+    - El error incluye únicamente metadatos seleccionados, no el cuerpo recibido.
+    """
+    if not isinstance(data, dict):
+        raise RuntimeError(
+            "[ERROR RESPUESTA LLM] Cuerpo de respuesta inválido: no es un objeto JSON. "
+            f"Metadatos: {_metadatos_respuesta(data)}"
+        )
+    choices = data.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise RuntimeError(
+            "[ERROR RESPUESTA LLM] 'choices' ausente, vacío o no es una lista. "
+            f"Metadatos: {_metadatos_respuesta(data)}"
+        )
+    choice = choices[0]
+    if not isinstance(choice, dict):
+        raise RuntimeError(
+            "[ERROR RESPUESTA LLM] El primer elemento de 'choices' no es un objeto. "
+            f"Metadatos: {_metadatos_respuesta(data)}"
+        )
+    if choice.get("finish_reason") == "length":
+        raise RuntimeError(
+            "[ERROR RESPUESTA LLM] Respuesta truncada por límite de tokens (finish_reason=length): "
+            "el texto quedó incompleto y no se usa. "
+            f"Metadatos: {_metadatos_respuesta(data)}"
+        )
+    message = choice.get("message")
+    if not isinstance(message, dict):
+        raise RuntimeError(
+            "[ERROR RESPUESTA LLM] 'message' ausente o inválido en la respuesta. "
+            f"Metadatos: {_metadatos_respuesta(data)}"
+        )
+    content = message.get("content")
+    if not isinstance(content, str) or not content.strip():
+        raise RuntimeError(
+            "[ERROR RESPUESTA LLM] 'content' ausente, vacío o no textual en la respuesta. "
+            f"Metadatos: {_metadatos_respuesta(data)}"
+        )
+    return content.strip()
+
+
 def consultar_llm(system_prompt: str, user_content: str, json_mode: bool = False, max_tokens: int = 300) -> str:
     """
     Envía la consulta al LLM configurado.
@@ -462,14 +586,23 @@ def consultar_llm(system_prompt: str, user_content: str, json_mode: bool = False
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content}
         ]
+        host = urlparse(OPENAI_BASE_URL).hostname
+        # Piso solo para OpenRouter: conserva los presupuestos mayores que pida el llamador
+        # y no altera a Ollama ni a otros proveedores compatibles.
+        max_tokens_efectivo = (
+            max(max_tokens, OPENROUTER_MAX_TOKENS_MINIMO) if host == OPENROUTER_HOST else max_tokens
+        )
         payload = {
             "model": OPENAI_MODEL,
             "messages": messages,
             "temperature": 0.1,
-            "max_tokens": max_tokens
+            "max_tokens": max_tokens_efectivo
         }
         if json_mode:
             payload["response_format"] = {"type": "json_object"}
+        if host == OPENROUTER_HOST and OPENAI_MODEL == OPENROUTER_MODELO_SIN_RAZONAMIENTO:
+            # Desactivación real del razonamiento (no solo ocultarlo) para el modelo verificado.
+            payload["reasoning"] = {"enabled": False}
 
         endpoint = f"{OPENAI_BASE_URL.rstrip('/')}/chat/completions"
         try:
@@ -481,7 +614,7 @@ def consultar_llm(system_prompt: str, user_content: str, json_mode: bool = False
             raise RuntimeError(f"[ERROR API REMOTA] Código {resp.status_code}: {resp.text}")
 
         data = resp.json()
-        return data["choices"][0]["message"]["content"].strip()
+        return _validar_respuesta_chat(data)
 
     else:
         raise ValueError(f"[ERROR CONFIGURACIÓN] Proveedor LLM desconocido: '{LLM_PROVIDER}'.")
@@ -903,12 +1036,12 @@ def extraer_datos_llm(texto: str) -> dict:
     Extracción con el LLM. El LLM se encarga ÚNICA Y EXCLUSIVAMENTE de parsear el JSON.
     Garantiza que 'fallas' contenga la lista de todas las fallas reportadas.
     """
-    raw = consultar_llm(PROMPT_EXTRACTOR_INTEGRAL, texto, json_mode=False, max_tokens=260)
+    raw = consultar_llm(PROMPT_EXTRACTOR_INTEGRAL, texto, json_mode=False, max_tokens=1024)
     try:
         datos = _parsear_json_llm(raw)
     except (json.JSONDecodeError, ValueError):
         raw2 = consultar_llm(PROMPT_EXTRACTOR_INTEGRAL + "\nIMPORTANTE: Devolvé solo el objeto JSON, sin texto adicional.",
-                             texto, json_mode=False, max_tokens=260)
+                             texto, json_mode=False, max_tokens=1024)
         try:
             datos = _parsear_json_llm(raw2)
         except (json.JSONDecodeError, ValueError) as e:
@@ -951,7 +1084,7 @@ def generar_sintesis_gerencial_llm(resumen: dict) -> str:
             PROMPT_SINTESIS_GERENCIAL,
             prompt_usuario,
             json_mode=False,
-            max_tokens=260
+            max_tokens=768
         )
         if dictamen_llm and len(dictamen_llm.strip()) > 20:
             return dictamen_llm.strip()
