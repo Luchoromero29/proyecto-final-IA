@@ -60,7 +60,7 @@ app/orquestador_evaltic.py   motor: enrutador, SM1, SM2, SM3, pipeline y pruebas
 app/app_web.py               interfaz Streamlit (solo presentación)
 app/tests/                   pruebas offline de la capa LLM (sin API ni Neo4j)
 cypher/Grupo_20_PG2_U1_carga.cypher       base del PG2: esquema, reglas, frames y difusa
-cypher/Grupo_20_PG3_mercado.cypher        componentes, líneas, RAM, avisos, costos y criterios v2
+cypher/Grupo_20_PG3_mercado.cypher        componentes, líneas, RAM, avisos, costos y criterios (incluye CE-29 v2)
 cypher/Grupo_20_PG2_U1_consultas.cypher   consultas de ejemplo
 datos/relevamiento_mercado.csv            289 avisos de Mercado Libre (9/11/2026), seed del PG3
 scripts/cargar_grafo.sh                   carga automática usado por el contenedor neo4j-init
@@ -81,7 +81,9 @@ docker-compose.yml · Dockerfile · *.bat   entorno local (Neo4j + init + app + 
 3. **R3.3**: señales de bloqueo en el texto → `VerificacionPendiente` (no se descarta sin verificar).
 4. **SM1**: R1.1 falla catastrófica → inviabilidad (luego R3.2). Batería (SM1-BAT o R1.2), temperatura
    (SM1-TER), upgrade de RAM por debajo de `CE ram_objetivo`, HDD → SSD, pantalla/teclado/cargador y mano
-   de obra.
+   de obra. En el cargador manda el campo `cargador_incluido`: `false` cobra la reposición y `true` no la
+   cobra aunque el aviso lo nombre; la falla con la frase «sin cargador» solo se usa cuando el campo viene
+   `null`.
 5. **SM2**: valuación por componentes en Cypher y luego riesgo/demanda difusos.
 6. **SM3**: R3.7 → R3.8 → margen requerido (base, R3.4/R3.5, R3.6) → contraoferta y conveniencia difusa.
 7. **Estado de la decisión** (`Firme`/`Provisional`) y dictamen final.
@@ -109,10 +111,13 @@ cada lectura queda registrada en la traza.
   Cypher; SM2-DEM consume el centroide continuo de riesgo, no solo su etiqueta.
 - El PG3 calibra el valor del procesador y el factor de cada línea con **medianas** sobre los 289 avisos
   (sección 31 de `cypher/Grupo_20_PG3_mercado.cypher`). Si una línea tiene menos de
-  `CE min_muestras_mercado` avisos, usa el factor de su grupo.
+  `CE min_muestras_mercado` avisos, usa el factor de su grupo. Ese criterio es **CE-29 en versión v2 = 5
+  avisos**: la v1 usaba 3 y la calibración guarda `valor_anterior` para la trazabilidad.
+  Traer los cambios de Git no actualiza una base ya cargada: para aplicar CE-29 v2 hay que actualizar el
+  PG3 siguiendo las advertencias de [Carga del grafo](#carga-del-grafo).
 - Si el aviso menciona un procesador, línea o capacidad de RAM que no existe en el grafo → error
-  `ConocimientoFaltante`. Si un procesador existe pero tiene pocas muestras, o falta un dato para tasar →
-  `VerificacionPendiente`.
+  `ConocimientoFaltante`. Si un procesador existe pero tiene menos de 5 avisos, o falta un dato para tasar
+  → `VerificacionPendiente`.
 - Falta de dato **no** es un estado favorable: queda pendiente y visible.
 - No todo el conocimiento está en el grafo: quedan listas de palabras clave en Python (fallas
   insalvables, señales de bloqueo, términos positivos) y el armado del plan y de las fórmulas.
@@ -126,8 +131,13 @@ valor de mercado = valor del procesador × factor de línea × factor de RAM fin
 VMA              = valor de mercado × (1 − CE descuento_negociacion/100) + CE reval_ssd (solo si HDD → SSD)
 ```
 
-La RAM final es la que queda después de los upgrades de SM1; el VMA se redondea a miles. Si el año no está
-en el aviso se toma el del procesador y, si tampoco hay, la tasación queda pendiente. El soporte de
+La RAM final es la que queda después de los upgrades de SM1; el VMA se redondea a miles. Si el aviso no
+informa la RAM, SM2 tasa con la configuración de referencia (`CE ram_objetivo`, 8 GB) y lo registra como dato
+inferido, mientras SM1 la deja como pendiente: eso **no** es un error; `ConocimientoFaltante` queda para una
+capacidad que el aviso menciona y no existe en `:CapacidadRAM`. Antes de buscar el `:Procesador`, el texto del
+procesador se normaliza en minúsculas y se une el sufijo separado del modelo («Ryzen 5 5500 U» → «ryzen 5 5500u»); el
+match sigue siendo el regex `patron` del grafo, así que no se agrega un modelo que el aviso no diga. Si el año
+no está en el aviso se toma el del procesador y, si tampoco hay, la tasación queda pendiente. El soporte de
 Windows 11 se resuelve aviso → procesador → año contra `CE anio_min_w11`.
 
 Orden de SM3: R3.7 (costo de reparación / VMA sobre `CE ratio_reparacion_max`) y R3.8 (riesgo Alto con
@@ -180,8 +190,12 @@ fabrica JSON.
 
 Las pruebas oficiales comparan la decisión calculada con la esperada e informan el enrutamiento correcto.
 Las salidas reales de corridas anteriores están en `docs/ejecuciones/`. Este README **no** documenta una
-corrida end-to-end nueva: los números de precisión que aparecen en el informe (por ejemplo, ~13 % de error
-mediano) son observaciones sobre los mismos avisos usados para calibrar, no una validación independiente.
+corrida end-to-end nueva: los números de precisión de los informes (error mediano 14,9 % y 67,7 % de las
+estimaciones dentro de ±25 %, medidos sobre 217 avisos tasables con CE-29 = 5) son observaciones sobre los
+mismos avisos usados para calibrar, no una validación independiente.
+
+El caso integral 4 usa «Core i5» sin generación: `Core i5 7ma gen` registra 4 avisos relevados y con CE-29 = 5
+no recibe valor de referencia, así que quedaría `VerificacionPendiente` en lugar de descartarse por riesgo.
 
 ## Configuración (`.env`)
 
@@ -277,12 +291,24 @@ abrir la app. Más detalle en [LEVANTAR.md](LEVANTAR.md).
 Informe del PG3, infografía, los tres PI4, diagramas, salidas de ejecución y export de Neo4j:
 [docs/README.md](docs/README.md).
 
+## Cambios recientes de la calibración
+
+Ajustes posteriores a la primera calibración; las salidas y tablas completas están en
+`docs/ejecuciones/` y en `docs/fuentes_html/Grupo_20_PG3_ProyectoFinal.html`.
+
+| Cambio | Efecto |
+|---|---|
+| CE-29 a 5 avisos (v2) | Un procesador con menos de 5 avisos no recibe valor de referencia y la evaluación queda `VerificacionPendiente`; una línea con menos de 5 avisos usa el factor de su grupo. Reduce la dependencia de muestras escasas; no elimina toda sensibilidad a valores atípicos. |
+| Sufijo del procesador separado | El procesador se normaliza antes del match («Ryzen 5 5500 U» → «ryzen 5 5500u»), permitiendo reconocer el sufijo separado sin cambiar el catálogo ni descartar el resto del texto. |
+| Cargador | `cargador_incluido` manda: `false` cobra la reposición, `true` no la cobra y la frase «sin cargador» solo cuenta si el campo viene `null`. No toda mención al cargador se trata igual. |
+| RAM leída del texto | Si el LLM no devuelve `ram_gb`, la evaluación integral la busca en el aviso («8GB de RAM», «memoria 8GB», «16 gb ram») antes de seguir; si tampoco aparece, SM2 tasa con 8 GB de referencia y lo marca como inferido. |
+
 ## Estado y pendientes
 
 - [x] Evaluación integral, enrutador y submódulos sueltos funcionando contra Neo4j real, según las corridas
       registradas en `docs/ejecuciones/` (este README no ejecuta una corrida E2E nueva).
 - [x] Valuación por componentes con calibración por medianas sobre los 289 avisos (sección 31 del PG3;
-      valores provisionales).
+      valores provisionales), con 217 avisos tasables con CE-29 = 5.
 - [x] Capa LLM adaptada: presupuestos por etapa, validación de respuestas y razonamiento desactivado para
       el modelo verificado en OpenRouter; cubierto por las 29 pruebas offline de `app/tests/`.
 - [ ] Validación de criterios, costos y factores con el experto (todo sigue `Provisional`).
