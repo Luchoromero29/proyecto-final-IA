@@ -54,7 +54,7 @@ no está en el grafo, la evaluación da **error** (`ConocimientoFaltante`), no u
   {dias_promedio_venta, indice_repuestos})`. Grupos: Corporativa, Consumo, Gamer, Premium, Nacional/genérica.
 - `(:CapacidadRAM {gb, factor})` (8 GB = 1,00).
 - `(:AvisoMercado)` cargados del CSV, con `TIENE_PROCESADOR`, `DE_LINEA`, `TIENE_RAM`. La sección 31 del PG3
-  calibra con medianas: valor del procesador y factor de cada línea (si la línea tiene < CE-29 avisos, usa el
+  calibra con medianas: valor del procesador y factor de cada línea (si la línea tiene < CE-29 = 5 avisos, usa el
   de su grupo). Procesador con < CE-29 avisos → sin `valor_ref_ars` → verificación pendiente.
 - Reglas difusas `(:ReglaDifusa {base})`: SM1-BAT, SM1-TER, SM2-RIE, SM2-DEM, SM3-CONV (Mamdani en Cypher).
 Todos los valores son PROVISIONALES (falta la entrevista con el experto Matías Romero).
@@ -89,8 +89,8 @@ Evaluación integral (`evaluar_publicacion_integral`):
 
 ## Estado (9/11/2026)
 - [x] Probado contra Neo4j real. `--test`: 5/5 casos integrales + 4/4 enrutador.
-- [x] Valuación por componentes calibrada con 289 avisos; error mediano 13 % contra el precio publicado
-      (73 % dentro de ±25 %; medido sobre los mismos datos de la calibración).
+- [x] Valuación por componentes calibrada con 289 avisos; error mediano 14,9 % contra el precio publicado
+      (67,7 % dentro de ±25 %, CE-29 = 5; medido sobre los mismos datos de la calibración).
 - [x] Se quitó el atajo de Leonel que devolvía decisiones guardadas de casos del PG2 (matcheaba mal: HP 15 → Dell Inspiron 15).
 - [ ] Entregables: PI4 de cada integrante y PG3 (informe PDF, diagramas, zip con export de Neo4j, video/infografía).
 - [ ] R1.4 `NoAmpliable`; R3.1b rechazo comercial directo.

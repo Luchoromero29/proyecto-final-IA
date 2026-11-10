@@ -643,7 +643,9 @@ def consultar_mercado_componentes(procesador: str, texto: str, ram_informada: Op
            END AS vma
     """
     with driver.session(database=NEO4J_DATABASE) as s:
-        r = s.run(q, procesador=procesador or "", texto=texto or "", ram_informada=ram_informada,
+        # "5500 U" → "5500u": el sufijo del modelo a veces viene separado del número
+        procesador = re.sub(r"(\d)\s+([a-z]{1,2})\b", r"\1\2", (procesador or "").lower())
+        r = s.run(q, procesador=procesador, texto=texto or "", ram_informada=ram_informada,
                   ram_final=ram_final, hdd_a_ssd=bool(hdd_a_ssd)).single()
     return dict(r) if r else {}
 
@@ -750,7 +752,9 @@ def ejecutar_motor_sm1(datos: dict, traza: dict) -> dict:
         agregar("pantalla", "Plan: pantalla dañada")
     if datos.get("teclado_danado") is True or any(k in txt_fallas for k in ("teclado", "tecla")):
         agregar("teclado", "Plan: teclado dañado")
-    if datos.get("cargador_incluido") is False or "sin cargador" in txt_fallas:
+    # El campo cargador_incluido manda; la lista de fallas solo se usa si el campo viene vacío
+    cargador = datos.get("cargador_incluido")
+    if cargador is False or (cargador is None and "sin cargador" in txt_fallas):
         agregar("cargador", "Plan: reposición de cargador")
 
     n_intervenciones = len(plan)  # la mano de obra no cuenta como intervención (R3.6)
@@ -1211,6 +1215,13 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
         if m_anio:
             datos["anio_fabricacion"] = int(m_anio.group(1))
 
+    # Validación defensiva de la RAM: "8GB de RAM", "memoria 8GB", "16 gb ram"
+    if datos.get("ram_gb") is None:
+        m_ram = (re.search(r"(?:ram|memoria)\D{0,12}?(\d{1,2})\s*gb", txt_lower)
+                 or re.search(r"(\d{1,2})\s*gb\s*(?:de\s*)?(?:ram|memoria)", txt_lower))
+        if m_ram:
+            datos["ram_gb"] = int(m_ram.group(1))
+
     marca_str = str(datos.get("marca") or "").strip().lower()
     modelo_str = str(datos.get("modelo") or "").strip().lower()
     tiene_equipo = bool(marca_str and marca_str not in ["none", "null", "generica"]) or \
@@ -1564,7 +1575,7 @@ CASOS_INTEGRADOS_PG3 = {
         "Dell Inspiron 15 piden $150.000 pero no da video, tiene la CPU quemada en corto insalvable y pista de placa perforada.",
 
     "Caso 4 (Lenovo ThinkPad T470 2017 — Descarte por Obsolescencia e Iliquidez)":
-        "Vendo Lenovo ThinkPad T470 año 2017 con Intel Core i5 7ma gen, piden $300.000. "
+        "Vendo Lenovo ThinkPad T470 año 2017 con Intel Core i5, piden $300.000. "
         "Batería agotada al 30% con 900 ciclos que requiere cambio. 4GB de RAM y disco HDD de 500GB. "
         "Sin soporte para Windows 11, equipo antiguo.",
 
