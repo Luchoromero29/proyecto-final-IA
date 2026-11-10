@@ -1207,6 +1207,185 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
 
 
 # ------------------------------------------------------------------------------
+# 7b. Asistente unificado: System Prompt maestro de enrutamiento + flujos por submódulo
+#     Punto de entrada único (CLI y web). El LLM clasifica la consulta y cada
+#     submódulo sigue el patrón sándwich: prompt de extracción (JSON estricto) →
+#     consulta Cypher / motor de reglas sobre Neo4j → prompt de explicación.
+# ------------------------------------------------------------------------------
+PROMPT_MAESTRO_ENRUTAMIENTO = """Sos el enrutador de EvalTIC, un asistente que evalúa notebooks usadas para reventa.
+Tu única tarea es clasificar el mensaje del usuario en UNA intención. No respondas la consulta.
+Límites: el conocimiento experto (precios, costos, umbrales y reglas) está en la base de conocimiento Neo4j;
+vos nunca das valores ni recomendaciones propias.
+
+Intenciones posibles:
+- "evaluacion_integral": un aviso o una oferta de venta de una notebook con precio pedido, o la pregunta
+  de si conviene comprarla. Usa los tres submódulos (técnico, comercial y decisión).
+- "diagnostico_tecnico": preguntas sobre el estado físico o la reparación de una notebook (batería, temperatura,
+  RAM, disco, pantalla, teclado, cargador, fallas) SIN precio de compra. Submódulo SM1.
+- "valuacion_comercial": preguntas sobre cuánto vale o a cuánto se revende una notebook según su procesador,
+  marca/línea o RAM, SIN pedir una decisión de compra. Submódulo SM2.
+- "fuera_de_dominio": cualquier otra cosa (otros productos, charla general, pedidos sin relación).
+
+Respondé ÚNICAMENTE un JSON: {"intencion": "<una de las cuatro>", "motivo": "<frase corta>"}"""
+
+PROMPT_EXTRACCION_SM1 = """Extraé en un único objeto JSON los datos técnicos de la notebook que figuran en el mensaje.
+Si un dato NO aparece, poné null. No inventes valores. No agregues texto fuera del JSON.
+Campos:
+- "marca", "modelo": string o null
+- "salud_bateria_pct": entero 0-100 o null
+- "ciclos_bateria": entero o null
+- "temperatura_cpu_c": entero °C o null
+- "thermal_throttling": bool o null
+- "ram_gb": entero o null
+- "tipo_disco": "HDD" o "SSD" o null
+- "pantalla_danada": true/false/null
+- "teclado_danado": true/false/null
+- "cargador_incluido": bool o null
+- "fallas": lista de fallas o problemas informados (strings); [] si no hay
+Respondé ÚNICAMENTE el JSON."""
+
+PROMPT_EXPLICACION_SM1 = """Sos el técnico de EvalTIC. Explicá al usuario, en español claro y en menos de 120 palabras,
+el diagnóstico técnico de su notebook. Usá ÚNICAMENTE los datos del resultado que te paso (vienen de la base de
+conocimiento Neo4j): reparaciones del plan con su costo, reglas que se activaron y datos que faltan verificar.
+No inventes costos, umbrales ni reparaciones. Si hay datos pendientes, pedí que se verifiquen.
+Aclarás en una frase que los costos son provisionales (todavía no validados por el experto)."""
+
+PROMPT_EXTRACCION_SM2 = """Extraé en un único objeto JSON los datos comerciales de la notebook que figuran en el mensaje.
+Si un dato NO aparece, poné null. No inventes valores ni completes modelos de procesador que no estén escritos.
+No agregues texto fuera del JSON.
+Campos:
+- "marca", "modelo": string o null
+- "procesador": procesador copiado textual del mensaje o null
+- "ram_gb": entero o null
+- "tipo_disco": "HDD" o "SSD" o null
+- "anio_fabricacion": entero o null
+- "soporte_windows_11": bool o null
+Respondé ÚNICAMENTE el JSON."""
+
+PROMPT_EXPLICACION_SM2 = """Sos el tasador de EvalTIC. Explicá al usuario, en español claro y en menos de 120 palabras,
+cuánto vale su notebook en el mercado de usados y por qué. Usá ÚNICAMENTE los datos del resultado que te paso
+(vienen de la base de conocimiento Neo4j): valor de referencia del procesador y cantidad de avisos relevados,
+factor de la línea, factor de la RAM, valor de mercado, VMA, riesgo de obsolescencia y demanda.
+No inventes precios ni factores. Si el resultado está pendiente o con error, explicá qué dato falta.
+Aclarás en una frase que los valores son provisionales (relevamiento de Mercado Libre del 9/11/2026)."""
+
+RESPUESTA_FUERA_DE_DOMINIO = ("EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valuación "
+                              "comercial y decisión de compra. Pegá un aviso de venta o hacé una consulta sobre una notebook.")
+
+
+def _llm_json(prompt: str, texto: str) -> dict:
+    """Llama al LLM con un prompt de extracción y devuelve el JSON (reintenta una vez)."""
+    for intento in range(2):
+        extra = "" if intento == 0 else "\nIMPORTANTE: devolvé solo el objeto JSON, sin texto adicional."
+        try:
+            return _parsear_json_llm(consultar_llm(prompt + extra, texto, json_mode=False, max_tokens=220))
+        except (json.JSONDecodeError, ValueError):
+            continue
+    raise ValueError("[ERROR PARSEO] El LLM no devolvió un JSON válido.")
+
+
+def _explicar(prompt: str, resultado: dict, respaldo: str) -> str:
+    """Prompt de explicación: el LLM redacta solo a partir del resultado de Neo4j."""
+    try:
+        txt = consultar_llm(prompt, json.dumps(resultado, ensure_ascii=False, default=str), max_tokens=220)
+        if txt and len(txt.strip()) > 20:
+            return txt.strip()
+    except Exception as e:
+        print(f"      [Aviso LLM] No se pudo redactar la explicación ({e}); se usa la respuesta de respaldo.", flush=True)
+    return respaldo
+
+
+def enrutar_consulta(texto: str) -> dict:
+    """System Prompt maestro: clasifica la consulta. Si la salida del LLM no es válida, usa una regla de respaldo."""
+    validas = {"evaluacion_integral", "diagnostico_tecnico", "valuacion_comercial", "fuera_de_dominio"}
+    tiene_precio = bool(re.search(r"\$\s*\d|\d{3}\.\d{3}|\bpiden\b|\bprecio\b", texto.lower()))
+    try:
+        r = _llm_json(PROMPT_MAESTRO_ENRUTAMIENTO, texto)
+        intencion = str(r.get("intencion", "")).strip()
+        if intencion in validas:
+            # Regla de consistencia: un aviso con precio siempre pasa por los tres submódulos
+            if tiene_precio and intencion in ("diagnostico_tecnico", "valuacion_comercial"):
+                return {"intencion": "evaluacion_integral", "origen": "regla (el mensaje tiene precio)",
+                        "motivo": r.get("motivo")}
+            return {"intencion": intencion, "origen": "LLM", "motivo": r.get("motivo")}
+    except Exception:
+        pass
+    return {"intencion": "evaluacion_integral" if tiene_precio else "fuera_de_dominio",
+            "origen": "regla de respaldo", "motivo": "salida del enrutador no válida"}
+
+
+def consultar_sm1(texto: str, verbose: bool = True) -> dict:
+    """Flujo SM1 (diagnóstico técnico): extracción → reglas y difusa SM1 en Neo4j → explicación."""
+    cargar_conocimiento(forzar=True)
+    traza = nueva_traza()
+    datos = _llm_json(PROMPT_EXTRACCION_SM1, texto)
+    res = ejecutar_motor_sm1(datos, traza)
+    resultado = {"submodulo": "SM1", "viable": res.get("es_viable"), "motivo": res.get("motivo"),
+                 "plan_reparacion": res.get("plan_reparacion"), "costo_total_ars": res.get("costo_total"),
+                 "reglas": traza["reglas"], "datos_pendientes": traza["datos_pendientes"],
+                 "datos_inferidos": traza["datos_inferidos"]}
+    plan = ", ".join(f"{t['tarea']} (${t['costo']:,})" for t in res.get("plan_reparacion", [])) or "ninguna reparación"
+    respaldo = (f"Diagnóstico: {res.get('motivo') or 'equipo reparable'}. Plan: {plan}. "
+                f"Costo total: ${res.get('costo_total', 0):,} ARS (costos provisionales).")
+    explicacion = _explicar(PROMPT_EXPLICACION_SM1, resultado, respaldo)
+    if verbose:
+        print("      Datos extraídos (SM1):", json.dumps(datos, ensure_ascii=False))
+        print(f"      Plan: {plan} | Costo: ${res.get('costo_total', 0):,} ARS")
+    return {"intencion": "diagnostico_tecnico", "datos_extraidos": datos, "sm1_tecnico": res,
+            "traza": traza, "respuesta": explicacion}
+
+
+def consultar_sm2(texto: str, verbose: bool = True) -> dict:
+    """Flujo SM2 (valuación): extracción → consulta Cypher de componentes y difusa SM2 en Neo4j → explicación."""
+    cargar_conocimiento(forzar=True)
+    traza = nueva_traza()
+    datos = _llm_json(PROMPT_EXTRACCION_SM2, texto)
+    # Mismas validaciones contra el texto que en la evaluación integral
+    txt_lower = texto.lower()
+    tokens = [tk for tk in re.findall(r"[a-z0-9°º]+", str(datos.get("procesador") or "").lower()) if tk in txt_lower]
+    datos["procesador"] = " ".join(tokens) if any(tk not in ("intel", "amd", "core", "cpu") for tk in tokens) else None
+    try:
+        res = ejecutar_motor_sm2(datos, {"upgrades": {}}, texto, traza)  # se tasa el equipo tal como está
+    except ConocimientoFaltante as e:
+        res = {"estado": "Error", "error": str(e), "vma_estimado_ars": 0}
+    resultado = {"submodulo": "SM2", **{k: v for k, v in res.items()}, "reglas": traza["reglas"],
+                 "datos_inferidos": traza["datos_inferidos"]}
+    if res["estado"] == "Tasado":
+        respaldo = (f"{res['procesador']} en línea {res['linea']}: valor de mercado ${res['valor_mercado_ars']:,} ARS; "
+                    f"VMA ${res['vma_estimado_ars']:,} ARS. Riesgo {res['riesgo_obsolescencia']}, demanda "
+                    f"{res['demanda_comercial']} (valores provisionales).")
+    else:
+        respaldo = f"No se pudo tasar: {res.get('error') or res.get('dato_faltante')}."
+    explicacion = _explicar(PROMPT_EXPLICACION_SM2, resultado, respaldo)
+    if verbose:
+        print("      Datos extraídos (SM2):", json.dumps(datos, ensure_ascii=False))
+        print(f"      Resultado SM2: {res.get('estado')} | VMA ${res.get('vma_estimado_ars', 0):,} ARS")
+    return {"intencion": "valuacion_comercial", "datos_extraidos": datos, "sm2_comercial": res,
+            "traza": traza, "respuesta": explicacion}
+
+
+def asistente_evaltic(texto: str, verbose: bool = True) -> dict:
+    """Punto de entrada único: enruta la consulta y ejecuta el o los submódulos que correspondan."""
+    ruta = enrutar_consulta(texto)
+    if verbose:
+        print(f"\n[Enrutador] Intención: {ruta['intencion']} ({ruta['origen']}) — {ruta.get('motivo') or ''}", flush=True)
+    if ruta["intencion"] == "evaluacion_integral":
+        r = evaluar_publicacion_integral(texto, verbose=verbose)
+        r["intencion"] = "evaluacion_integral"
+        r["respuesta"] = r.get("dictamen_gerencial") or r.get("error")
+    elif ruta["intencion"] == "diagnostico_tecnico":
+        r = consultar_sm1(texto, verbose=verbose)
+    elif ruta["intencion"] == "valuacion_comercial":
+        r = consultar_sm2(texto, verbose=verbose)
+    else:
+        r = {"intencion": "fuera_de_dominio", "respuesta": RESPUESTA_FUERA_DE_DOMINIO}
+    r["enrutamiento"] = ruta
+    if verbose and ruta["intencion"] != "evaluacion_integral":
+        print("\n" + "=" * 80 + "\n  RESPUESTA\n" + "=" * 80 + f"\n{r['respuesta']}\n" + "=" * 80)
+    return r
+
+
+# ------------------------------------------------------------------------------
 # 8. Batería de Pruebas Integradas End-to-End (5 Casos Oficiales)
 # ------------------------------------------------------------------------------
 CASOS_INTEGRADOS_PG3 = {
@@ -1273,16 +1452,43 @@ def ejecutar_bateria_pruebas():
     print(f"Coinciden {sum(1 for f in filas if f[4] == f[5])} de {len(filas)} casos.\n")
 
 
+CONSULTAS_ENRUTAMIENTO = [
+    ("La batería de mi notebook está al 45% con 850 ciclos y calienta a 90 grados. ¿Qué hay que reparar y cuánto sale?",
+     "diagnostico_tecnico"),
+    ("¿Cuánto vale una Lenovo ThinkPad con Intel Core i5 10ma gen y 16GB de RAM?", "valuacion_comercial"),
+    (CASOS_INTEGRADOS_PG3["Caso 2 (Lenovo ThinkPad T490 2019 — Compra Directa Aprobada)"], "evaluacion_integral"),
+    ("¿Me pasás una receta de empanadas?", "fuera_de_dominio"),
+]
+
+
+def ejecutar_pruebas_enrutador():
+    """Verifica que el System Prompt maestro envíe cada consulta al submódulo correcto."""
+    print("\n" + "=" * 80 + "\n  PRUEBAS DEL ENRUTADOR (System Prompt maestro)\n" + "=" * 80)
+    filas = []
+    for texto, esperado in CONSULTAS_ENRUTAMIENTO:
+        try:
+            r = asistente_evaltic(texto, verbose=False)
+            obtenido = r["enrutamiento"]["intencion"]
+            detalle = (r.get("sm3_financiero", {}).get("decision") or r.get("sm2_comercial", {}).get("estado")
+                       or (f"plan ${r['sm1_tecnico']['costo_total']:,}" if r.get("sm1_tecnico") else "") or "—")
+        except Exception as e:
+            obtenido, detalle = f"ERROR: {e}", ""
+        filas.append((texto[:48], obtenido, esperado, detalle))
+    for t, o_, e_, d in filas:
+        print(f"{'✔' if o_ == e_ else '✘'} {t:<48} → {o_:<20} (esperado {e_}) {d}")
+    print(f"Enrutamiento correcto en {sum(1 for f in filas if f[1] == f[2])} de {len(filas)} consultas.\n")
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--test":
         ejecutar_bateria_pruebas()
+        ejecutar_pruebas_enrutador()
     elif len(sys.argv) > 1:
-        evaluar_publicacion_integral(" ".join(sys.argv[1:]), verbose=True)
+        asistente_evaltic(" ".join(sys.argv[1:]), verbose=True)
     else:
-        print("EvalTIC — Asistente Inteligente Maestro (PG3)")
-        print("Para ejecutar la batería de pruebas: python orquestador_evaltic.py --test\n")
-        in_txt = input("Ingresa la publicación o descripción del equipo:\n> ")
+        print("EvalTIC — Asistente Inteligente (PG3)")
+        print("Para ejecutar las pruebas: python orquestador_evaltic.py --test\n")
+        in_txt = input("Escribí un aviso de venta o una consulta sobre una notebook:\n> ")
         if in_txt.strip():
-            evaluar_publicacion_integral(in_txt.strip(), verbose=True)
+            asistente_evaltic(in_txt.strip(), verbose=True)
         else:
             ejecutar_bateria_pruebas()

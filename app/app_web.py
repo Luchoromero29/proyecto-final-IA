@@ -10,7 +10,7 @@ import streamlit as st
 import json
 import time
 from orquestador_evaltic import (
-    evaluar_publicacion_integral,
+    asistente_evaltic,
     CASOS_INTEGRADOS_PG3,
     LLM_PROVIDER,
     OLLAMA_MODEL,
@@ -108,8 +108,29 @@ if btn_evaluar and input_texto.strip():
     with st.spinner("Ejecutando pipeline neuro-simbólico sándwich (SM1 ➔ SM2 ➔ SM3)..."):
         t0 = time.time()
         try:
-            resultado = evaluar_publicacion_integral(input_texto, verbose=False)
+            resultado = asistente_evaltic(input_texto, verbose=False)
             t_total = round(time.time() - t0, 2)
+            ruta = resultado.get("enrutamiento", {})
+            st.caption(f"Enrutador (System Prompt maestro): **{ruta.get('intencion')}** · origen: {ruta.get('origen')}")
+
+            if ruta.get("intencion") != "evaluacion_integral":
+                # Consultas de un solo submódulo (SM1 o SM2) o fuera de dominio
+                st.success(f"Consulta resuelta en {t_total} segundos.")
+                st.info(resultado.get("respuesta"))
+                if resultado.get("sm1_tecnico"):
+                    sm1 = resultado["sm1_tecnico"]
+                    if sm1.get("plan_reparacion"):
+                        st.table(sm1["plan_reparacion"])
+                    st.write(f"**Costo total (SM1):** ${sm1.get('costo_total', 0):,} ARS")
+                if resultado.get("sm2_comercial"):
+                    st.json(resultado["sm2_comercial"])
+                if resultado.get("traza"):
+                    with st.expander("Trazabilidad (Neo4j)"):
+                        st.json(resultado["traza"])
+                if resultado.get("datos_extraidos"):
+                    with st.expander("Datos extraídos por el LLM"):
+                        st.json(resultado["datos_extraidos"])
+                st.stop()
 
             if "error" in resultado:
                 st.error(f"❌ {resultado['error']}")
