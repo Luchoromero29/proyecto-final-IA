@@ -134,7 +134,14 @@ if btn_evaluar and input_texto.strip():
 
             if "error" in resultado:
                 st.error(f"❌ {resultado['error']}")
-                st.warning("⚠️ Formato esperado: 'Vendo [Marca] [Modelo] [Año/Specs] precio $[Monto] Detalles...'")
+                if resultado["error"].startswith("Base de conocimiento"):
+                    st.info("El aviso menciona un componente que no está cargado en Neo4j: hay que agregarlo al "
+                            "catálogo (script PG3) para poder tasarlo.")
+                else:
+                    st.warning("⚠️ Formato esperado: 'Vendo [Marca] [Modelo] [Año/Specs] precio $[Monto] Detalles...'")
+                if resultado.get("datos_extraidos"):
+                    with st.expander("Datos extraídos por el LLM"):
+                        st.json(resultado["datos_extraidos"])
                 st.stop()
 
             st.success(f"Evaluación completada en {t_total} segundos.")

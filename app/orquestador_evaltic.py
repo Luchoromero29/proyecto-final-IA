@@ -653,7 +653,9 @@ def consultar_mercado_componentes(procesador: str, texto: str, ram_informada: Op
     """
     with driver.session(database=NEO4J_DATABASE) as s:
         # "5500 U" → "5500u": el sufijo del modelo a veces viene separado del número
-        procesador = re.sub(r"(\d)\s+([a-z]{1,2})\b", r"\1\2", (procesador or "").lower())
+        #  Solo sufijos reales de procesador (no "i5 de 13ª"); "13ª" → "13a"
+        procesador = (procesador or "").lower().replace("ª", "a")
+        procesador = re.sub(r"(\d)\s+(u|h|hs|hx|hk|p)\b", r"\1\2", procesador)
         r = s.run(q, procesador=procesador, texto=texto or "", ram_informada=ram_informada,
                   ram_final=ram_final, hdd_a_ssd=bool(hdd_a_ssd)).single()
     return dict(r) if r else {}
@@ -1223,7 +1225,7 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
         m = re.match(r"(\d+)(st|nd|rd|th|ma|va|na|ta|ra|da|a|°|º)$", tk)  # "10th" ≈ "10ma" del aviso
         return bool(m and re.search(r"\b" + m.group(1) + r"\s*[a-z°º.]{0,3}\s*gen", txt_lower))
 
-    tokens = [tk for tk in re.findall(r"[a-z0-9°º]+", proc_llm.lower()) if _en_texto(tk)]
+    tokens = [tk for tk in re.findall(r"[a-z0-9°ºªáéíóúñ]+", proc_llm.lower()) if _en_texto(tk)]
     proc_validado = " ".join(tokens) if any(tk not in ("intel", "amd", "core", "cpu") for tk in tokens) else None
     if proc_llm and proc_validado != proc_llm.lower():
         datos["procesador"] = proc_validado
@@ -1530,7 +1532,7 @@ def consultar_sm2(texto: str, verbose: bool = True) -> dict:
     datos = _llm_json(PROMPT_EXTRACCION_SM2, texto)
     # Mismas validaciones contra el texto que en la evaluación integral
     txt_lower = texto.lower()
-    tokens = [tk for tk in re.findall(r"[a-z0-9°º]+", str(datos.get("procesador") or "").lower()) if tk in txt_lower]
+    tokens = [tk for tk in re.findall(r"[a-z0-9°ºªáéíóúñ]+", str(datos.get("procesador") or "").lower()) if tk in txt_lower]
     datos["procesador"] = " ".join(tokens) if any(tk not in ("intel", "amd", "core", "cpu") for tk in tokens) else None
     try:
         res = ejecutar_motor_sm2(datos, {"upgrades": {}}, texto, traza)  # se tasa el equipo tal como está

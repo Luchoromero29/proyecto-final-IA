@@ -135,7 +135,8 @@ UNWIND [{t:'3', gama:'entrada'}, {t:'5', gama:'media'}, {t:'7', gama:'alta'}] AS
 MERGE (p:Procesador {nombre: 'Core i' + f.t + ' ' + g.num + g.suf + ' gen'})
 SET p.familia = 'Core i' + f.t, p.gama = f.gama, p.anio = g.anio, p.soporte_w11 = g.w11,
     p.prioridad = 40,
-    p.patron = '(?s)(?=.*i' + f.t + '\\b)(?=.*\\b' + g.num + '\\s*[a-z°º.]{0,3}\\s*(gen|generaci)).*'
+    // generación con la palabra "gen" ("10ma gen", "13 generación") o solo con el ordinal ("13va", "8th", "13a")
+    p.patron = '(?s)(?=.*i' + f.t + '\\b)(?=.*\\b' + g.num + '(\\s*[a-z°º.]{0,3}\\s*(gen|generaci)|(va|ma|na|ta|ra|da|th|nd|rd|st|a|°|º)\\b)).*'
              + '|(?s).*i' + f.t + '[\\s-]*' + g.mod + '\\b.*';
 
 UNWIND [
