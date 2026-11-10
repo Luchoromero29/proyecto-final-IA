@@ -58,6 +58,8 @@ from dotenv import load_dotenv as load_dotenv_real  # noqa: E402  (después del 
 MODELO_NEMOTRON = "nvidia/nemotron-3.5-lightning:free"
 URL_OPENROUTER = "https://openrouter.ai/api/v1"
 URL_GROQ = "https://api.groq.com/openai/v1"
+URL_NVIDIA = "https://integrate.api.nvidia.com/v1"
+MODELO_NVIDIA = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
 
 # ------------------------------------------------------------------------------
@@ -294,6 +296,67 @@ class AlcanceRazonamientoTest(unittest.TestCase):
         self.assertNotIn("reasoning", payload)
         self.assertEqual(URL_GROQ + "/chat/completions", post.call_args.args[0])
         self.assertEqual(60, post.call_args.kwargs["timeout"])
+
+
+class ClienteNvidiaTest(unittest.TestCase):
+    """El razonamiento de NVIDIA se apaga solo con host y modelo exactos."""
+
+    def _consultar(self, base_url=URL_NVIDIA, modelo=MODELO_NVIDIA, **kwargs):
+        with mock.patch.object(oe, "LLM_PROVIDER", "openai"), \
+                mock.patch.object(oe, "OPENAI_API_KEY", "clave-ficticia-de-prueba"), \
+                mock.patch.object(oe, "OPENAI_BASE_URL", base_url), \
+                mock.patch.object(oe, "OPENAI_MODEL", modelo):
+            with mock.patch.object(oe.requests, "post",
+                                   return_value=respuesta_falsa(respuesta_chat(content="  dictamen  "))) as post:
+                resultado = oe.consultar_llm("sistema de prueba", "contenido de usuario", **kwargs)
+        return resultado, post.call_args
+
+    def test_nemotron_nvidia_desactiva_razonamiento_con_chat_template_kwargs(self):
+        resultado, llamada = self._consultar(json_mode=False, max_tokens=1024)
+        self.assertEqual("dictamen", resultado)
+        payload = llamada.kwargs["json"]
+        self.assertEqual(MODELO_NVIDIA, payload["model"])
+        self.assertEqual(0.1, payload["temperature"])
+        self.assertEqual(1024, payload["max_tokens"])
+        self.assertEqual({"enable_thinking": False}, payload["chat_template_kwargs"])
+        self.assertNotIn("reasoning", payload)
+        self.assertNotIn("response_format", payload)
+        self.assertEqual([
+            {"role": "system", "content": "sistema de prueba"},
+            {"role": "user", "content": "contenido de usuario"},
+        ], payload["messages"])
+        self.assertTrue(llamada.kwargs["headers"]["Authorization"].startswith("Bearer "))
+        self.assertEqual(URL_NVIDIA + "/chat/completions", llamada.args[0])
+        self.assertEqual(60, llamada.kwargs["timeout"])
+
+    def test_nemotron_nvidia_conserva_los_presupuestos_de_los_llamadores(self):
+        for pedido in (220, 300, 768, 1024, 4096):
+            with self.subTest(pedido=pedido):
+                _, llamada = self._consultar(max_tokens=pedido)
+                self.assertEqual(pedido, llamada.kwargs["json"]["max_tokens"])
+
+    def test_otro_modelo_en_nvidia_no_recibe_chat_template_kwargs(self):
+        for modelo in (MODELO_NEMOTRON, "meta/llama-3.1-70b-instruct", MODELO_NVIDIA + "-otro"):
+            with self.subTest(modelo=modelo):
+                _, llamada = self._consultar(modelo=modelo)
+                self.assertNotIn("chat_template_kwargs", llamada.kwargs["json"])
+
+    def test_nemotron_nvidia_fuera_del_host_nvidia_no_recibe_chat_template_kwargs(self):
+        for base_url in (URL_OPENROUTER, URL_GROQ, "https://api.openai.com/v1", "http://localhost:1234/v1"):
+            with self.subTest(base_url=base_url):
+                _, llamada = self._consultar(base_url=base_url)
+                payload = llamada.kwargs["json"]
+                self.assertNotIn("chat_template_kwargs", payload)
+                self.assertNotIn("reasoning", payload)
+
+    def test_host_enganoso_con_sufijo_o_prefijo_no_coincide(self):
+        for base_url in ("https://integrate.api.nvidia.com.invalid/v1",
+                         "https://integrate.api.nvidia.com.evil.example/v1",
+                         "https://evil.example/integrate.api.nvidia.com/v1",
+                         "https://api.nvidia.com/v1"):
+            with self.subTest(base_url=base_url):
+                _, llamada = self._consultar(base_url=base_url)
+                self.assertNotIn("chat_template_kwargs", llamada.kwargs["json"])
 
 
 class ClienteOllamaTest(unittest.TestCase):

@@ -171,6 +171,12 @@ fabrica JSON.
   Ollama.
 - **Razonamiento**: `reasoning.enabled=false` se envía **solo** con host `openrouter.ai` y modelo exacto
   `nvidia/nemotron-3.5-lightning:free`. No hay un interruptor genérico ni variables por etapa.
+- **Razonamiento en NVIDIA**: `chat_template_kwargs.enable_thinking=false` se envía **solo** con host exacto
+  `integrate.api.nvidia.com` y modelo exacto `nvidia/nemotron-3.5-lightning-30b-a3b`. Es el mismo apagado
+  real, en el campo que expone la plantilla de chat de NVIDIA, y el id de modelo es distinto del de
+  OpenRouter. No aplica piso de tokens: el presupuesto del llamador se envía sin cambios (220, 300, 768,
+  1024 o el que pida). Un host parecido (`api.nvidia.com`, subdominios o sufijos engañosos) no lo activa.
+  La validación de respuesta sigue rechazando `finish_reason=length` y `content` nulo.
 - No se agregan reintentos de transporte ni fallback a modelos pagos.
 - La rama de Ollama conserva su extracción previa de la respuesta: **no** tiene el mismo validador
   estructural.
@@ -185,7 +191,7 @@ fabrica JSON.
 
 | Qué | Comando | Requiere servicios |
 |---|---|---|
-| Offline (capa LLM, 29 tests) | `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s app/tests -v` | No |
+| Offline (cliente LLM y publicaciones, 69 tests) | `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s app/tests -v` | No |
 | Oficiales (5 casos integrales + 4 de enrutador) | `probar.bat` o `docker compose exec app python orquestador_evaltic.py --test` | Sí: Neo4j cargado y LLM disponible |
 
 Las pruebas oficiales comparan la decisión calculada con la esperada e informan el enrutamiento correcto.
@@ -310,7 +316,8 @@ Ajustes posteriores a la primera calibración; las salidas y tablas completas es
 - [x] Valuación por componentes con calibración por medianas sobre los 333 avisos (sección 31 del PG3;
       valores provisionales), con 217 avisos tasables con CE-29 = 5.
 - [x] Capa LLM adaptada: presupuestos por etapa, validación de respuestas y razonamiento desactivado para
-      el modelo verificado en OpenRouter; cubierto por las 29 pruebas offline de `app/tests/`.
+      el modelo verificado en OpenRouter y para NVIDIA Lightning en su propio host; 34 pruebas del cliente
+      dentro de las 69 pruebas offline de `app/tests/`.
 - [ ] Validación de criterios, costos y factores con el experto (todo sigue `Provisional`).
 - [ ] R1.4 (RAM soldada sin expansión) como limitación `NoAmpliable` y R3.1b (rechazo comercial directo).
 - [ ] Pasar al grafo las listas de palabras clave que todavía viven en Python.

@@ -365,6 +365,11 @@ OPENROUTER_MAX_TOKENS_MINIMO = 4096
 # Desactivación real de razonamiento: solo para el host y el modelo verificados.
 OPENROUTER_MODELO_SIN_RAZONAMIENTO = "nvidia/nemotron-3.5-lightning:free"
 
+# NVIDIA expone el interruptor de razonamiento en su propia plantilla de chat y con
+# otro id de modelo; también se aplica solo al host y al modelo verificados.
+NVIDIA_HOST = "integrate.api.nvidia.com"
+NVIDIA_MODELO_SIN_RAZONAMIENTO = "nvidia/nemotron-3.5-lightning-30b-a3b"
+
 
 def _entero_no_negativo(valor) -> Any:
     """Devuelve el conteo si es un entero no negativo; en otro caso 'unknown'."""
@@ -514,6 +519,10 @@ def consultar_llm(system_prompt: str, user_content: str, json_mode: bool = False
         if host == OPENROUTER_HOST and OPENAI_MODEL == OPENROUTER_MODELO_SIN_RAZONAMIENTO:
             # Desactivación real del razonamiento (no solo ocultarlo) para el modelo verificado.
             payload["reasoning"] = {"enabled": False}
+        if host == NVIDIA_HOST and OPENAI_MODEL == NVIDIA_MODELO_SIN_RAZONAMIENTO:
+            # NVIDIA recibe el interruptor dentro de la plantilla de chat y conserva el
+            # presupuesto del llamador: no se aplica piso ni se toca max_tokens.
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
 
         endpoint = f"{OPENAI_BASE_URL.rstrip('/')}/chat/completions"
         try:

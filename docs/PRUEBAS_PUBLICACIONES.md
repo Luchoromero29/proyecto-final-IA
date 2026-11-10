@@ -137,6 +137,21 @@ lo muestra una llamada real. Si falta el catálogo, el ejecutor **no** recarga n
 «Carga del grafo» del README y cargá sobre una base dedicada con respaldo, porque el script de
 carga del PG2 borra los datos existentes. No hay recarga automática.
 
+## Proveedor del modelo
+
+El corpus no depende de un proveedor: usa el LLM configurado en el `.env`. Desde la adaptación de la
+capa LLM (S8) el cliente también soporta **NVIDIA Nemotron 3.5 Lightning** en
+`https://integrate.api.nvidia.com/v1` con el modelo `nvidia/nemotron-3.5-lightning-30b-a3b`. Para ese
+host y ese modelo exactos el cliente envía `chat_template_kwargs: {"enable_thinking": false}` y deja
+`max_tokens` como lo pide cada llamador (sin piso). No es un interruptor genérico: otros modelos en ese
+host y el mismo modelo en otros hosts no reciben el campo.
+
+Esa adaptación está cubierta por 5 pruebas nuevas del cliente (69 pruebas offline en total).
+El [smoke real NVIDIA](ejecuciones/publicaciones_criticas_nvidia_smoke.log) verificó los 9 campos
+esperados y una evaluación integral: 4 respuestas HTTP 200, finalización `stop` y 0 tokens de
+razonamiento. **No** se afirma todavía una tanda completa con NVIDIA. La evidencia original que
+aparece más abajo corresponde a OpenRouter y se conserva tal como se registró.
+
 ## Costos y límites
 
 - Cada caso puede hacer varias llamadas al modelo: enrutador, extracción y síntesis. El enrutador
