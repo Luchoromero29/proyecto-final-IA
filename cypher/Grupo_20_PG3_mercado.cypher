@@ -138,12 +138,17 @@ SET p.familia = 'Core i' + f.t, p.gama = f.gama, p.anio = g.anio, p.soporte_w11 
              + '|(?s).*i' + f.t + '[\\s-]*' + g.mod + '\\b.*';
 
 UNWIND [
-  {s:'3000', anio:2019, mod:'3\\d{2}0u'},
-  {s:'4000', anio:2020, mod:'4\\d{2}0(u|h|hs)'},
-  {s:'5000', anio:2021, mod:'5\\d{2}[05](u|h|hs)'},
-  {s:'7020', anio:2022, mod:'7\\d20u'},
-  {s:'7030', anio:2023, mod:'7\\d30u'},
-  {s:'7035', anio:2023, mod:'7\\d35(u|hs|h)'}
+  // El sufijo (U/H/HS) es opcional: muchos avisos escriben "Ryzen 5 5500" sin la U
+  {s:'3000', anio:2019, mod:'3\\d{2}0u?'},
+  {s:'4000', anio:2020, mod:'4\\d{2}0(u|h|hs)?'},
+  {s:'5000', anio:2021, mod:'5\\d{2}[05](u|h|hs)?'},
+  {s:'7020', anio:2022, mod:'7\\d20u?'},
+  {s:'7030', anio:2023, mod:'7\\d30u?'},
+  {s:'7035', anio:2023, mod:'7\\d35(u|hs|h)?'},
+  // 7040 / 8040 (Phoenix / Hawk Point): el sufijo suele omitirse en los avisos ("Ryzen 5 PRO 7540")
+  {s:'7040', anio:2023, mod:'7\\d40(u|hs|h)?'},
+  {s:'7045', anio:2023, mod:'7\\d45(hx)?'},
+  {s:'8040', anio:2024, mod:'8\\d40(u|hs|h)?'}
 ] AS g
 UNWIND [{t:'3', gama:'entrada'}, {t:'5', gama:'media'}, {t:'7', gama:'alta'}] AS f
 MERGE (p:Procesador {nombre: 'Ryzen ' + f.t + ' ' + g.s})
@@ -319,6 +324,23 @@ MERGE (a)-[:DE_LINEA]->(l);
 MATCH (a:AvisoMercado) WHERE a.ram_gb IS NOT NULL
 MATCH (r:CapacidadRAM {gb: a.ram_gb})
 MERGE (a)-[:TIENE_RAM]->(r);
+
+
+// ---------------------------------------------------------------------
+// 30b. REGLA R2.4 — VALOR DESDE LA GENERACIÓN ANTERIOR (supuesto conservador)
+//   Si un procesador reconocido no tiene avisos suficientes, se toma como piso el
+//   valor de la generación ANTERIOR más cercana de su misma familia que sí tenga
+//   datos. No se asume que la generación nueva sea mejor, solo que no vale menos.
+//   Si no hay generación anterior con datos, la evaluación queda pendiente.
+//   El valor resultante se registra como dato inferido (decisión Provisional).
+// ---------------------------------------------------------------------
+MERGE (rg:Regla {id: 'R2.4'})
+SET rg.texto = 'SI Procesador sin muestras suficientes (< CE min_muestras_mercado) Y existe una generación anterior '
+             + 'de la misma familia con valor de referencia ENTONCES valor = valor de esa generación (dato inferido)',
+    rg.tipo = 'Heurística', rg.implementada = true, rg.estado = 'Provisional'
+WITH rg
+MATCH (sm:Submodulo {id: 'SM2'})
+MERGE (rg)-[:PERTENECE_A]->(sm);
 
 
 // ---------------------------------------------------------------------

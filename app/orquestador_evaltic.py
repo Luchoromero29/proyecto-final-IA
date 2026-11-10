@@ -621,17 +621,26 @@ def consultar_mercado_componentes(procesador: str, texto: str, ram_informada: Op
     WITH toLower($procesador) AS tp, toLower($texto) AS tt
     OPTIONAL MATCH (p:Procesador) WHERE tp =~ p.patron
     WITH tt, p ORDER BY p.prioridad DESC LIMIT 1
+    // R2.4: sin muestras propias → generación anterior más cercana de la misma familia con datos
+    OPTIONAL MATCH (v:Procesador)
+      WHERE p.valor_ref_ars IS NULL AND p.anio IS NOT NULL AND v.familia = p.familia AND v <> p
+        AND v.valor_ref_ars IS NOT NULL AND v.anio IS NOT NULL AND v.anio <= p.anio
+    WITH tt, p, v ORDER BY v.anio DESC, v.n_muestras DESC LIMIT 1
     OPTIONAL MATCH (l:Linea) WHERE tt =~ l.patron
-    WITH p, l ORDER BY l.prioridad DESC LIMIT 1
+    WITH p, v, l ORDER BY l.prioridad DESC LIMIT 1
     OPTIONAL MATCH (l)-[:PERTENECE_A_GRUPO]->(g:GrupoLinea)
     OPTIONAL MATCH (ri:CapacidadRAM {gb: $ram_informada})
     OPTIONAL MATCH (r:CapacidadRAM {gb: $ram_final})
     MATCH (cd:CriterioExperto {nombre: 'descuento_negociacion'}), (cs:CriterioExperto {nombre: 'reval_ssd'})
-    WITH p, l, g, ri, r, cd, cs,
-         CASE WHEN p.valor_ref_ars IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
-              THEN p.valor_ref_ars * l.factor_precio * r.factor END AS valor_mercado
+    WITH p, v, l, g, ri, r, cd, cs, coalesce(p.valor_ref_ars, v.valor_ref_ars) AS valor_proc
+    WITH p, v, l, g, ri, r, cd, cs, valor_proc,
+         CASE WHEN valor_proc IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
+              THEN valor_proc * l.factor_precio * r.factor END AS valor_mercado
     RETURN p {.nombre, .familia, .gama, .anio, .soporte_w11, .valor_ref_ars, .n_muestras,
               .fuente_valor, .estado_validacion} AS procesador,
+           CASE WHEN p.valor_ref_ars IS NULL AND v IS NOT NULL
+                THEN v {.nombre, .anio, .valor_ref_ars, .n_muestras} END AS generacion_anterior,
+           valor_proc,
            l {.nombre, .marca, .factor_precio, .origen_factor, .estado_validacion} AS linea,
            g {.nombre, .dias_promedio_venta, .indice_repuestos} AS grupo,
            ri IS NOT NULL AS ram_informada_existe,
@@ -812,7 +821,7 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
 
     texto_busqueda = " ".join(str(x) for x in (datos.get("marca"), datos.get("modelo"), texto) if x)
     ref = consultar_mercado_componentes(proc_txt, texto_busqueda, ram, ram_final, hdd_a_ssd)
-    traza["referencia_mercado"] = {k: ref.get(k) for k in ("procesador", "linea", "grupo", "ram")}
+    traza["referencia_mercado"] = {k: ref.get(k) for k in ("procesador", "generacion_anterior", "linea", "grupo", "ram")}
     proc, linea, grupo = ref.get("procesador"), ref.get("linea"), ref.get("grupo")
 
     # Lo que el aviso menciona y no está en la base de conocimiento → error explícito
@@ -836,11 +845,20 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
 
     # Procesador reconocido pero sin avisos suficientes para tener un precio de referencia
     min_muestras = int(CE("min_muestras_mercado", traza))
-    if proc.get("valor_ref_ars") is None:
+    gen_ant = ref.get("generacion_anterior")
+    if proc.get("valor_ref_ars") is None and not gen_ant:
         return pendiente(
-            f"R3.3b: {proc['nombre']} con {proc.get('n_muestras', 0)} avisos relevados (< CE min_muestras_mercado)",
+            f"R3.3b: {proc['nombre']} con {proc.get('n_muestras', 0)} avisos relevados (< CE min_muestras_mercado) "
+            f"y sin generación anterior con datos",
             f"Precio de mercado para {proc['nombre']} (hay {proc.get('n_muestras', 0)} avisos relevados; "
             f"se necesitan {min_muestras})")
+    if gen_ant:
+        traza["reglas"].append(
+            f"R2.4: {proc['nombre']} sin muestras suficientes → valor de la generación anterior "
+            f"{gen_ant['nombre']} (${gen_ant['valor_ref_ars']:,}, {gen_ant['n_muestras']} avisos)")
+        traza["datos_inferidos"].append(
+            f"Valor de {proc['nombre']} tomado de {gen_ant['nombre']} (generación anterior, supuesto conservador R2.4)")
+    valor_proc = int(ref["valor_proc"])
 
     # Año: aviso → generación del procesador (dato inferido)
     anio = datos.get("anio_fabricacion")
@@ -881,7 +899,7 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
         reval = int(CE("reval_ssd", traza))
         traza["reglas"].append("R2.3: revalorización por upgrade a SSD (CE reval_ssd)")
     traza["reglas"].append(
-        f"SM2 componentes: {proc['nombre']} (${proc['valor_ref_ars']:,}) × {linea['nombre']} ({linea['factor_precio']}) "
+        f"SM2 componentes: {proc['nombre']} (${valor_proc:,}) × {linea['nombre']} ({linea['factor_precio']}) "
         f"× RAM {ram_final} GB ({ref['ram']['factor']}) − {descuento:.0f} % de negociación")
 
     vma = int(ref["vma"])
@@ -891,7 +909,8 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
         "procesador": proc["nombre"],
         "linea": linea["nombre"],
         "grupo_linea": grupo["nombre"],
-        "valor_ref_procesador_ars": int(proc["valor_ref_ars"]),
+        "valor_ref_procesador_ars": valor_proc,
+        "valor_desde_generacion_anterior": gen_ant["nombre"] if gen_ant else None,
         "muestras_procesador": proc.get("n_muestras"),
         "factor_linea": linea["factor_precio"],
         "origen_factor_linea": linea.get("origen_factor"),
@@ -1215,12 +1234,11 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
         if m_anio:
             datos["anio_fabricacion"] = int(m_anio.group(1))
 
-    # Validación defensiva de la RAM: "8GB de RAM", "memoria 8GB", "16 gb ram"
-    if datos.get("ram_gb") is None:
-        m_ram = (re.search(r"(?:ram|memoria)\D{0,12}?(\d{1,2})\s*gb", txt_lower)
-                 or re.search(r"(\d{1,2})\s*gb\s*(?:de\s*)?(?:ram|memoria)", txt_lower))
-        if m_ram:
-            datos["ram_gb"] = int(m_ram.group(1))
+    # Validación defensiva de la RAM: "8GB de RAM", "memoria 8GB", "16 RAM". Si el aviso lo dice, manda el texto.
+    m_ram = (re.search(r"(\d{1,2})\s*(?:gb)?\s*(?:de\s*)?(?:ram|memoria)\b", txt_lower)
+             or re.search(r"(?:ram|memoria)\D{0,12}?(\d{1,2})\s*gb", txt_lower))
+    if m_ram:
+        datos["ram_gb"] = int(m_ram.group(1))
 
     marca_str = str(datos.get("marca") or "").strip().lower()
     modelo_str = str(datos.get("modelo") or "").strip().lower()

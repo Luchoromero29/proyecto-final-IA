@@ -55,7 +55,9 @@ no está en el grafo, la evaluación da **error** (`ConocimientoFaltante`), no u
 - `(:CapacidadRAM {gb, factor})` (8 GB = 1,00).
 - `(:AvisoMercado)` cargados del CSV, con `TIENE_PROCESADOR`, `DE_LINEA`, `TIENE_RAM`. La sección 31 del PG3
   calibra con medianas: valor del procesador y factor de cada línea (si la línea tiene < CE-29 = 5 avisos, usa el
-  de su grupo). Procesador con < CE-29 avisos → sin `valor_ref_ars` → verificación pendiente.
+  de su grupo). Procesador con < CE-29 avisos → sin `valor_ref_ars` → **R2.4** (`(:Regla)` en el PG3): toma el valor
+  de la generación anterior más cercana de la misma familia con datos (dato inferido, supuesto conservador);
+  si no hay, verificación pendiente. Las series Ryzen tienen el sufijo U/H opcional y existen 7040/7045/8040.
 - Reglas difusas `(:ReglaDifusa {base})`: SM1-BAT, SM1-TER, SM2-RIE, SM2-DEM, SM3-CONV (Mamdani en Cypher).
 Todos los valores son PROVISIONALES (falta la entrevista con el experto Matías Romero).
 
