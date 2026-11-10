@@ -11,7 +11,8 @@
 | `PI4/Tapia_Alvaro_PI4_U4.pdf` | PI4 de SM1 (diagnóstico técnico) |
 | `PI4/Navarta_Leonel_PI4_U4.pdf` | PI4 de SM2 (valuación por componentes) |
 | `PI4/Romero_Luciano_PI4_U4.pdf` | PI4 de SM3 (decisión y orquestación) |
-| `diagramas/` | Arquitectura y modelo del grafo (SVG) |
+| `Grupo_20_PG3_ProyectoFinal.docx`, `PI4/*.docx` | Versiones editables en Word de los informes (para agregar capturas y exportar a PDF) |
+| `diagramas/` | Arquitectura, modelo del grafo y flujos de cada submódulo (SVG y PNG) |
 | `ejecuciones/` | Salidas reales de terminal: casos integrales, SM1, SM2 y entradas con error |
 | `neo4j/neo4j.dump` | Exportación de la base Neo4j 5.26 (`neo4j-admin database load neo4j --from-path=docs/neo4j`) |
 | `fuentes_html/` | Fuentes editables de los informes (se convierten a PDF con Edge/Chrome) |

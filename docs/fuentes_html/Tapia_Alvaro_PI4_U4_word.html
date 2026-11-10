@@ -1,0 +1,177 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Tapia_Alvaro_PI4_U4</title><style>
+@page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 10.5pt; color: #1a1a1a; line-height: 1.45; }
+h1 { font-size: 18pt; color: #0b3d6e; margin: 0 0 6px; }
+h2 { font-size: 14pt; color: #0b3d6e; border-bottom: 2px solid #0b3d6e; padding-bottom: 3px; margin-top: 22px; page-break-after: avoid; }
+h3 { font-size: 11.5pt; color: #174f86; margin: 14px 0 4px; page-break-after: avoid; }
+p { margin: 5px 0; text-align: justify; }
+table { border-collapse: collapse; width: 100%; margin: 8px 0 12px; font-size: 9pt; page-break-inside: auto; }
+th, td { border: 1px solid #b9c4d0; padding: 4px 6px; vertical-align: top; text-align: left; }
+th { background: #e6eef6; }
+tr { page-break-inside: avoid; }
+code { font-family: Consolas, 'Courier New', monospace; font-size: 8.8pt; background: #f2f4f7; padding: 0 3px; }
+pre { font-family: Consolas, 'Courier New', monospace; font-size: 8pt; background: #f6f8fa; border: 1px solid #d0d7de;
+      padding: 8px; white-space: pre-wrap; word-break: break-word; page-break-inside: auto; }
+.terminal { background: #0c0c0c; color: #e6e6e6; border: none; border-radius: 0 0 6px 6px; margin-top: 0; font-size: 7.6pt; }
+.term-bar { background: #2d2d2d; color: #cfcfcf; font: 8pt Consolas, monospace; padding: 4px 8px; border-radius: 6px 6px 0 0; margin-top: 10px; }
+.portada { text-align: center; padding-top: 70px; page-break-after: always; }
+.portada .inst { font-size: 12pt; color: #333; }
+.portada h1 { font-size: 22pt; margin-top: 60px; }
+.portada .sub { font-size: 13pt; color: #174f86; margin: 10px 0 50px; }
+.portada table { width: 70%; margin: 30px auto; font-size: 10.5pt; }
+.nota { background: #fff8e1; border-left: 4px solid #e0a800; padding: 6px 10px; margin: 8px 0; font-size: 9.5pt; }
+.ok { color: #1a7f37; font-weight: 600; } .mal { color: #c62828; font-weight: 600; }
+.fig { text-align: center; margin: 10px 0; page-break-inside: avoid; } .fig svg { max-width: 100%; height: auto; }
+.cap { font-size: 9pt; color: #555; text-align: center; margin-top: 2px; }
+.salto { page-break-before: always; }
+</style></head><body><div class="portada">
+<div class="inst"><b>Universidad Tecnológica Nacional — Facultad Regional Mendoza</b><br>Ingeniería en Sistemas de Información<br>Cátedra: Inteligencia Artificial — Comisión 5K09 — Ciclo 2026</div>
+<h1>Actividad PI4 — Unidad 4 (Individual)</h1><div class="sub">Integración de Modelos de Lenguaje con la Base de Conocimiento</div>
+<table><tr><th>Proyecto</th><td>EvalTIC — Asistente inteligente para la evaluación de notebooks usadas</td></tr>
+<tr><th>Grupo</th><td>Grupo 20</td></tr><tr><th>Autor</th><td>Álvaro Tapia</td></tr>
+<tr><th>Rol</th><td>SM1 — Diagnóstico técnico y plan de reacondicionamiento</td></tr><tr><th>Fecha</th><td>10 de noviembre de 2026</td></tr>
+<tr><th>Repositorio</th><td>github.com/Luchoromero29/proyecto-final-IA</td></tr></table></div><h2>b) Revisión de consultas y conocimiento recuperable</h2><p>SM1 consulta en Neo4j los nodos <code>:CriterioExperto</code> (umbrales, por ejemplo
+<code>bateria_reemplazo</code> y <code>ram_objetivo</code>), <code>:CostoReparacion</code> (8 tareas con su costo) y la base
+difusa <code>SM1-BAT</code> / <code>SM1-TER</code> (<code>:ReglaDifusa</code>-[:ANTECEDENTE]-&gt;<code>:ConjuntoDifuso</code>).
+La salida es un plan de reacondicionamiento con costo total, las reglas activadas y los datos que faltan verificar.</p>
+<h3>Consulta 1 — criterios y costos (carga de conocimiento)</h3><pre>MATCH (c:CriterioExperto) RETURN c.nombre AS nombre, c.id AS id, c.valor AS valor, 
+MATCH (c:CostoReparacion) RETURN c.tarea AS tarea, c.id AS id, c.costo_ars AS costo, </pre>
+<h3>Consulta 2 — inferencia Mamdani de batería (SM1-BAT) en Cypher</h3><pre>            WITH $salud AS salud, $ciclos AS ciclos
+            MATCH (r:ReglaDifusa {base:&#x27;SM1-BAT&#x27;})-[a:ANTECEDENTE]-&gt;(cj:ConjuntoDifuso)&lt;-[:TIENE_CONJUNTO]-(var:VariableDifusa)
+            WITH salud, ciclos, r, a.grupo AS grupo,
+                 max(exp(-0.5 * (((CASE var.nombre WHEN &#x27;Salud_Bateria&#x27; THEN salud ELSE ciclos END) - cj.c) / cj.sigma)^2)) AS mu_grupo
+            WITH salud, ciclos, r, min(mu_grupo) AS fuerza
+            WHERE fuerza &gt;= 0.01
+            MATCH (r)-[:CONSECUENTE]-&gt;(sal:ConjuntoDifuso)&lt;-[:TIENE_CONJUNTO]-(vs:VariableDifusa {nombre:&#x27;Necesidad_Intervencion&#x27;})
+            WITH vs, collect({regla: r.id, fuerza: fuerza, c: sal.c, sigma: sal.sigma}) AS reglas
+            UNWIND range(0, 100) AS i
+            WITH vs, reglas, vs.min + (vs.max - vs.min) * i / 100.0 AS y
+            UNWIND reglas AS rg
+            WITH vs, reglas, y, rg, exp(-0.5 * ((y - rg.c) / rg.sigma)^2) AS mu_sal
+            WITH vs, reglas, y, max(CASE WHEN rg.fuerza &lt; mu_sal THEN rg.fuerza ELSE mu_sal END) AS altura
+            WITH vs, reglas, sum(y * altura) / sum(altura) AS centroide
+            MATCH (vs)-[:TIENE_CONJUNTO]-&gt;(s:ConjuntoDifuso)
+            WITH reglas, centroide, s, exp(-0.5 * ((centroide - s.c) / s.sigma)^2) AS mu
+            ORDER BY mu DESC
+            WITH reglas, centroide, collect(s.etiqueta)[0] AS categoria
+            RETURN round(centroide, 4) AS centroide, categoria
+            </pre>
+<table><tr><th>Id</th><th>Tarea</th><th>Descripción</th><th>Costo (ARS)</th></tr><tr><td>COS-BAT</td><td>bateria</td><td>Reemplazo de batería</td><td>$75.000</td></tr><tr><td>COS-CAR</td><td>cargador</td><td>Cargador compatible</td><td>$35.000</td></tr><tr><td>COS-MO</td><td>mano_de_obra</td><td>Mano de obra y control de calidad</td><td>$40.000</td></tr><tr><td>COS-PAN</td><td>pantalla</td><td>Reemplazo de módulo de pantalla</td><td>$160.000</td></tr><tr><td>COS-RAM</td><td>ram_upgrade</td><td>Ampliación de RAM a 8 GB</td><td>$40.000</td></tr><tr><td>COS-SSD</td><td>ssd_upgrade</td><td>Reemplazo de HDD por SSD 480 GB</td><td>$45.000</td></tr><tr><td>COS-TEC</td><td>teclado</td><td>Reemplazo de teclado</td><td>$55.000</td></tr><tr><td>COS-TER</td><td>service_termico</td><td>Service térmico (pasta térmica y limpieza)</td><td>$30.000</td></tr></table>
+<h2>c) Diseño del flujo de orquestación</h2>
+<p>El flujo sigue el patrón sándwich con dos prompts separados. El enrutador (System Prompt maestro, común a todo el
+asistente) decide que la consulta corresponde a SM1; el prompt de extracción la convierte en JSON estricto; ese JSON se
+valida contra el texto original y alimenta las consultas Cypher sobre Neo4j; el resultado estructurado vuelve al LLM
+con el prompt de explicación, que solo puede redactar con esos datos.</p>
+<div class="fig"><img src="../diagramas/flujo_sm1.png" width="620"><div class="cap">Figura 1. Flujo de orquestación de SM1.</div></div>
+<h2>d) Diseño de prompts</h2>
+<h3>System Prompt maestro de enrutamiento (común al asistente)</h3><pre>Sos el enrutador de EvalTIC, un asistente que evalúa notebooks usadas para reventa.
+Tu única tarea es clasificar el mensaje del usuario en UNA intención. No respondas la consulta.
+Límites: el conocimiento experto (precios, costos, umbrales y reglas) está en la base de conocimiento Neo4j;
+vos nunca das valores ni recomendaciones propias.
+
+Intenciones posibles:
+- &quot;evaluacion_integral&quot;: un aviso o una oferta de venta de una notebook con precio pedido, o la pregunta
+  de si conviene comprarla. Usa los tres submódulos (técnico, comercial y decisión).
+- &quot;diagnostico_tecnico&quot;: preguntas sobre el estado físico o la reparación de una notebook (batería, temperatura,
+  RAM, disco, pantalla, teclado, cargador, fallas) SIN precio de compra. Submódulo SM1.
+- &quot;valuacion_comercial&quot;: preguntas sobre cuánto vale o a cuánto se revende una notebook según su procesador,
+  marca/línea o RAM, SIN pedir una decisión de compra. Submódulo SM2.
+- &quot;fuera_de_dominio&quot;: cualquier otra cosa (otros productos, charla general, pedidos sin relación).
+
+Respondé ÚNICAMENTE un JSON: {&quot;intencion&quot;: &quot;&lt;una de las cuatro&gt;&quot;, &quot;motivo&quot;: &quot;&lt;frase corta&gt;&quot;}</pre>
+<h3>System Prompt de extracción (PROMPT_EXTRACCION_SM1)</h3><pre>Extraé en un único objeto JSON los datos técnicos de la notebook que figuran en el mensaje.
+Si un dato NO aparece, poné null. No inventes valores. No agregues texto fuera del JSON.
+Campos:
+- &quot;marca&quot;, &quot;modelo&quot;: string o null
+- &quot;salud_bateria_pct&quot;: entero 0-100 o null
+- &quot;ciclos_bateria&quot;: entero o null
+- &quot;temperatura_cpu_c&quot;: entero °C o null
+- &quot;thermal_throttling&quot;: bool o null
+- &quot;ram_gb&quot;: entero o null
+- &quot;tipo_disco&quot;: &quot;HDD&quot; o &quot;SSD&quot; o null
+- &quot;pantalla_danada&quot;: true/false/null
+- &quot;teclado_danado&quot;: true/false/null
+- &quot;cargador_incluido&quot;: bool o null
+- &quot;fallas&quot;: lista de fallas o problemas informados (strings); [] si no hay
+Respondé ÚNICAMENTE el JSON.</pre>
+<h3>System Prompt de explicación (PROMPT_EXPLICACION_SM1)</h3><pre>Sos el técnico de EvalTIC. Explicá al usuario, en español claro y en menos de 120 palabras,
+el diagnóstico técnico de su notebook. Usá ÚNICAMENTE los datos del resultado que te paso (vienen de la base de
+conocimiento Neo4j): reparaciones del plan con su costo, reglas que se activaron y datos que faltan verificar.
+No inventes costos, umbrales ni reparaciones. Si hay datos pendientes, pedí que se verifiquen.
+Aclarás en una frase que los costos son provisionales (todavía no validados por el experto).</pre>
+<p>Los ejemplos de entrada y de salida de ambos prompts están en la sección f) (columnas "Información extraída" y
+"Respuesta generada"), tomados de ejecuciones reales.</p>
+<h2>e) Implementación desarrollada</h2><p>Prototipo en Python (<code>app/orquestador_evaltic.py</code>): <code>consultar_sm1()</code> llama al LLM con el prompt
+de extracción, ejecuta <code>ejecutar_motor_sm1()</code> (reglas R1.1 y R1.2, plan de upgrades, inferencias difusas
+<code>inferir_sm1_bat_cypher</code> e <code>inferir_sm1_ter_cypher</code> que corren dentro de Neo4j) y redacta con el prompt
+de explicación. El LLM se usa por HTTP con Ollama (local, sin costo ni datos que salgan de la máquina); Neo4j con el
+driver oficial. Se eligió Python puro sin LangChain porque el flujo es fijo y así cada paso queda visible y auditable.
+Todo corre con <code>docker compose</code> (Neo4j, carga del grafo y la app).</p>
+<ul><li>Una falla insalvable (CPU/placa quemada, sin video) dispara R1.1 → inviabilidad física.</li>
+<li>Una falla redactada en positivo ("pantalla perfecta") no genera reparación.</li>
+<li>La mano de obra se suma al plan pero no cuenta como intervención (para R3.6 de SM3).</li></ul>
+<h2>f) Pruebas de ejecución</h2>
+<p>Se ejecutaron cinco consultas representativas. Todas las salidas son reales (LLM local <code>qwen2.5:1.5b</code> en
+Ollama y Neo4j 5.26 en Docker), corridas el 10 de noviembre de 2026.</p><table><tr><th>Consulta del usuario</th><th>Información extraída (JSON)</th><th>Consulta ejecutada</th><th>Resultado recuperado (Neo4j)</th><th>Respuesta generada</th></tr><tr><td>La batería de mi notebook está al 45% con 850 ciclos y calienta a 90 grados con cuelgues. ¿Qué hay que reparar y cuánto sale?</td><td><code>{&quot;marca&quot;: null, &quot;modelo&quot;: null, &quot;salud_bateria_pct&quot;: 45, &quot;ciclos_bateria&quot;: 850, &quot;temperatura_cpu_c&quot;: 90, &quot;thermal_throttling&quot;: null, &quot;ram_gb&quot;: null, &quot;tipo_disco&quot;: null, &quot;pantalla_danada&quot;: null, &quot;teclado_danado&quot;: null, &quot;cargador_incluido&quot;: null, &quot;fallas&quot;: [&quot;batería al 45%&quot;, &quot;850 ciclos&quot;, &quot;calienta a 90 grados&quot;]}</code></td><td>Reglas R1.1/R1.2, CE bateria_reemplazo y ram_objetivo, CostoReparacion; Mamdani SM1-BAT/SM1-TER en Cypher</td><td>Plan: Reemplazo de batería, Service térmico (pasta térmica y limpieza), Mano de obra y control de calidad<br>Costo: $145.000<br>Pendientes: Memoria RAM; Tipo de disco</td><td>El notebook necesita reemplazo de batería y servicio térmico. La reparación total costará $145,000. La batería es obligatoria con un costo de $75,000, y el servicio térmico de $30,000. La mano de obra y control de calidad también se requiere, con un costo de $40,000. Los datos de la memoria RAM y tipo de disco están pendientes de verificar. Los costos son provisionales hasta que se validen.</td></tr><tr><td>Tengo una notebook con 4GB de RAM y disco HDD, la batería al 80%. ¿Qué le conviene hacer?</td><td><code>{&quot;marca&quot;: null, &quot;modelo&quot;: null, &quot;salud_bateria_pct&quot;: 80, &quot;ciclos_bateria&quot;: null, &quot;temperatura_cpu_c&quot;: null, &quot;thermal_throttling&quot;: null, &quot;ram_gb&quot;: 4, &quot;tipo_disco&quot;: &quot;HDD&quot;, &quot;pantalla_danada&quot;: null, &quot;teclado_danado&quot;: null, &quot;cargador_incluido&quot;: null, &quot;fallas&quot;: []}</code></td><td>Reglas R1.1/R1.2, CE bateria_reemplazo y ram_objetivo, CostoReparacion; Mamdani SM1-BAT/SM1-TER en Cypher</td><td>Plan: Ampliación de RAM a 8 GB, Reemplazo de HDD por SSD 480 GB, Mano de obra y control de calidad<br>Costo: $125.000<br>Pendientes: Temperatura bajo carga (prueba de estrés)</td><td>El notebook necesita reparaciones para mejorar la RAM a 8 GB y reemplazar el HDD por SSD 480 GB. La mano de obra y control de calidad también se requiere. El costo total es de 125,000 ARS, con provisionales por la temperatura bajo carga (prueba de estrés). No hay datos pendientes o inferidos.</td></tr><tr><td>Mi Dell Inspiron tiene la pantalla con rayas y el teclado con teclas que no andan, no tiene cargador. ¿Qué arreglos necesita?</td><td><code>{&quot;marca&quot;: &quot;Dell&quot;, &quot;modelo&quot;: &quot;Inspiron&quot;, &quot;salud_bateria_pct&quot;: null, &quot;ciclos_bateria&quot;: null, &quot;temperatura_cpu_c&quot;: null, &quot;thermal_throttling&quot;: null, &quot;ram_gb&quot;: null, &quot;tipo_disco&quot;: null, &quot;pantalla_danada&quot;: true, &quot;teclado_danado&quot;: true, &quot;cargador_incluido&quot;: null}</code></td><td>Reglas R1.1/R1.2, CE bateria_reemplazo y ram_objetivo, CostoReparacion; Mamdani SM1-BAT/SM1-TER en Cypher</td><td>Plan: Reemplazo de módulo de pantalla, Reemplazo de teclado, Mano de obra y control de calidad<br>Costo: $255.000<br>Pendientes: Salud de batería (verificar en la revisión); Temperatura bajo carga (prueba de estrés); Memoria RAM; Tipo de disco</td><td>El notebook necesita reemplazo de módulo de pantalla y teclado por $160,000 y $55,000, respectivamente. También se requiere mano de obra por $40,000. El costo total es de $255,000. Los datos pendientes son la salud de la batería, la temperatura bajo carga y la memoria RAM.</td></tr><tr><td>La notebook no da video y tiene la placa quemada en corto. ¿Se puede reparar?</td><td><code>{&quot;marca&quot;: null, &quot;modelo&quot;: null, &quot;salud_bateria_pct&quot;: null, &quot;ciclos_bateria&quot;: null, &quot;temperatura_cpu_c&quot;: null, &quot;thermal_throttling&quot;: null, &quot;ram_gb&quot;: null, &quot;tipo_disco&quot;: null, &quot;pantalla_danada&quot;: null, &quot;teclado_danado&quot;: null, &quot;cargador_incluido&quot;: null, &quot;fallas&quot;: [&quot;No da video&quot;, &quot;Placa quemada en corto&quot;]}</code></td><td>Reglas R1.1/R1.2, CE bateria_reemplazo y ram_objetivo, CostoReparacion; Mamdani SM1-BAT/SM1-TER en Cypher</td><td>Inviable: Falla física irreparable detectada en el grafo: No da video.<br>Costo: $0<br>Pendientes: —</td><td>El técnico de EvalTIC ha diagnosticado que el notebook presenta una falla física irreparable detectada en el grafo, específicamente que no da video. No se han realizado reparaciones ni se han activado reglas. Los datos pendientes y inferidos no se han proporcionado. Los costos son provisionales y aún no han sido validados por el experto.</td></tr><tr><td>¿Qué hay que revisar en una notebook con batería al 92% y 16GB de RAM con SSD?</td><td><code>{&quot;marca&quot;: null, &quot;modelo&quot;: null, &quot;salud_bateria_pct&quot;: 92, &quot;ciclos_bateria&quot;: null, &quot;temperatura_cpu_c&quot;: null, &quot;thermal_throttling&quot;: null, &quot;ram_gb&quot;: 16, &quot;tipo_disco&quot;: &quot;SSD&quot;, &quot;pantalla_danada&quot;: null, &quot;teclado_danado&quot;: null, &quot;cargador_incluido&quot;: null, &quot;fallas&quot;: []}</code></td><td>Reglas R1.1/R1.2, CE bateria_reemplazo y ram_objetivo, CostoReparacion; Mamdani SM1-BAT/SM1-TER en Cypher</td><td>Plan: <br>Costo: $0<br>Pendientes: Temperatura bajo carga (prueba de estrés)</td><td>El notebook está en buen estado. No se han realizado reparaciones ni se activaron reglas. El costo total es de 0 ARS. Los datos pendientes son una prueba de estrés bajo temperatura baja.</td></tr></table>
+<h3>Capturas de la terminal</h3>
+<p>Salida completa de la terminal de dos interacciones exitosas (comando <code>python orquestador_evaltic.py "&lt;consulta&gt;"</code>
+dentro del contenedor de la aplicación).</p><div class="term-bar">PS proyecto-final&gt; docker compose exec app python orquestador_evaltic.py &quot;La batería de mi notebook está al 45% con 850 ciclos y calienta a 90 grados con cuelgues. …&quot;</div><pre class="terminal">[Enrutador] Intención: diagnostico_tecnico (LLM) — La batería de mi notebook está al 45% con 850 ciclos y calienta a 90 grados con cuelgues.
+      Datos extraídos (SM1): {&quot;marca&quot;: null, &quot;modelo&quot;: null, &quot;salud_bateria_pct&quot;: 45, &quot;ciclos_bateria&quot;: 850, &quot;temperatura_cpu_c&quot;: 90, &quot;thermal_throttling&quot;: null, &quot;ram_gb&quot;: null, &quot;tipo_disco&quot;: null, &quot;pantalla_danada&quot;: null, &quot;teclado_danado&quot;: null, &quot;cargador_incluido&quot;: null, &quot;fallas&quot;: [&quot;batería al 45%&quot;, &quot;850 ciclos&quot;, &quot;calienta a 90 grados&quot;]}
+      Plan: Reemplazo de batería ($75,000), Service térmico (pasta térmica y limpieza) ($30,000), Mano de obra y control de calidad ($40,000) | Costo: $145,000 ARS
+
+================================================================================
+  RESPUESTA
+================================================================================
+El notebook necesita reemplazo de batería y servicio térmico. La reparación total costará $145,000. La batería es obligatoria con un costo de $75,000, y el servicio térmico de $30,000. La mano de obra y control de calidad también se requiere, con un costo de $40,000. Los datos de la memoria RAM y tipo de disco están pendientes de verificar. Los costos son provisionales hasta que se validen.
+================================================================================</pre><div class="term-bar">PS proyecto-final&gt; docker compose exec app python orquestador_evaltic.py &quot;Mi Dell Inspiron tiene la pantalla con rayas y el teclado con teclas que no andan, no tien…&quot;</div><pre class="terminal">[Enrutador] Intención: diagnostico_tecnico (LLM) — ¿Qué arreglos necesita?
+      Datos extraídos (SM1): {&quot;marca&quot;: &quot;Dell&quot;, &quot;modelo&quot;: &quot;Inspiron&quot;, &quot;salud_bateria_pct&quot;: null, &quot;ciclos_bateria&quot;: null, &quot;temperatura_cpu_c&quot;: null, &quot;thermal_throttling&quot;: null, &quot;ram_gb&quot;: null, &quot;tipo_disco&quot;: null, &quot;pantalla_danada&quot;: true, &quot;teclado_danado&quot;: true, &quot;cargador_incluido&quot;: null}
+      Plan: Reemplazo de módulo de pantalla ($160,000), Reemplazo de teclado ($55,000), Mano de obra y control de calidad ($40,000) | Costo: $255,000 ARS
+
+================================================================================
+  RESPUESTA
+================================================================================
+El notebook necesita reemplazo de módulo de pantalla y teclado por $160,000 y $55,000, respectivamente. También se requiere mano de obra por $40,000. El costo total es de $255,000. Los datos pendientes son la salud de la batería, la temperatura bajo carga y la memoria RAM.
+================================================================================</pre>
+<h2>g) Análisis de errores</h2>
+<p>Se probaron entradas absurdas, incompletas o fuera del conocimiento cargado. El sistema nunca rellena un dato
+faltante con un valor favorable: o pide aclaración, o responde que está fuera de dominio, o corta con un error que
+dice qué falta en la base de conocimiento.</p><table><tr><th>Entrada</th><th>Ruta del enrutador</th><th>Respuesta del sistema</th></tr><tr><td>asdf qwerty 123</td><td>fuera_de_dominio</td><td>EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valuación comercial y decisión de compra. Pegá un aviso de venta o hacé una consulta sobre una notebook.</td></tr><tr><td>Vendo notebook Lenovo Legion con Intel Core i9 13980HX, 32GB, RTX 4080. Precio $2.500.000</td><td>evaluacion_integral</td><td>Base de conocimiento incompleta: El procesador &#x27;Intel Core i9 13980HX&#x27; no está en la base de conocimiento (Neo4j :Procesador).</td></tr><tr><td>Vendo notebook a $1</td><td>evaluacion_integral</td><td>Entrada rechazada: falta marca/modelo o precio comercial válido.</td></tr><tr><td>¿Me pasás una receta de empanadas?</td><td>fuera_de_dominio</td><td>EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valuación comercial y decisión de compra. Pegá un aviso de venta o hacé una consulta sobre una notebook.</td></tr></table>
+<ul>
+<li><b>Texto sin sentido o de otro tema:</b> el System Prompt maestro lo clasifica como <code>fuera_de_dominio</code>
+y se responde con un mensaje fijo, sin consultar los motores ni dejar que el LLM improvise.</li>
+<li><b>Aviso sin marca/modelo o sin precio válido:</b> se rechaza la entrada con un mensaje que indica el formato esperado.</li>
+<li><b>Componente que no existe en el grafo</b> (por ejemplo un Core i9): error explícito <code>ConocimientoFaltante</code>
+con el nodo que falta (<code>:Procesador</code>, <code>:Linea</code> o <code>:CapacidadRAM</code>).</li>
+<li><b>Dato faltante o sin evidencia suficiente</b> (sin procesador, sin año, procesador con menos de 5 avisos relevados (CE-29)):
+<code>VerificacionPendiente</code> con el dato a verificar.</li>
+<li><b>Salida del LLM mal formada:</b> se reintenta una vez con una instrucción más estricta; si vuelve a fallar se informa el error.</li>
+<li><b>El LLM completa datos que no están en el aviso</b> (por ejemplo "Ryzen 3" → "Ryzen 3 3250U"): el procesador, el precio y
+el año se validan contra el texto original y se descarta lo que no figura.</li>
+</ul>
+<h2>h) Análisis de explicabilidad</h2><ul>
+<li><b>Del grafo provienen</b> todos los valores con los que se decide: criterios expertos (con id, versión y estado de
+validación), costos de reparación, reglas difusas, valores de procesadores, factores de línea y de RAM, y las propias
+reglas de enrutamiento de datos pendientes.</li>
+<li><b>El LLM genera</b> solo dos cosas: el JSON de entrada (a partir del texto del usuario) y la redacción de la respuesta.
+No calcula ni decide.</li>
+<li><b>Para evitar que invente criterios:</b> (1) el prompt de explicación le prohíbe usar datos que no estén en el
+resultado; (2) un control anti-alucinación compara cada número de la respuesta con el resultado de Neo4j y, si aparece
+uno que no está, descarta la redacción y usa una respuesta determinística; (3) los estados pendientes o con error no
+pasan por el LLM; (4) la traza (reglas activadas, criterios y costos usados, datos inferidos y pendientes) acompaña cada
+respuesta y se muestra en la interfaz.</li>
+</ul>
+<h2>i) Limitaciones y mejoras</h2><ul><li>El LLM local (1,5 B parámetros) a veces completa datos que no están en el aviso o mete cosas positivas como
+"fallas"; se mitiga con validaciones contra el texto y el control anti-alucinación, pero un modelo más grande (o Groq)
+mejoraría la extracción.</li>
+<li>Todos los criterios, costos y factores son provisionales: falta la entrevista de validación con el experto (M. Romero),
+por eso las decisiones salen como "Provisional".</li><li>R1.4 (RAM soldada, limitación <code>NoAmpliable</code>) todavía no está implementada.</li><li>Las palabras clave de fallas insalvables y la asociación falla→tarea siguen en Python; deberían pasar al grafo.</li><li>Mejora: costos por modelo (pantallas y baterías varían mucho entre líneas).</li></ul>
+<h2>j) Referencias y fuentes consultadas</h2><ul>
+<li>Cátedra de Inteligencia Artificial UTN FRM (2026). Consignas PG0–PG3 y PI0–PI4; Unidad 4 — Implementación de modelos de IA.</li>
+<li>Russell, S. y Norvig, P. (2021). <i>Artificial Intelligence: A Modern Approach</i>, 4.ª ed. Pearson.</li>
+<li>Mamdani, E. H. y Assilian, S. (1975). An experiment in linguistic synthesis with a fuzzy logic controller. <i>Int. J. Man-Machine Studies</i>, 7(1).</li>
+<li>Rosen, S. (1974). Hedonic prices and implicit markets. <i>Journal of Political Economy</i>, 82(1). (Base de la valuación por componentes.)</li>
+<li>Lewis, P. et al. (2020). Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. NeurIPS.</li>
+<li>Neo4j, Inc. (2026). <i>Cypher Manual</i> v5 (LOAD CSV, percentileCont, expresiones regulares).</li>
+<li>Ollama (2026). Documentación de la API <code>/api/generate</code>; modelo Qwen2.5 1.5B (Alibaba Cloud).</li>
+<li>Mercado Libre Argentina. Búsquedas de notebooks usadas relevadas el 9 y el 10/11/2026 (datos/relevamiento_mercado.csv).</li>
+</ul></body></html>

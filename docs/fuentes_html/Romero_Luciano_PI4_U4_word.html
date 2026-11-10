@@ -1,0 +1,431 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Romero_Luciano_PI4_U4</title><style>
+@page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 10.5pt; color: #1a1a1a; line-height: 1.45; }
+h1 { font-size: 18pt; color: #0b3d6e; margin: 0 0 6px; }
+h2 { font-size: 14pt; color: #0b3d6e; border-bottom: 2px solid #0b3d6e; padding-bottom: 3px; margin-top: 22px; page-break-after: avoid; }
+h3 { font-size: 11.5pt; color: #174f86; margin: 14px 0 4px; page-break-after: avoid; }
+p { margin: 5px 0; text-align: justify; }
+table { border-collapse: collapse; width: 100%; margin: 8px 0 12px; font-size: 9pt; page-break-inside: auto; }
+th, td { border: 1px solid #b9c4d0; padding: 4px 6px; vertical-align: top; text-align: left; }
+th { background: #e6eef6; }
+tr { page-break-inside: avoid; }
+code { font-family: Consolas, 'Courier New', monospace; font-size: 8.8pt; background: #f2f4f7; padding: 0 3px; }
+pre { font-family: Consolas, 'Courier New', monospace; font-size: 8pt; background: #f6f8fa; border: 1px solid #d0d7de;
+      padding: 8px; white-space: pre-wrap; word-break: break-word; page-break-inside: auto; }
+.terminal { background: #0c0c0c; color: #e6e6e6; border: none; border-radius: 0 0 6px 6px; margin-top: 0; font-size: 7.6pt; }
+.term-bar { background: #2d2d2d; color: #cfcfcf; font: 8pt Consolas, monospace; padding: 4px 8px; border-radius: 6px 6px 0 0; margin-top: 10px; }
+.portada { text-align: center; padding-top: 70px; page-break-after: always; }
+.portada .inst { font-size: 12pt; color: #333; }
+.portada h1 { font-size: 22pt; margin-top: 60px; }
+.portada .sub { font-size: 13pt; color: #174f86; margin: 10px 0 50px; }
+.portada table { width: 70%; margin: 30px auto; font-size: 10.5pt; }
+.nota { background: #fff8e1; border-left: 4px solid #e0a800; padding: 6px 10px; margin: 8px 0; font-size: 9.5pt; }
+.ok { color: #1a7f37; font-weight: 600; } .mal { color: #c62828; font-weight: 600; }
+.fig { text-align: center; margin: 10px 0; page-break-inside: avoid; } .fig svg { max-width: 100%; height: auto; }
+.cap { font-size: 9pt; color: #555; text-align: center; margin-top: 2px; }
+.salto { page-break-before: always; }
+</style></head><body><div class="portada">
+<div class="inst"><b>Universidad Tecnológica Nacional — Facultad Regional Mendoza</b><br>Ingeniería en Sistemas de Información<br>Cátedra: Inteligencia Artificial — Comisión 5K09 — Ciclo 2026</div>
+<h1>Actividad PI4 — Unidad 4 (Individual)</h1><div class="sub">Integración de Modelos de Lenguaje con la Base de Conocimiento</div>
+<table><tr><th>Proyecto</th><td>EvalTIC — Asistente inteligente para la evaluación de notebooks usadas</td></tr>
+<tr><th>Grupo</th><td>Grupo 20</td></tr><tr><th>Autor</th><td>Luciano Romero</td></tr>
+<tr><th>Rol</th><td>SM3 — Evaluación de la operación y decisión final (y orquestación)</td></tr><tr><th>Fecha</th><td>10 de noviembre de 2026</td></tr>
+<tr><th>Repositorio</th><td>github.com/Luchoromero29/proyecto-final-IA</td></tr></table></div><h2>b) Revisión de consultas y conocimiento recuperable</h2><p>SM3 recibe el costo de SM1 y el VMA, el riesgo y la demanda de SM2, y decide con criterios del grafo:
+R3.7 (costo / VMA &gt; CE <code>ratio_reparacion_max</code>), R3.8 (riesgo Alto y demanda Baja), margen requerido con orden
+fijo (CE <code>margen_base</code> → R3.4 o R3.5 → R3.6) y la conveniencia difusa <code>SM3-CONV</code> (brecha de margen y
+descuento necesario). Además coordina la evaluación integral: el enrutador, la extracción integral y el dictamen.</p>
+<h3>Consulta — inferencia Mamdani de conveniencia (SM3-CONV) en Cypher</h3><pre>            WITH $brecha AS brecha, $descuento AS descuento
+            MATCH (r:ReglaDifusa {base:&#x27;SM3-CONV&#x27;})-[a:ANTECEDENTE]-&gt;(cj:ConjuntoDifuso)&lt;-[:TIENE_CONJUNTO]-(var:VariableDifusa)
+            WITH brecha, descuento, r, a.grupo AS grupo,
+                 max(exp(-0.5 * (((CASE var.nombre WHEN &#x27;Brecha_Margen&#x27; THEN brecha ELSE descuento END) - cj.c) / cj.sigma)^2)) AS mu_grupo
+            WITH brecha, descuento, r, min(mu_grupo) AS fuerza
+            MATCH (r)-[:CONSECUENTE]-&gt;(sal:ConjuntoDifuso)
+            WITH brecha, descuento, collect({regla: r.id, fuerza: fuerza, c: sal.c, sigma: sal.sigma}) AS reglas
+            UNWIND range(0, 100) AS i
+            WITH brecha, descuento, reglas, i / 100.0 AS y
+            UNWIND reglas AS rg
+            WITH brecha, descuento, reglas, y, rg, exp(-0.5 * ((y - rg.c) / rg.sigma)^2) AS mu_sal
+            WITH brecha, descuento, reglas, y,
+                 max(CASE WHEN rg.fuerza &lt; mu_sal THEN rg.fuerza ELSE mu_sal END) AS altura
+            WITH brecha, descuento, reglas, sum(y * altura) / sum(altura) AS centroide
+            MATCH (:VariableDifusa {nombre:&#x27;Conveniencia&#x27;})-[:TIENE_CONJUNTO]-&gt;(s:ConjuntoDifuso)
+            WITH brecha, descuento, reglas, centroide, s,
+                 exp(-0.5 * ((centroide - s.c) / s.sigma)^2) AS mu
+            ORDER BY mu DESC
+            WITH brecha, descuento, reglas, centroide, collect(s.etiqueta)[0] AS categoria
+            RETURN round(centroide, 4) AS centroide, categoria
+            </pre>
+<h3>Criterios expertos vigentes en Neo4j</h3><table><tr><th>Id</th><th>Nombre</th><th>Valor</th><th>Unidad</th><th>Versión</th><th>Estado</th><th>En uso</th></tr><tr><td>CE-01</td><td>bateria_reemplazo</td><td>75</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-02</td><td>ram_soldada_min</td><td>4</td><td>GB</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-03</td><td>temperatura_service</td><td>85</td><td>°C</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-04</td><td>costo_service_termico</td><td>30000</td><td>ARS</td><td>v2</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-05</td><td>bateria_depreciacion</td><td>80</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-06</td><td>bateria_factor</td><td>10</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-07</td><td>deprec_danado</td><td>15</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-08</td><td>deprec_detalles</td><td>5</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-09</td><td>reval_ssd</td><td>45000</td><td>ARS</td><td>v2</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-10</td><td>reval_ram</td><td>35000</td><td>ARS</td><td>v2</td><td>Provisional</td><td>no (reemplazado)</td></tr><tr><td>CE-11</td><td>penal_repuestos</td><td>50000</td><td>ARS</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-12</td><td>antiguedad_obsoleta</td><td>6</td><td>años</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-13</td><td>anio_referencia</td><td>2026</td><td>año</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-14</td><td>margen_base</td><td>20</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-15</td><td>margen_alta_liquidez</td><td>12</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-16</td><td>margen_riesgo_alto</td><td>30</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-17</td><td>umbral_intervenciones</td><td>4</td><td>intervenciones</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-18</td><td>prima_fallas</td><td>5</td><td>pp</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-19</td><td>ratio_reparacion_max</td><td>0.5</td><td>adimensional</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-20</td><td>descuento_max</td><td>35</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-21</td><td>deprec_anual_inicial</td><td>10</td><td>%</td><td>v1</td><td>Provisional</td><td>no (reemplazado)</td></tr><tr><td>CE-22</td><td>deprec_anual_posterior</td><td>8</td><td>%</td><td>v1</td><td>Provisional</td><td>no (reemplazado)</td></tr><tr><td>CE-23</td><td>anios_deprec_inicial</td><td>3</td><td>años</td><td>v1</td><td>Provisional</td><td>no (reemplazado)</td></tr><tr><td>CE-24</td><td>valor_residual_min</td><td>20</td><td>%</td><td>v1</td><td>Provisional</td><td>no (reemplazado)</td></tr><tr><td>CE-25</td><td>factor_riesgo_medio</td><td>90</td><td>%</td><td>v1</td><td>Provisional</td><td>no (reemplazado)</td></tr><tr><td>CE-26</td><td>factor_riesgo_alto</td><td>75</td><td>%</td><td>v1</td><td>Provisional</td><td>no (reemplazado)</td></tr><tr><td>CE-27</td><td>ram_objetivo</td><td>8</td><td>GB</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-28</td><td>anio_min_w11</td><td>2018</td><td>año</td><td>v1</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-29</td><td>min_muestras_mercado</td><td>5</td><td>avisos</td><td>v2</td><td>Provisional</td><td>sí</td></tr><tr><td>CE-30</td><td>descuento_negociacion</td><td>10</td><td>%</td><td>v1</td><td>Provisional</td><td>sí</td></tr></table>
+<h2>c) Diseño del flujo de orquestación</h2>
+<p>El flujo sigue el patrón sándwich con dos prompts separados. El enrutador (System Prompt maestro, común a todo el
+asistente) decide que la consulta corresponde a SM3; el prompt de extracción la convierte en JSON estricto; ese JSON se
+valida contra el texto original y alimenta las consultas Cypher sobre Neo4j; el resultado estructurado vuelve al LLM
+con el prompt de explicación, que solo puede redactar con esos datos.</p>
+<div class="fig"><img src="../diagramas/flujo_sm3.png" width="620"><div class="cap">Figura 1. Flujo de orquestación de SM3.</div></div>
+<h2>d) Diseño de prompts</h2>
+<h3>System Prompt maestro de enrutamiento (común al asistente)</h3><pre>Sos el enrutador de EvalTIC, un asistente que evalúa notebooks usadas para reventa.
+Tu única tarea es clasificar el mensaje del usuario en UNA intención. No respondas la consulta.
+Límites: el conocimiento experto (precios, costos, umbrales y reglas) está en la base de conocimiento Neo4j;
+vos nunca das valores ni recomendaciones propias.
+
+Intenciones posibles:
+- &quot;evaluacion_integral&quot;: un aviso o una oferta de venta de una notebook con precio pedido, o la pregunta
+  de si conviene comprarla. Usa los tres submódulos (técnico, comercial y decisión).
+- &quot;diagnostico_tecnico&quot;: preguntas sobre el estado físico o la reparación de una notebook (batería, temperatura,
+  RAM, disco, pantalla, teclado, cargador, fallas) SIN precio de compra. Submódulo SM1.
+- &quot;valuacion_comercial&quot;: preguntas sobre cuánto vale o a cuánto se revende una notebook según su procesador,
+  marca/línea o RAM, SIN pedir una decisión de compra. Submódulo SM2.
+- &quot;fuera_de_dominio&quot;: cualquier otra cosa (otros productos, charla general, pedidos sin relación).
+
+Respondé ÚNICAMENTE un JSON: {&quot;intencion&quot;: &quot;&lt;una de las cuatro&gt;&quot;, &quot;motivo&quot;: &quot;&lt;frase corta&gt;&quot;}</pre>
+<h3>System Prompt de extracción (PROMPT_EXTRACTOR_INTEGRAL)</h3><pre>Extrae en un único objeto JSON los parámetros de la notebook para el sistema EvalTIC.
+El LLM se encarga única y exclusivamente de parsear los datos presentes en el texto a formato JSON.
+No inventes valores. Si un dato NO aparece en el texto, poné null.
+No agregues comentarios en el JSON (no uses // ni /* */).
+NO clasifiques ni catalogues fallas críticas: incluye en &quot;fallas&quot; TODAS las fallas, roturas, faltantes, deterioros o problemas informados en el texto.
+
+Campos del JSON:
+- &quot;marca&quot;: marca comercial (string o null)
+- &quot;modelo&quot;: modelo comercial (string o null)
+- &quot;procesador&quot;: procesador copiado textual del aviso, sin completar modelos que no estén escritos (o null)
+- &quot;precio_publicado&quot;: precio entero en pesos (ej: &quot;$115.000&quot; -&gt; 115000) o null
+- &quot;anio_fabricacion&quot;: año entero (ej: 2020) o null
+- &quot;salud_bateria_pct&quot;: entero 0-100 o null
+- &quot;ciclos_bateria&quot;: entero o null
+- &quot;temperatura_cpu_c&quot;: entero °C o null
+- &quot;thermal_throttling&quot;: bool o null
+- &quot;ram_gb&quot;: entero (4, 8, 16) o null
+- &quot;tipo_disco&quot;: &quot;HDD&quot; o &quot;SSD&quot; o null
+- &quot;pantalla_danada&quot;: true solo si el aviso dice que la pantalla está dañada; false si dice que está bien; si no, null
+- &quot;teclado_danado&quot;: true solo si el aviso dice que el teclado está dañado; false si dice que está bien; si no, null
+- &quot;cargador_incluido&quot;: bool o null
+- &quot;soporte_windows_11&quot;: bool o null
+- &quot;fallas&quot;: lista con TODAS las fallas, daños, desgastes o problemas reportados (lista de strings). NO incluyas cosas que están bien.
+
+Ejemplo:
+Texto: &quot;Vendo Acer Aspire 5 2020 i5 w11 $115.000. Batería 42% 780 ciclos, calienta 92C cuelgues térmicos, 4GB RAM, HDD 500GB, pantalla con rayas, teclado roto, sin cargador.&quot;
+JSON:
+{&quot;marca&quot;: &quot;Acer&quot;, &quot;modelo&quot;: &quot;Aspire 5&quot;, &quot;procesador&quot;: &quot;i5&quot;, &quot;precio_publicado&quot;: 115000, &quot;anio_fabricacion&quot;: 2020, &quot;salud_bateria_pct&quot;: 42, &quot;ciclos_bateria&quot;: 780, &quot;temperatura_cpu_c&quot;: 92, &quot;thermal_throttling&quot;: true, &quot;ram_gb&quot;: 4, &quot;tipo_disco&quot;: &quot;HDD&quot;, &quot;pantalla_danada&quot;: true, &quot;teclado_danado&quot;: true, &quot;cargador_incluido&quot;: false, &quot;soporte_windows_11&quot;: true, &quot;fallas&quot;: [&quot;batería baja duración (42%, 780 ciclos)&quot;, &quot;calienta 92°C con cuelgues térmicos&quot;, &quot;disco HDD&quot;, &quot;pantalla con rayas&quot;, &quot;teclado roto&quot;, &quot;sin cargador&quot;]}
+
+Responde ÚNICAMENTE el objeto JSON.</pre>
+<h3>System Prompt de explicación (PROMPT_SINTESIS_GERENCIAL)</h3><pre>Eres el Director General de EvalTIC (PG3), sistema neuro-simbólico de evaluación y tasación de notebooks usadas.
+A partir del resumen consolidado de la evaluación técnica (SM1), comercial (SM2) y financiera (SM3), redacta una síntesis ejecutiva comercial profesional, no determinista y concisa (máximo 120 palabras).
+
+La síntesis ejecutiva debe incluir:
+1. Veredicto Final claro: COMPRAR DIRECTO, NEGOCIAR CON CONTRAOFERTA, DESCARTAR POR INVIABILIDAD / RIESGO, o VERIFICAR ANTES DE DECIDIR.
+2. Resumen Técnico (SM1): condición del equipo, todas las fallas reportadas y plan de reacondicionamiento necesario con sus costos.
+3. Valuación y Mercado (SM2): VMA tasado, nivel de riesgo y demanda comercial.
+4. Estrategia Financiera (SM3): márgenes proyectados, contraoferta sugerida si aplica o motivo de descarte/verificación.
+
+Reglas:
+- Mencioná textualmente todas las fallas y problemas informados en el resumen.
+- Utilizá los valores numéricos y montos provistos en el resumen, sin inventar cifras.
+- Redactá con estilo profesional, ejecutivo y directo, sin formato JSON ni etiquetas markdown innecesarias.
+</pre>
+<p>Los ejemplos de entrada y de salida de ambos prompts están en la sección f) (columnas "Información extraída" y
+"Respuesta generada"), tomados de ejecuciones reales.</p>
+<h2>e) Implementación desarrollada</h2><p><code>asistente_evaltic()</code> es el punto de entrada único: el System Prompt maestro clasifica la consulta y, si es
+un aviso con precio, <code>evaluar_publicacion_integral()</code> ejecuta: extracción con <code>PROMPT_EXTRACTOR_INTEGRAL</code>,
+validaciones contra el texto (precio, procesador, año), R3.3 (señales de bloqueo → verificación pendiente), SM1, SM2 y
+<code>ejecutar_motor_sm3()</code>. El estado de la decisión es <b>Firme</b> solo si todos los criterios y costos usados están
+validados y no hubo datos inferidos ni pendientes; si no, <b>Provisional</b> con la lista de criterios pendientes. El
+dictamen lo redacta el LLM con <code>PROMPT_SINTESIS_GERENCIAL</code> a partir del resumen ya calculado, con el control
+anti-alucinación y un dictamen determinístico de respaldo.</p>
+<pre>margen neto  = (VMA − precio − costo de reparación) / VMA
+contraoferta = VMA − costo de reparación − VMA × margen requerido</pre>
+<h2>f) Pruebas de ejecución</h2>
+<p>Se ejecutaron cinco consultas representativas. Todas las salidas son reales (LLM local <code>qwen2.5:1.5b</code> en
+Ollama y Neo4j 5.26 en Docker), corridas el 10 de noviembre de 2026.</p><table><tr><th>Consulta del usuario</th><th>Información extraída (JSON)</th><th>Reglas activadas</th><th>Resultado</th><th>Respuesta generada</th></tr><tr><td>Publicación: Vendo Acer Aspire 5 año 2020 con Intel i5 10ma gen (soporte Windows 11). Precio pedido: $350.000. Detalles: enciende pero la batería dura 20 minuto…</td><td><code>{&quot;marca&quot;: &quot;Acer&quot;, &quot;modelo&quot;: &quot;Aspire 5&quot;, &quot;procesador&quot;: &quot;Intel i5 10th gen&quot;, &quot;precio_publicado&quot;: 350000, &quot;anio_fabricacion&quot;: 2020, &quot;salud_bateria_pct&quot;: 42, &quot;ciclos_bateria&quot;: 780, &quot;temperatura_cpu_c&quot;: 92, &quot;thermal_throttling&quot;: true, &quot;ram_gb&quot;: 4, &quot;tipo_disco&quot;: &quot;HDD&quot;, &quot;cargador_incluido&quot;: true, &quot;soporte_windows_11&quot;: true, &quot;fallas&quot;: [&quot;batería baja duración (42%, 780 ciclos)&quot;, &quot;calienta 92°C con cuelgues térmicos&quot;, &quot;disco HDD&quot;]}</code></td><td>SM1-BAT difusa (0.86 → Obligatoria) → bateria ($75,000)<br>SM1-TER difusa (0.86 → Obligatoria) → service_termico ($30,000)<br>Plan: RAM &lt; CE ram_objetivo → ram_upgrade ($40,000)<br>Plan: disco HDD → SSD → ssd_upgrade ($45,000)<br>Plan: mano de obra → mano_de_obra ($40,000)<br>R2.3: revalorización por upgrade a SSD (CE reval_ssd)<br>SM2 componentes: Core i5 10ma gen ($683,000) × Aspire (0.972) × RAM 8 GB (1.0) − 10 % de negociación<br>R3.6: intervenciones ≥ CE umbral_intervenciones → + CE prima_fallas<br>SM3-CONV difusa (brecha -15.3 pp, descuento 28.0 %) → Negociar (0.47)</td><td><b>ComprarConOfertaMenor</b> (Provisional)<br>Costo SM1 $230.000; VMA $642.000; margen 9.7 % vs requerido 25.0 %; contraoferta $252.000</td><td>Veredicto Final: COMPRAR DIRECTO
+
+Resumen Técnico (SM1):
+- La batería tiene una duración de 42% y 780 ciclos, lo que indica que la batería debe ser reemplazada.
+- La computadora calienta 92°C con cuelgues térmicos, lo que requiere servicio térmico.
+- El disco duro está en estado de disco HDD, lo que requiere una ampliación de RAM a 8 GB y reemplazo del disco duro por SSD 480 GB.
+- El costo total de reparación es de 230,000 ARS.
+
+Valuación y Mercado (SM2):
+- La VMA tasada es de 642,000 ARS.
+- El nivel de riesgo es medio, y la demanda comercial es media.
+
+Estrategia Financiera (SM3):
+- Los márgenes proyectados son de 9.7%.
+- La contraoferta sugerida es de 252,000 ARS.
+- La brecha de margen por reparación es de -15.3%.
+- El descuento requerido es de 28.0%.
+- La razón de reparación es de 0.36.
+
+Motivo de decisión: La computadora se encuentra en un estado de reparación, pero la VMA tasada es superior a la inversión inicial, lo que hace que la compra sea una buena opción.</td></tr><tr><td>Oportunidad ThinkPad T490 2019 Core i5 8va gen, Windows 11 oficial. Piden $400.000. Equipo en estado excelente, batería al 91% con 110 ciclos, temperatura bajo …</td><td><code>{&quot;marca&quot;: &quot;ThinkPad&quot;, &quot;modelo&quot;: &quot;T490&quot;, &quot;procesador&quot;: &quot;Core i5 8va gen&quot;, &quot;precio_publicado&quot;: 400000, &quot;anio_fabricacion&quot;: 2019, &quot;salud_bateria_pct&quot;: 91, &quot;ciclos_bateria&quot;: 110, &quot;temperatura_cpu_c&quot;: 68, &quot;thermal_throttling&quot;: false, &quot;ram_gb&quot;: 16, &quot;tipo_disco&quot;: &quot;SSD&quot;, &quot;pantalla_danada&quot;: false, &quot;teclado_danado&quot;: false, &quot;cargador_incluido&quot;: true, &quot;soporte_windows_11&quot;: true}</code></td><td>SM1-TER difusa (0.38 → Recomendada) → service_termico ($30,000)<br>Plan: mano de obra → mano_de_obra ($40,000)<br>SM2 componentes: Core i5 8va gen ($574,000) × ThinkPad (1.075) × RAM 16 GB (1.08) − 10 % de negociación<br>SM3-CONV difusa (brecha 1.7 pp, descuento 0.0 %) → Comprar (0.77)</td><td><b>Comprar</b> (Provisional)<br>Costo SM1 $70.000; VMA $600.000; margen 21.7 % vs requerido 20.0 %</td><td>DICTAMEN EJECUTIVO EVALTIC — ThinkPad T490
+• Veredicto Final: COMPRAR DIRECTO (Decisión provisional).
+• Fallas y problemas reportados: Ninguno (equipo en condición operativa normal).
+• Resumen Técnico (SM1): Físicamente reparable. Plan: Service térmico (pasta térmica y limpieza), Mano de obra y control de calidad (Costo total: $70,000 ARS).
+• Valuación Comercial (SM2): VMA tasado en $600,000 ARS | Riesgo de obsolescencia: Medio | Demanda comercial: Alta.
+• Estrategia Financiera (SM3): Operación aprobada al precio pedido ($400,000 ARS). Margen neto: 21.7% (Requerido: 20.0%).</td></tr><tr><td>Dell Inspiron 15 piden $150.000 pero no da video, tiene la CPU quemada en corto insalvable y pista de placa perforada.</td><td><code>{&quot;marca&quot;: &quot;Dell&quot;, &quot;modelo&quot;: &quot;Inspiron 15&quot;, &quot;procesador&quot;: &quot;quemada&quot;, &quot;precio_publicado&quot;: 150000, &quot;fallas&quot;: [&quot;no da video&quot;, &quot;CPU quemada&quot;, &quot;pista de placa perforada&quot;]}</code></td><td>R1.1: falla insalvable detectada (&#x27;no da video&#x27;) → Inviabilidad_Fisica_Insalvable<br>R3.2: dictamen técnico insalvable → DescartarPorInviabilidad</td><td><b>DescartarPorInviabilidad</b> (Firme)<br>Costo SM1 $0; VMA $0; margen — % vs requerido — %</td><td>Veredicto Final: DESCARTAR POR INVIABILIDAD / RIESGO
+
+Resumen Técnico (SM1):
+- Equipo: Dell Inspiron 15
+- Precio Solicitado ARS: 150,000
+- Motivo: Falla física irreparable detectada en el grafo: no da video.
+- Fallas Reportadas: no da video, CPU quemada, pista de placa perforada.
+- Costo Reparación ARS: 0
+- Reparaciones: No Aplicable
+
+Valuación y Mercado (SM2):
+- VMA Tasado: 0
+- Nivel de Riesgo: N/A
+- Demanda Comercial: N/A
+
+Estrategia Financiera (SM3):
+- Márgenes Proyectados: N/A
+- Contraoferta Sugerida: N/A
+- Motivo de Descarte/Verificación: Falla física irreparable detectada en el grafo: no da video.
+
+Veredicto: La decisión es DESCARTAR POR INVIABILIDAD / RIESGO debido a la falla física irreparable detectada en el equipo.</td></tr><tr><td>Vendo Lenovo ThinkPad T470 año 2017 con Intel Core i5, piden $300.000. Batería agotada al 30% con 900 ciclos que requiere cambio. 4GB de RAM y disco HDD de 500G…</td><td><code>{&quot;marca&quot;: &quot;Lenovo&quot;, &quot;modelo&quot;: &quot;ThinkPad T470&quot;, &quot;procesador&quot;: &quot;Intel Core i5&quot;, &quot;precio_publicado&quot;: 300000, &quot;anio_fabricacion&quot;: 2017, &quot;salud_bateria_pct&quot;: 30, &quot;ciclos_bateria&quot;: 900, &quot;ram_gb&quot;: 4, &quot;tipo_disco&quot;: &quot;HDD&quot;, &quot;fallas&quot;: [&quot;batería agotada al 30%&quot;, &quot;900 ciclos, requiere cambio&quot;]}</code></td><td>SM1-BAT difusa (0.86 → Obligatoria) → bateria ($75,000)<br>Plan: RAM &lt; CE ram_objetivo → ram_upgrade ($40,000)<br>Plan: disco HDD → SSD → ssd_upgrade ($45,000)<br>Plan: mano de obra → mano_de_obra ($40,000)<br>R2.3: revalorización por upgrade a SSD (CE reval_ssd)<br>SM2 componentes: Core i5 ($683,000) × ThinkPad (1.075) × RAM 8 GB (1.0) − 10 % de negociación<br>R3.8: riesgo Alto y demanda Baja → DescartarPorRiesgo</td><td><b>DescartarPorRiesgo</b> (Provisional)<br>Costo SM1 $200.000; VMA $706.000; margen 29.2 % vs requerido — %</td><td>**Síntesis Ejecutiva Comercial**
+
+**Veredicto Final:** **DESCARTAR POR RIESGO**
+
+**Resumen Técnico (SM1):**
+- **Equipo:** Lenovo ThinkPad T470
+- **Precio Solicitado ARS:** 300,000
+- **Estado Decision:** Provisional
+- **Motivo:** Riesgo de obsolescencia alto con demanda comercial baja (inmovilización de capital).
+- **Fallas Reportadas:**
+  - Batería agotada al 30%
+  - 900 ciclos, requiere cambio
+
+**Valuación y Mercado (SM2):**
+- **VMA ARS:** 706,000
+- **Riesgo:** Alto
+- **Demanda:** Baja
+
+**Estrategia Financiera (SM3):**
+- **Precio Publicado:** 300,000
+- **Costo Reparación:** 200,000
+- **VMA Tasado:** 706,000
+- **Márgen Neto %:** 29.2
+- **Ratio Reparación:** 0.28
+
+**Datos a Verificar:**
+- Temperatura bajo carga (prueba de estrés)
+
+**Conclusión:** El equipo presenta un alto riesgo de obsolescencia y baja demanda comercial, lo que hace que no sea viable para la decisión de compra. La inversión en reparación sería significativa y no proporcionaría beneficios esperados. Por lo tanto, se recomienda descartar este producto para evitar el inmovilización de capital.</td></tr><tr><td>HP 15 modelo 2021 Ryzen 3 pide $220.000. Batería al 85% y temperaturas normales. Tiene 4GB de RAM y disco HDD de 1TB. Requiere service de limpieza y upgrades es…</td><td><code>{&quot;marca&quot;: &quot;HP&quot;, &quot;modelo&quot;: &quot;15&quot;, &quot;procesador&quot;: &quot;Ryzen 3&quot;, &quot;precio_publicado&quot;: 220000, &quot;anio_fabricacion&quot;: 2021, &quot;salud_bateria_pct&quot;: 85, &quot;ram_gb&quot;: 4, &quot;tipo_disco&quot;: &quot;HDD&quot;, &quot;fallas&quot;: [&quot;batería baja duración (85%)&quot;, &quot;temperaturas normales&quot;]}</code></td><td>Plan: RAM &lt; CE ram_objetivo → ram_upgrade ($40,000)<br>Plan: disco HDD → SSD → ssd_upgrade ($45,000)<br>Plan: mano de obra → mano_de_obra ($40,000)<br>R2.3: revalorización por upgrade a SSD (CE reval_ssd)<br>SM2 componentes: Ryzen 3 ($496,000) × HP 15/240/250 (0.962) × RAM 8 GB (1.0) − 10 % de negociación<br>SM3-CONV difusa (brecha 7.2 pp, descuento 0.0 %) → Comprar (0.83)</td><td><b>Comprar</b> (Provisional)<br>Costo SM1 $125.000; VMA $474.000; margen 27.2 % vs requerido 20.0 %</td><td>**Síntesis Ejecutiva Comercial**
+
+**Veredicto Final:** COMPRAR DIRECTO
+
+**Resumen Técnico (SM1)**
+
+- **Equipo:** HP 15
+- **Precio Solicitado ARS:** 220,000
+- **Estado Decision:** Provisional
+- **Motivo:** Sin motivo específico
+- **Fallas Reportadas:** 
+  - Batería baja duración (85%)
+  - Temperaturas normales
+
+**Costo Reparación:** $125,000
+
+**Reparaciones Necesarias:**
+- Ampliación de RAM a 8 GB
+- Reemplazo de HDD por SSD 480 GB
+- Mano de obra y control de calidad
+
+**Valuación y Mercado (SM2)**
+
+- **VMA (Valor Máximo Asociado):** ARS 474,000
+- **Riesgo:** Bajo
+- **Demanda:** Media
+
+**Estrategia Financiera (SM3)**
+
+- **Precio Publicado:** $220,000
+- **Costo Reparación:** $125,000
+- **VMA Tasado:** ARS 474,000
+- **Márgen Neto (Pct):** 27.2%
+- **Ratio Reparación:** 0.26
+- **Márgen Requerido (Pct):** 20.0%
+- **Brecha Margen (PP):** 7.2%
+- **Descuento Requerido (Pct):** 0.0%
+- **Contraoferta Sugerida (ARS):** Sin datos
+
+**Datos a Verificar:**
+- Temperatura bajo carga (prueba de estrés)
+
+**Conclusión:** 
+El equipo HP 15 cumple con todas las especificaciones técnicas y está en un buen estado de reparación. Su valor de mercado y demanda son medianas, lo que hace que sea una opción viable para la compra directa. Sin embargo, se recomienda realizar pruebas de estrés para verificar la temperatura bajo carga, ya que no se reportaron problemas de temperatura.</td></tr></table>
+<h3>Capturas de la terminal</h3>
+<p>Salida completa de la terminal de dos interacciones exitosas (comando <code>python orquestador_evaltic.py "&lt;consulta&gt;"</code>
+dentro del contenedor de la aplicación).</p><div class="term-bar">PS proyecto-final&gt; docker compose exec app python orquestador_evaltic.py &quot;Publicación: Vendo Acer Aspire 5 año 2020 con Intel i5 10ma gen (soporte Windows 11). Prec…&quot;</div><pre class="terminal">[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Pregunta sobre la valoración de la notebook.
+
+================================================================================
+  EVALTIC — ASISTENTE INTELIGENTE INTEGRADO (ORQUESTACIÓN PG3)
+  Grafo de Conocimiento Neo4j: Local Offline (Docker) (bolt://neo4j:7687)
+================================================================================
+[Paso 1/4] Extracción y parseo de datos estructurados con el LLM...
+      Datos extraídos por el LLM:
+      {
+            &quot;marca&quot;: &quot;Acer&quot;,
+            &quot;modelo&quot;: &quot;Aspire 5&quot;,
+            &quot;procesador&quot;: &quot;Intel i5 10th gen&quot;,
+            &quot;precio_publicado&quot;: 350000,
+            &quot;anio_fabricacion&quot;: 2020,
+            &quot;salud_bateria_pct&quot;: 42,
+            &quot;ciclos_bateria&quot;: 780,
+            &quot;temperatura_cpu_c&quot;: 92,
+            &quot;thermal_throttling&quot;: true,
+            &quot;ram_gb&quot;: 4,
+            &quot;tipo_disco&quot;: &quot;HDD&quot;,
+            &quot;pantalla_danada&quot;: null,
+            &quot;teclado_danado&quot;: null,
+            &quot;cargador_incluido&quot;: true,
+            &quot;soporte_windows_11&quot;: true,
+            &quot;fallas&quot;: [
+                  &quot;batería baja duración (42%, 780 ciclos)&quot;,
+                  &quot;calienta 92°C con cuelgues térmicos&quot;,
+                  &quot;disco HDD&quot;
+            ]
+      }
+      Fallas reportadas (3): [&#x27;batería baja duración (42%, 780 ciclos)&#x27;, &#x27;calienta 92°C con cuelgues térmicos&#x27;, &#x27;disco HDD&#x27;]
+
+[Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...
+      SM1: 4 intervenciones | Costo: $230,000 ARS
+      [Cypher Neo4j SM2] Core i5 10ma gen · Aspire · 8 GB → VMA $642,000
+
+[Paso 3/4] Generando síntesis general ejecutiva con LLM (no determinista)...
+
+--------------------------------------------------------------------------------
+  DECISIÓN FINAL: ComprarConOfertaMenor (Provisional)
+  Fallas Registradas: [&#x27;batería baja duración (42%, 780 ciclos)&#x27;, &#x27;calienta 92°C con cuelgues térmicos&#x27;, &#x27;disco HDD&#x27;]
+  Margen neto: 9.7% | Requerido: 25.0% | Contraoferta: 252000
+  Reglas activadas:
+    • SM1-BAT difusa (0.86 → Obligatoria) → bateria ($75,000)
+    • SM1-TER difusa (0.86 → Obligatoria) → service_termico ($30,000)
+    • Plan: RAM &lt; CE ram_objetivo → ram_upgrade ($40,000)
+    • Plan: disco HDD → SSD → ssd_upgrade ($45,000)
+    • Plan: mano de obra → mano_de_obra ($40,000)
+    • R2.3: revalorización por upgrade a SSD (CE reval_ssd)
+    • SM2 componentes: Core i5 10ma gen ($683,000) × Aspire (0.972) × RAM 8 GB (1.0) − 10 % de negociación
+    • R3.6: intervenciones ≥ CE umbral_intervenciones → + CE prima_fallas
+    • SM3-CONV difusa (brecha -15.3 pp, descuento 28.0 %) → Negociar (0.47)
+--------------------------------------------------------------------------------
+
+================================================================================
+  DICTAMEN EJECUTIVO
+================================================================================
+Veredicto Final: COMPRAR DIRECTO
+
+Resumen Técnico (SM1):
+- La batería tiene una duración de 42% y 780 ciclos, lo que indica que la batería debe ser reemplazada.
+- La computadora calienta 92°C con cuelgues térmicos, lo que requiere servicio térmico.
+- El disco duro está en estado de disco HDD, lo que requiere una ampliación de RAM a 8 GB y reemplazo del disco duro por SSD 480 GB.
+- El costo total de reparación es de 230,000 ARS.
+
+Valuación y Mercado (SM2):
+- La VMA tasada es de 642,000 ARS.
+- El nivel de riesgo es medio, y la demanda comercial es media.
+
+Estrategia Financiera (SM3):
+- Los márgenes proyectados son de 9.7%.
+- La contraoferta sugerida es de 252,000 ARS.
+- La brecha de margen por reparación es de -15.3%.
+- El descuento requerido es de 28.0%.
+- La razón de reparación es de 0.36.
+
+Motivo de decisión: La computadora se encuentra en un estado de reparación, pero la VMA tasada es superior a la inversión inicial, lo que hace que la compra sea una buena opción.
+================================================================================</pre><div class="term-bar">PS proyecto-final&gt; docker compose exec app python orquestador_evaltic.py &quot;Oportunidad ThinkPad T490 2019 Core i5 8va gen, Windows 11 oficial. Piden $400.000. Equipo…&quot;</div><pre class="terminal">[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Piden $400.000
+
+================================================================================
+  EVALTIC — ASISTENTE INTELIGENTE INTEGRADO (ORQUESTACIÓN PG3)
+  Grafo de Conocimiento Neo4j: Local Offline (Docker) (bolt://neo4j:7687)
+================================================================================
+[Paso 1/4] Extracción y parseo de datos estructurados con el LLM...
+      Datos extraídos por el LLM:
+      {
+            &quot;marca&quot;: &quot;ThinkPad&quot;,
+            &quot;modelo&quot;: &quot;T490&quot;,
+            &quot;procesador&quot;: &quot;Core i5 8va gen&quot;,
+            &quot;precio_publicado&quot;: 400000,
+            &quot;anio_fabricacion&quot;: 2019,
+            &quot;salud_bateria_pct&quot;: 91,
+            &quot;ciclos_bateria&quot;: 110,
+            &quot;temperatura_cpu_c&quot;: 68,
+            &quot;thermal_throttling&quot;: false,
+            &quot;ram_gb&quot;: 16,
+            &quot;tipo_disco&quot;: &quot;SSD&quot;,
+            &quot;pantalla_danada&quot;: false,
+            &quot;teclado_danado&quot;: false,
+            &quot;cargador_incluido&quot;: true,
+            &quot;soporte_windows_11&quot;: true,
+            &quot;fallas&quot;: []
+      }
+      Fallas reportadas (0): []
+
+[Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...
+      SM1: 1 intervenciones | Costo: $70,000 ARS
+      [Cypher Neo4j SM2] Core i5 8va gen · ThinkPad · 16 GB → VMA $600,000
+
+[Paso 3/4] Generando síntesis general ejecutiva con LLM (no determinista)...
+      [Control anti-alucinación] El dictamen del LLM traía números que no están en el resultado de Neo4j; se usa el dictamen determinístico.
+
+--------------------------------------------------------------------------------
+  DECISIÓN FINAL: Comprar (Provisional)
+  Fallas Registradas: []
+  Margen neto: 21.7% | Requerido: 20.0% | Contraoferta: —
+  Reglas activadas:
+    • SM1-TER difusa (0.38 → Recomendada) → service_termico ($30,000)
+    • Plan: mano de obra → mano_de_obra ($40,000)
+    • SM2 componentes: Core i5 8va gen ($574,000) × ThinkPad (1.075) × RAM 16 GB (1.08) − 10 % de negociación
+    • SM3-CONV difusa (brecha 1.7 pp, descuento 0.0 %) → Comprar (0.77)
+--------------------------------------------------------------------------------
+
+================================================================================
+  DICTAMEN EJECUTIVO
+================================================================================
+DICTAMEN EJECUTIVO EVALTIC — ThinkPad T490
+• Veredicto Final: COMPRAR DIRECTO (Decisión provisional).
+• Fallas y problemas reportados: Ninguno (equipo en condición operativa normal).
+• Resumen Técnico (SM1): Físicamente reparable. Plan: Service térmico (pasta térmica y limpieza), Mano de obra y control de calidad (Costo total: $70,000 ARS).
+• Valuación Comercial (SM2): VMA tasado en $600,000 ARS | Riesgo de obsolescencia: Medio | Demanda comercial: Alta.
+• Estrategia Financiera (SM3): Operación aprobada al precio pedido ($400,000 ARS). Margen neto: 21.7% (Requerido: 20.0%).
+================================================================================</pre>
+<h2>g) Análisis de errores</h2>
+<p>Se probaron entradas absurdas, incompletas o fuera del conocimiento cargado. El sistema nunca rellena un dato
+faltante con un valor favorable: o pide aclaración, o responde que está fuera de dominio, o corta con un error que
+dice qué falta en la base de conocimiento.</p><table><tr><th>Entrada</th><th>Ruta del enrutador</th><th>Respuesta del sistema</th></tr><tr><td>asdf qwerty 123</td><td>fuera_de_dominio</td><td>EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valuación comercial y decisión de compra. Pegá un aviso de venta o hacé una consulta sobre una notebook.</td></tr><tr><td>Vendo notebook Lenovo Legion con Intel Core i9 13980HX, 32GB, RTX 4080. Precio $2.500.000</td><td>evaluacion_integral</td><td>Base de conocimiento incompleta: El procesador &#x27;Intel Core i9 13980HX&#x27; no está en la base de conocimiento (Neo4j :Procesador).</td></tr><tr><td>Vendo notebook a $1</td><td>evaluacion_integral</td><td>Entrada rechazada: falta marca/modelo o precio comercial válido.</td></tr><tr><td>¿Me pasás una receta de empanadas?</td><td>fuera_de_dominio</td><td>EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valuación comercial y decisión de compra. Pegá un aviso de venta o hacé una consulta sobre una notebook.</td></tr></table>
+<ul>
+<li><b>Texto sin sentido o de otro tema:</b> el System Prompt maestro lo clasifica como <code>fuera_de_dominio</code>
+y se responde con un mensaje fijo, sin consultar los motores ni dejar que el LLM improvise.</li>
+<li><b>Aviso sin marca/modelo o sin precio válido:</b> se rechaza la entrada con un mensaje que indica el formato esperado.</li>
+<li><b>Componente que no existe en el grafo</b> (por ejemplo un Core i9): error explícito <code>ConocimientoFaltante</code>
+con el nodo que falta (<code>:Procesador</code>, <code>:Linea</code> o <code>:CapacidadRAM</code>).</li>
+<li><b>Dato faltante o sin evidencia suficiente</b> (sin procesador, sin año, procesador con menos de 5 avisos relevados (CE-29)):
+<code>VerificacionPendiente</code> con el dato a verificar.</li>
+<li><b>Salida del LLM mal formada:</b> se reintenta una vez con una instrucción más estricta; si vuelve a fallar se informa el error.</li>
+<li><b>El LLM completa datos que no están en el aviso</b> (por ejemplo "Ryzen 3" → "Ryzen 3 3250U"): el procesador, el precio y
+el año se validan contra el texto original y se descarta lo que no figura.</li>
+</ul>
+<h2>h) Análisis de explicabilidad</h2><ul>
+<li><b>Del grafo provienen</b> todos los valores con los que se decide: criterios expertos (con id, versión y estado de
+validación), costos de reparación, reglas difusas, valores de procesadores, factores de línea y de RAM, y las propias
+reglas de enrutamiento de datos pendientes.</li>
+<li><b>El LLM genera</b> solo dos cosas: el JSON de entrada (a partir del texto del usuario) y la redacción de la respuesta.
+No calcula ni decide.</li>
+<li><b>Para evitar que invente criterios:</b> (1) el prompt de explicación le prohíbe usar datos que no estén en el
+resultado; (2) un control anti-alucinación compara cada número de la respuesta con el resultado de Neo4j y, si aparece
+uno que no está, descarta la redacción y usa una respuesta determinística; (3) los estados pendientes o con error no
+pasan por el LLM; (4) la traza (reglas activadas, criterios y costos usados, datos inferidos y pendientes) acompaña cada
+respuesta y se muestra en la interfaz.</li>
+</ul>
+<h2>i) Limitaciones y mejoras</h2><ul><li>El LLM local (1,5 B parámetros) a veces completa datos que no están en el aviso o mete cosas positivas como
+"fallas"; se mitiga con validaciones contra el texto y el control anti-alucinación, pero un modelo más grande (o Groq)
+mejoraría la extracción.</li>
+<li>Todos los criterios, costos y factores son provisionales: falta la entrevista de validación con el experto (M. Romero),
+por eso las decisiones salen como "Provisional".</li><li>El riesgo influye en la demanda y en el margen requerido (R3.5/R3.8); conviene revisar con el experto si no se penaliza dos veces.</li><li>R3.1b (rechazo comercial directo) no está implementada.</li><li>Mejora: guardar cada evaluación en el grafo como historial auditable.</li></ul>
+<h2>j) Referencias y fuentes consultadas</h2><ul>
+<li>Cátedra de Inteligencia Artificial UTN FRM (2026). Consignas PG0–PG3 y PI0–PI4; Unidad 4 — Implementación de modelos de IA.</li>
+<li>Russell, S. y Norvig, P. (2021). <i>Artificial Intelligence: A Modern Approach</i>, 4.ª ed. Pearson.</li>
+<li>Mamdani, E. H. y Assilian, S. (1975). An experiment in linguistic synthesis with a fuzzy logic controller. <i>Int. J. Man-Machine Studies</i>, 7(1).</li>
+<li>Rosen, S. (1974). Hedonic prices and implicit markets. <i>Journal of Political Economy</i>, 82(1). (Base de la valuación por componentes.)</li>
+<li>Lewis, P. et al. (2020). Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. NeurIPS.</li>
+<li>Neo4j, Inc. (2026). <i>Cypher Manual</i> v5 (LOAD CSV, percentileCont, expresiones regulares).</li>
+<li>Ollama (2026). Documentación de la API <code>/api/generate</code>; modelo Qwen2.5 1.5B (Alibaba Cloud).</li>
+<li>Mercado Libre Argentina. Búsquedas de notebooks usadas relevadas el 9 y el 10/11/2026 (datos/relevamiento_mercado.csv).</li>
+</ul></body></html>
