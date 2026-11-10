@@ -65,6 +65,12 @@ B2 espera resolver la política de síntomas/confirmación. El usuario pidió di
 síntomas hacen que una compra deje de convenir; no se aplicó una definición experta implícita.
 No se modificaron aún reglas térmicas, bloqueo ni enrutamiento.
 
+Primera entrega local: `b43270d`, sobre `67de236`, rama `mejoras/b1-integridad-precio`,
+encadenada a `integracion/mejoras-con-pruebas`. Sin push ni PR. La evaluación nativa no pudo
+calificar la candidatura por la declaración de archivos sin seguimiento, incluso al solicitar
+un rango comprometido; no hay aprobación nativa. El plan devuelto admite la autoverificación
+realizada sin un verificador adicional para este cambio, que no nombra riesgo alto.
+
 Risk: none para el cambio B1: validación local del pipeline integral pedido y su prompt,
 sin cambiar helpers de SM1/SM2 sueltos, consultas, formatos persistidos, dependencias o permisos.
 El cambio intencional del contrato de precio se prueba explícitamente; las futuras reglas del
