@@ -336,6 +336,14 @@ WITH ce, c
 MATCH (sm:Submodulo {id: c.modulo})
 MERGE (ce)-[:PERTENECE_A]->(sm);
 
+// CE-29 v2: con 3 avisos una sola publicación cara movía la mediana (ej. Ryzen 5 5000 → $1.177.000);
+// se exige un mínimo de 5 para que un procesador tenga valor de referencia.
+MATCH (ce:CriterioExperto {nombre: 'min_muestras_mercado'})
+WHERE ce.version = 'v1'
+SET ce.valor_anterior = ce.valor, ce.valor = 5, ce.version = 'v2',
+    ce.vigente_desde = date('2026-11-09'),
+    ce.fuente = 'Ajuste del grupo tras probar avisos reales (provisional)';
+
 // Criterios del catálogo v1 que dejan de usarse: quedan en el grafo para la trazabilidad
 MATCH (ce:CriterioExperto)
 WHERE ce.nombre IN ['deprec_anual_inicial', 'deprec_anual_posterior', 'anios_deprec_inicial',

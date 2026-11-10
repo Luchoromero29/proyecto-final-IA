@@ -29,65 +29,81 @@ $ python orquestador_evaltic.py "Publicación: Vendo Acer Aspire 5 año 2020 con
                   "calienta 92°C con cuelgues térmicos",
                   "disco HDD",
                   "teclado funcionando perfectamente",
-                  "pantalla funcionando perfectamente",
-                  "sin cargador original"
+                  "pantalla funcionando perfectamente"
             ]
       }
-      Fallas reportadas (6): ['batería baja duración (42%, 780 ciclos)', 'calienta 92°C con cuelgues térmicos', 'disco HDD', 'teclado funcionando perfectamente', 'pantalla funcionando perfectamente', 'sin cargador original']
+      Fallas reportadas (5): ['batería baja duración (42%, 780 ciclos)', 'calienta 92°C con cuelgues térmicos', 'disco HDD', 'teclado funcionando perfectamente', 'pantalla funcionando perfectamente']
 
 [Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...
-      SM1: 5 intervenciones | Costo: $265,000 ARS
-      [Cypher Neo4j SM2] Core i5 10ma gen · Aspire · 8 GB → VMA $661,000
+      SM1: 4 intervenciones | Costo: $230,000 ARS
+      [Cypher Neo4j SM2] Core i5 10ma gen · Aspire · 8 GB → VMA $660,000
 
 [Paso 3/4] Generando síntesis general ejecutiva con LLM (no determinista)...
 
 --------------------------------------------------------------------------------
   DECISIÓN FINAL: ComprarConOfertaMenor (Provisional)
-  Fallas Registradas: ['batería baja duración (42%, 780 ciclos)', 'calienta 92°C con cuelgues térmicos', 'disco HDD', 'teclado funcionando perfectamente', 'pantalla funcionando perfectamente', 'sin cargador original']
-  Margen neto: 7.0% | Requerido: 25.0% | Contraoferta: 231000
+  Fallas Registradas: ['batería baja duración (42%, 780 ciclos)', 'calienta 92°C con cuelgues térmicos', 'disco HDD', 'teclado funcionando perfectamente', 'pantalla funcionando perfectamente']
+  Margen neto: 12.1% | Requerido: 25.0% | Contraoferta: 265000
   Reglas activadas:
     • SM1-BAT difusa (0.86 → Obligatoria) → bateria ($75,000)
     • SM1-TER difusa (0.86 → Obligatoria) → service_termico ($30,000)
     • Plan: RAM < CE ram_objetivo → ram_upgrade ($40,000)
     • Plan: disco HDD → SSD → ssd_upgrade ($45,000)
-    • Plan: reposición de cargador → cargador ($35,000)
     • Plan: mano de obra → mano_de_obra ($40,000)
     • R2.3: revalorización por upgrade a SSD (CE reval_ssd)
-    • SM2 componentes: Core i5 10ma gen ($704,000) × Aspire (0.972) × RAM 8 GB (1.0) − 10 % de negociación
+    • SM2 componentes: Core i5 10ma gen ($703,000) × Aspire (0.972) × RAM 8 GB (1.0) − 10 % de negociación
     • R3.6: intervenciones ≥ CE umbral_intervenciones → + CE prima_fallas
-    • SM3-CONV difusa (brecha -18.0 pp, descuento 34.0 %) → Negociar (0.45)
+    • SM3-CONV difusa (brecha -12.9 pp, descuento 24.3 %) → Negociar (0.49)
 --------------------------------------------------------------------------------
 
 ================================================================================
   DICTAMEN EJECUTIVO
 ================================================================================
-Veredicto Final: COMPRAR DIRECTO
+**Síntesis Ejecutiva Comercial**
 
-Resumen Técnico (SM1):
-- **Equipo**: Acer Aspire 5
-- **Precio Solicitado ARS**: 350,000
-- **Estado de Decisión**: Provisional
-- **Motivo**: Sin motivo específico
-- **Fallas Reportadas**:
-  - Batería baja duración (42%, 780 ciclos)
-  - Calienta 92°C con cuelgues térmicos
-  - Disco HDD
-  - Teclado funcionando perfectamente
-  - Pantalla funcionando perfectamente
-  - Sin cargador original
+**Veredicto Final:** COMPRAR DIRECTO
 
-Plan de Reacondicionamiento:
+**Resumen Técnico (SM1)**
+
+- **Equipo:** Acer Aspire 5
+- **Precio Solicitado (ARS):** 350,000
+- **Estado Decision:** Provisional
+- **Motivo:** Sin motivo específico
+- **Fallas Reportadas:**
+  1. Batería baja duración (42%, 780 ciclos)
+  2. Calienta 92°C con cuelgues térmicos
+  3. Disco HDD
+  4. Teclado funcionando perfectamente
+  5. Pantalla funcionando perfectamente
+
+**Costo de Reparación:** $230,000
+
+**Reparaciones Necesarias:**
 - Reemplazo de batería
 - Service térmico (pasta térmica y limpieza)
 - Ampliación de RAM a 8 GB
 - Reemplazo de HDD por SSD 480 GB
-- Cargador compatible
 - Mano de obra y control de calidad
 
-Valuación y Mercado (SM2):
-- VMA tasado: 661,000 ARS
-- Nivel de Riesgo: Medio
-- Nivel
+**Valuación y Mercado (SM2)**
+
+- **VMA Tasado (ARS):** 660,000
+- **Riesgo:** Medio
+- **Demanda:** Media
+
+**Estrategia Financiera (SM3)**
+
+- **Precio Publicado:** 350,000
+- **Costo Reparación:** 230,000
+- **VMA Tasado:** 660,000
+- **Márgen Neto (Pct):** 12.1%
+- **Ratio Reparación:** 0.35
+- **Márgen Requerido (Pct):** 25.0%
+- **Brecha Margen (PP):** -12.9%
+- **Descuento Requerido (Pct):** 24.3%
+- **Contraoferta Sugerida (ARS):** 265,000
+
+**Conclusión:** La evaluación técnica, valuación, y estrategia financiera del equipo Acer Aspire 5 son favorables para una compra directa con una contraoferta sugerida de $265,000. Este equipo tiene una buena demanda y margen de beneficio, lo que lo convierte en una opción atractiva para la empresa EvalTIC.
 ================================================================================
 
 
@@ -119,26 +135,29 @@ $ python orquestador_evaltic.py "Oportunidad ThinkPad T490 2019 Core i5 8va gen,
             "teclado_danado": false,
             "cargador_incluido": true,
             "soporte_windows_11": true,
-            "fallas": []
+            "fallas": [
+                  "batería al 91%",
+                  "temperatura bajo carga 68°C sin throttling"
+            ]
       }
-      Fallas reportadas (0): []
+      Fallas reportadas (2): ['batería al 91%', 'temperatura bajo carga 68°C sin throttling']
 
 [Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...
       SM1: 1 intervenciones | Costo: $70,000 ARS
-      [Cypher Neo4j SM2] Core i5 8va gen · ThinkPad · 16 GB → VMA $702,000
+      [Cypher Neo4j SM2] Core i5 8va gen · ThinkPad · 16 GB → VMA $621,000
 
 [Paso 3/4] Generando síntesis general ejecutiva con LLM (no determinista)...
       [Control anti-alucinación] El dictamen del LLM traía números que no están en el resultado de Neo4j; se usa el dictamen determinístico.
 
 --------------------------------------------------------------------------------
   DECISIÓN FINAL: Comprar (Provisional)
-  Fallas Registradas: []
-  Margen neto: 33.0% | Requerido: 20.0% | Contraoferta: —
+  Fallas Registradas: ['batería al 91%', 'temperatura bajo carga 68°C sin throttling']
+  Margen neto: 24.3% | Requerido: 20.0% | Contraoferta: —
   Reglas activadas:
     • SM1-TER difusa (0.38 → Recomendada) → service_termico ($30,000)
     • Plan: mano de obra → mano_de_obra ($40,000)
-    • SM2 componentes: Core i5 8va gen ($672,000) × ThinkPad (1.075) × RAM 16 GB (1.08) − 10 % de negociación
-    • SM3-CONV difusa (brecha 13.0 pp, descuento 0.0 %) → Comprar (0.84)
+    • SM2 componentes: Core i5 8va gen ($594,000) × ThinkPad (1.075) × RAM 16 GB (1.08) − 10 % de negociación
+    • SM3-CONV difusa (brecha 4.3 pp, descuento 0.0 %) → Comprar (0.81)
 --------------------------------------------------------------------------------
 
 ================================================================================
@@ -146,10 +165,10 @@ $ python orquestador_evaltic.py "Oportunidad ThinkPad T490 2019 Core i5 8va gen,
 ================================================================================
 DICTAMEN EJECUTIVO EVALTIC — ThinkPad T490
 • Veredicto Final: COMPRAR DIRECTO (Decisión provisional).
-• Fallas y problemas reportados: Ninguno (equipo en condición operativa normal).
+• Fallas y problemas reportados: batería al 91%, temperatura bajo carga 68°C sin throttling.
 • Resumen Técnico (SM1): Físicamente reparable. Plan: Service térmico (pasta térmica y limpieza), Mano de obra y control de calidad (Costo total: $70,000 ARS).
-• Valuación Comercial (SM2): VMA tasado en $702,000 ARS | Riesgo de obsolescencia: Medio | Demanda comercial: Alta.
-• Estrategia Financiera (SM3): Operación aprobada al precio pedido ($400,000 ARS). Margen neto: 33.0% (Requerido: 20.0%).
+• Valuación Comercial (SM2): VMA tasado en $621,000 ARS | Riesgo de obsolescencia: Medio | Demanda comercial: Alta.
+• Estrategia Financiera (SM3): Operación aprobada al precio pedido ($400,000 ARS). Margen neto: 24.3% (Requerido: 20.0%).
 ================================================================================
 
 
@@ -157,7 +176,7 @@ DICTAMEN EJECUTIVO EVALTIC — ThinkPad T490
 
 $ python orquestador_evaltic.py "Dell Inspiron 15 piden $150.000 pero no da video, tiene la CPU quemada en corto insalvable y pista de placa perforada."
 
-[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Dell Inspiron 15 pide $150.000 pero no da video, tiene la CPU quemada en corto insalvable y pista de placa perforada.
+[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Dell Inspiron 15 piden $150.000 pero no da video, tiene la CPU quemada en corto insalvable y pista de placa perforada.
 
 ================================================================================
   EVALTIC — ASISTENTE INTELIGENTE INTEGRADO (ORQUESTACIÓN PG3)
@@ -209,32 +228,37 @@ $ python orquestador_evaltic.py "Dell Inspiron 15 piden $150.000 pero no da vide
 
 **Veredicto Final:** DESCARTAR POR INVIABILIDAD / RIESGO
 
-**Resumen Técnico (SM1):**
+**Resumen Técnico (SM1)**
+
 - **Equipo:** Dell Inspiron 15
 - **Precio Solicitado ARS:** 150,000
 - **Estado Decision:** Firme
 - **Motivo:** Falla física irreparable detectada en el grafo: no da video.
 - **Fallas Reportadas:** no da video, CPU quemada, pista de placa perforada.
 - **Costo Reparación ARS:** 0
-- **Reparaciones Necesarias:** No Aplicable
+- **Reparaciones:** No aplicable
 
-**Valuación y Mercado (SM2):**
-- **VMA Tasado:** 0
-- **Nivel de Riesgo:** N/A
+**Valuación y Mercado (SM2)**
+
+- **VMA Tasado (ARS):** 0
+- **Riesgo:** N/A
 - **Demanda Comercial:** N/A
 
-**Estrategia Financiera (SM3):**
+**Estrategia Financiera (SM3)**
+
 - **Márgenes Proyectados:** N/A
 - **Contraoferta Sugerida:** N/A
-- **Motivo de Descarte/Verificación:** Falla física irreparable detectada en el grafo:
+- **Motivo de Descarte/Verificación:** Falla física irreparable detectada en el grafo: no da video.
+
+**Conclusión:** Este equipo presenta una falla física irreparable que no permite la reproducción de video, lo cual es un impedimento significativo para su uso en una evaluación. Debido a la inviabilidad del producto, se recomienda descartarlo.
 ================================================================================
 
 
 ################################################################################
 
-$ python orquestador_evaltic.py "Vendo Lenovo ThinkPad T470 año 2017 con Intel Core i5 7ma gen, piden $300.000. Batería agotada al 30% con 900 ciclos que requiere cambio. 4GB de RAM y disco HDD de 500GB. Sin soporte para Windows 11, equipo antiguo."
+$ python orquestador_evaltic.py "Vendo Lenovo ThinkPad T470 año 2017 con Intel Core i5, piden $300.000. Batería agotada al 30% con 900 ciclos que requiere cambio. 4GB de RAM y disco HDD de 500GB. Sin soporte para Windows 11, equipo antiguo."
 
-[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — ¿Cuánto se revende una notebook Lenovo ThinkPad T470 con Intel Core i5 7th gen, 4GB RAM y 500GB HDD, sin soporte para Windows 11?
+[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Pregunta sobre el valor de una notebook usada
 
 ================================================================================
   EVALTIC — ASISTENTE INTELIGENTE INTEGRADO (ORQUESTACIÓN PG3)
@@ -245,7 +269,7 @@ $ python orquestador_evaltic.py "Vendo Lenovo ThinkPad T470 año 2017 con Intel 
       {
             "marca": "Lenovo",
             "modelo": "ThinkPad T470",
-            "procesador": "Intel Core i5 7th gen",
+            "procesador": "Intel Core i5",
             "precio_publicado": 300000,
             "anio_fabricacion": 2017,
             "salud_bateria_pct": 30,
@@ -267,37 +291,59 @@ $ python orquestador_evaltic.py "Vendo Lenovo ThinkPad T470 año 2017 con Intel 
 
 [Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...
       SM1: 3 intervenciones | Costo: $200,000 ARS
-      [Cypher Neo4j SM2] Core i5 7ma gen · ThinkPad · 8 GB → VMA $649,000
+      [Cypher Neo4j SM2] Core i5 · ThinkPad · 8 GB → VMA $706,000
 
 [Paso 3/4] Generando síntesis general ejecutiva con LLM (no determinista)...
-      [Control anti-alucinación] El dictamen del LLM traía números que no están en el resultado de Neo4j; se usa el dictamen determinístico.
 
 --------------------------------------------------------------------------------
   DECISIÓN FINAL: DescartarPorRiesgo (Provisional)
   Motivo: Riesgo de obsolescencia Alto con demanda comercial Baja (inmovilización de capital).
   Fallas Registradas: ['batería agotada al 30%', '900 ciclos, requiere cambio']
-  Margen neto: 23.0% | Requerido: —% | Contraoferta: —
+  Margen neto: 29.2% | Requerido: —% | Contraoferta: —
   Reglas activadas:
     • SM1-BAT difusa (0.86 → Obligatoria) → bateria ($75,000)
     • Plan: RAM < CE ram_objetivo → ram_upgrade ($40,000)
     • Plan: disco HDD → SSD → ssd_upgrade ($45,000)
     • Plan: mano de obra → mano_de_obra ($40,000)
     • R2.3: revalorización por upgrade a SSD (CE reval_ssd)
-    • SM2 componentes: Core i5 7ma gen ($624,000) × ThinkPad (1.075) × RAM 8 GB (1.0) − 10 % de negociación
+    • SM2 componentes: Core i5 ($683,000) × ThinkPad (1.075) × RAM 8 GB (1.0) − 10 % de negociación
     • R3.8: riesgo Alto y demanda Baja → DescartarPorRiesgo
 --------------------------------------------------------------------------------
 
 ================================================================================
   DICTAMEN EJECUTIVO
 ================================================================================
-DICTAMEN EJECUTIVO EVALTIC — Lenovo ThinkPad T470
-• Veredicto Final: DESCARTAR POR RIESGO (Decisión provisional).
-• Motivo: Riesgo de obsolescencia Alto con demanda comercial Baja (inmovilización de capital).
-• Fallas y problemas reportados: batería agotada al 30%, 900 ciclos, requiere cambio.
-• Resumen Técnico (SM1): Físicamente reparable. Plan: Reemplazo de batería, Ampliación de RAM a 8 GB, Reemplazo de HDD por SSD 480 GB, Mano de obra y control de calidad (Costo total: $200,000 ARS).
-• Valuación Comercial (SM2): VMA tasado en $649,000 ARS | Riesgo de obsolescencia: Alto | Demanda comercial: Baja.
-• Estrategia Financiera (SM3): Descartar adquisición. Los costos o el riesgo de obsolescencia superan la rentabilidad permitida.
-• Datos pendientes de validación en taller: Temperatura bajo carga (prueba de estrés).
+**Síntesis Ejecutiva Comercial**
+
+**Veredicto Final:** **DESCARTAR POR RIESGO**
+
+**Resumen Técnico (SM1)**
+
+- **Equipo:** Lenovo ThinkPad T470
+- **Precio Solicitado ARS:** 300,000
+- **Estado Decision:** Provisional
+- **Motivo:** Riesgo de obsolescencia Alto con demanda comercial Baja (inmovilización de capital).
+- **Fallas Reportadas:** 
+  - Batería agotada al 30%
+  - 900 ciclos, requiere cambio
+
+**Valuación y Mercado (SM2)**
+
+- **VMA ARS:** 706,000
+- **Riesgo:** Alto
+- **Demanda:** Baja
+
+**Estrategia Financiera (SM3)**
+
+- **Precio Publicado:** 300,000
+- **Costo Reparación:** 200,000
+- **VMA Tasado:** 706,000
+- **Márgen Neto %:** 29.2
+- **Ratio Reparación:** 0.28
+
+**Datos a Verificar:** Temperatura bajo carga (prueba de estrés)
+
+**Conclusión:** El equipo Lenovo ThinkPad T470 presenta un alto riesgo de obsolescencia y baja demanda comercial, lo que hace que no sea una opción viable para la empresa. La inversión en reparaciones sería significativa y no proporcionaría beneficios económicos. Por lo tanto, se recomienda descartar este producto para evitar el riesgo de inmovilización de capital.
 ================================================================================
 
 
@@ -305,7 +351,7 @@ DICTAMEN EJECUTIVO EVALTIC — Lenovo ThinkPad T470
 
 $ python orquestador_evaltic.py "HP 15 modelo 2021 Ryzen 3 pide $220.000. Batería al 85% y temperaturas normales. Tiene 4GB de RAM y disco HDD de 1TB. Requiere service de limpieza y upgrades estándar de memoria y SSD."
 
-[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Pide $220.000
+[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Pide $220.000 y especifica características y necesidades
 
 ================================================================================
   EVALTIC — ASISTENTE INTELIGENTE INTEGRADO (ORQUESTACIÓN PG3)
@@ -338,21 +384,21 @@ $ python orquestador_evaltic.py "HP 15 modelo 2021 Ryzen 3 pide $220.000. Bater�
 
 [Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...
       SM1: 2 intervenciones | Costo: $125,000 ARS
-      [Cypher Neo4j SM2] Ryzen 3 · HP 15/240/250 · 8 GB → VMA $500,000
+      [Cypher Neo4j SM2] Ryzen 3 · HP 15/240/250 · 8 GB → VMA $493,000
 
 [Paso 3/4] Generando síntesis general ejecutiva con LLM (no determinista)...
 
 --------------------------------------------------------------------------------
   DECISIÓN FINAL: Comprar (Provisional)
   Fallas Registradas: ['batería al 85%', 'sin disco SSD']
-  Margen neto: 31.0% | Requerido: 20.0% | Contraoferta: —
+  Margen neto: 30.0% | Requerido: 20.0% | Contraoferta: —
   Reglas activadas:
     • Plan: RAM < CE ram_objetivo → ram_upgrade ($40,000)
     • Plan: disco HDD → SSD → ssd_upgrade ($45,000)
     • Plan: mano de obra → mano_de_obra ($40,000)
     • R2.3: revalorización por upgrade a SSD (CE reval_ssd)
-    • SM2 componentes: Ryzen 3 ($505,000) × HP 15/240/250 (1.0) × RAM 8 GB (1.0) − 10 % de negociación
-    • SM3-CONV difusa (brecha 11.0 pp, descuento 0.0 %) → Comprar (0.83)
+    • SM2 componentes: Ryzen 3 ($507,000) × HP 15/240/250 (0.981) × RAM 8 GB (1.0) − 10 % de negociación
+    • SM3-CONV difusa (brecha 10.0 pp, descuento 0.0 %) → Comprar (0.83)
 --------------------------------------------------------------------------------
 
 ================================================================================
@@ -362,33 +408,45 @@ $ python orquestador_evaltic.py "HP 15 modelo 2021 Ryzen 3 pide $220.000. Bater�
 
 **Veredicto Final:** COMPRAR DIRECTO
 
-**Resumen Técnico (SM1)**
+**Resumen Técnico (SM1):**
+- **Condición del equipo:** HP 15
+- **Fallas reportadas:** batería al 85%, sin disco SSD
+- **Plan de reacondicionamiento necesario:**
+  - Ampliación de RAM a 8 GB
+  - Reemplazo de HDD por SSD 480 GB
+  - Mano de obra y control de calidad
+- **Costos de reparación:** $125,000
 
-- **Equipo:** HP 15
-- **Precio Solicitado ARS:** 220,000
-- **Estado Decision:** Provisional
-- **Motivo:** Sin fallas reportadas
-- **Fallas:** 
-  - Batería al 85%
-  - Sin disco SSD
+**Valuación y Mercado (SM2):**
+- **VMA tasado:** $493,000
+- **Nivel de riesgo:** Bajo
+- **Demanda comercial:** Media
 
-**Valuación y Mercado (SM2)**
+**Estrategia Financiera (SM3):**
+- **Márgenes proyectados:** 30.0%
+- **Costo de reparación:** $125,000
+- **VMA tasado:** $493,000
+- **Márgen requerido:** 20.0%
+- **Brecha de margen:** 10.0%
+- **Descuento requerido:** 0.0%
+- **Contraoferta sugerida:** $220,000
 
-- **VMA Tasado (ARS):** 500,000
-- **Riesgo:** Bajo
-- **Demanda:** Media
+**Reglas y Registros:**
+- **Fallas informadas:** batería al 85%, sin disco SSD
+- **Costos de reparación:** $125,000
+- **Márgen proyectado:** 30.0%
+- **Márgen requerido:** 20.0%
+- **Brecha de margen:** 10.0%
+- **Descuento requerido:** 0.0%
+- **Contraoferta sugerida:** $220,000
 
-**Estrategia Financiera (SM3)**
+**Estado de la decisión:** Provisoria
 
-- **Márgenes Proyectados:** 31.0%
-- **Costo Reparación:** 125,000
-- **Márgen Requerido (ARS):** 20.0%
-- **Brecha de Margen (PP):** 11.0%
-- **Contraoferencia Sugerida (ARS):** N/A
+**Motivo:** Sin motivo específico para la decisión provisional.
 
-**Conclusión**
+**Datos a verificar:** Temperatura bajo carga (prueba de estrés)
 
-Con base en la
+**Conclusión:** La decisión de comprar el equipo HP 15 es clara y justificada, teniendo en cuenta la valuación, el mercado y los márgenes financieros. La decisión está respaldada por la información proporcionada en los resúmenes SM1, SM2 y SM3.
 ================================================================================
 
 

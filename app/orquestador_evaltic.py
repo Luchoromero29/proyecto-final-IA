@@ -1575,7 +1575,7 @@ CASOS_INTEGRADOS_PG3 = {
         "Dell Inspiron 15 piden $150.000 pero no da video, tiene la CPU quemada en corto insalvable y pista de placa perforada.",
 
     "Caso 4 (Lenovo ThinkPad T470 2017 — Descarte por Obsolescencia e Iliquidez)":
-        "Vendo Lenovo ThinkPad T470 año 2017 con Intel Core i5 7ma gen, piden $300.000. "
+        "Vendo Lenovo ThinkPad T470 año 2017 con Intel Core i5, piden $300.000. "
         "Batería agotada al 30% con 900 ciclos que requiere cambio. 4GB de RAM y disco HDD de 500GB. "
         "Sin soporte para Windows 11, equipo antiguo.",
 

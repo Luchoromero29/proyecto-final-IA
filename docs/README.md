@@ -36,5 +36,5 @@ Requiere Ollama con `qwen2.5:1.5b` corriendo en la máquina (ver `LEVANTAR.md`).
 | 1 · Acer Aspire 5 i5 10ma gen, $350.000, 4 reparaciones | Comprar con oferta menor |
 | 2 · ThinkPad T490 i5 8va gen 16 GB, $400.000 | Comprar |
 | 3 · Dell Inspiron 15 con CPU quemada | Descartar por inviabilidad |
-| 4 · ThinkPad T470 i5 7ma gen sin W11, $300.000 | Descartar por riesgo (R3.8) |
+| 4 · ThinkPad T470 2017 Core i5 sin W11, $300.000 | Descartar por riesgo (R3.8) |
 | 5 · HP 15 Ryzen 3 2021, $220.000 | Comprar |

@@ -1,6 +1,6 @@
 $ python orquestador_evaltic.py "asdf qwerty 123"
 
-[Enrutador] Intención: fuera_de_dominio (LLM) — no contiene información relevante para clasificar en una de las cuatro intenciones posibles
+[Enrutador] Intención: fuera_de_dominio (LLM) — No se proporcionó información relevante para clasificar la intención.
 
 ================================================================================
   RESPUESTA
@@ -12,7 +12,7 @@ EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valua
 
 $ python orquestador_evaltic.py "Vendo notebook Lenovo Legion con Intel Core i9 13980HX, 32GB, RTX 4080. Precio $2.500.000"
 
-[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Pregunta sobre el valor de una notebook
+[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Pregunta sobre el precio de venta de una notebook
 
 ================================================================================
   EVALTIC — ASISTENTE INTELIGENTE INTEGRADO (ORQUESTACIÓN PG3)
@@ -30,7 +30,7 @@ $ python orquestador_evaltic.py "Vendo notebook Lenovo Legion con Intel Core i9 
             "ciclos_bateria": null,
             "temperatura_cpu_c": null,
             "thermal_throttling": null,
-            "ram_gb": null,
+            "ram_gb": 32,
             "tipo_disco": "SSD",
             "pantalla_danada": null,
             "teclado_danado": null,
@@ -38,12 +38,12 @@ $ python orquestador_evaltic.py "Vendo notebook Lenovo Legion con Intel Core i9 
             "soporte_windows_11": null,
             "fallas": [
                   "Intel Core i9 13980HX",
-                  "32GB",
-                  "RTX 4080",
+                  "32GB RAM",
+                  "RTX 4080 GPU",
                   "sin cargador"
             ]
       }
-      Fallas reportadas (4): ['Intel Core i9 13980HX', '32GB', 'RTX 4080', 'sin cargador']
+      Fallas reportadas (4): ['Intel Core i9 13980HX', '32GB RAM', 'RTX 4080 GPU', 'sin cargador']
 
 [Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...
       SM1: 1 intervenciones | Costo: $75,000 ARS
@@ -65,7 +65,7 @@ $ python orquestador_evaltic.py "Vendo notebook a $1"
 
 $ python orquestador_evaltic.py "¿Me pasás una receta de empanadas?"
 
-[Enrutador] Intención: fuera_de_dominio (LLM) — No es una consulta relacionada con el enrutador de EvalTIC o su función de evaluación de notebooks usadas para reventa.
+[Enrutador] Intención: fuera_de_dominio (LLM) — No es una consulta relacionada con el enrutador de EvalTIC.
 
 ================================================================================
   RESPUESTA
