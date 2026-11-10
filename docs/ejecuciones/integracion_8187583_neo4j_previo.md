@@ -65,3 +65,11 @@ El reset PG2 y la importación del dump seguirían excluidos.
 Suite offline: 71/71 aprobadas (informe del fixture separado). Corpus real: **no ejecutado**;
 se espera resolver la actualización para evitar presentar resultados del grafo anterior como
 si correspondieran al código y conocimiento más recientes. Los logs originales se preservan.
+
+## Incidente de permisos resuelto
+
+Al arrancar, la imagen cambió `datos/` y su CSV a propietario `7474:7474`, modo `700`, causando
+`Permission denied` en Git. Se restauraron exclusivamente esas dos rutas al usuario local
+`1000:1000`, directorio `755` y CSV `644`, sin cambios de contenido ni operaciones recursivas.
+`stat`, `git diff --check` y `git status` confirmaron la recuperación; solo quedó el archivo
+ajeno sin seguimiento. La recarga de PG3 sigue sin ejecutarse.
