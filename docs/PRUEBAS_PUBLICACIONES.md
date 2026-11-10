@@ -163,6 +163,17 @@ completó los 32 sin errores de infraestructura: 27 cumplen, 2 fallan y 3 son so
 casos se completaron con OpenRouter; no se presenta como una corrida homogénea de 61 con NVIDIA.
 La evidencia original de OpenRouter se conserva tal como se registró.
 
+### Tanda completa después de integrar las mejoras
+
+Los **61 casos** se ejecutaron con NVIDIA sobre el PG3 actualizado: **49 cumplen, 6 no cumplen,
+6 sondas y 0 errores de infraestructura reportados**, salida 1 en 7 min 12 s. Los incumplimientos
+son PC-01, PC-15, PC-17, PC-19, PC-29 y PC-50. No se cambiaron sus expectativas.
+
+Consultá el [resumen de integración](ejecuciones/publicaciones_criticas_integracion_resumen.md),
+el [log completo](ejecuciones/publicaciones_criticas_integracion_nvidia.log) y la
+[evidencia de actualización y respaldo](ejecuciones/integracion_neo4j_actualizacion.md).
+La ejecución quedó completa; no se afirma que los 61 aprobaron ni que se corrigieron los defectos.
+
 ## Costos y límites
 
 - Cada caso puede hacer varias llamadas al modelo: enrutador, extracción y síntesis. El enrutador
@@ -173,7 +184,8 @@ La evidencia original de OpenRouter se conserva tal como se registró.
 - Las sondas dependen del modelo configurado; no se afirman resultados. Los fixtures no son
   conocimiento de producción: precios, costos, factores y umbrales reales salen del grafo.
 - Las pruebas offline no demuestran el comportamiento en vivo; solo el ejecutor real contra el LLM
-  y Neo4j lo hace. Esta guía no afirma una corrida de integración completa.
+  y Neo4j lo hace. La corrida de integración completa está registrada arriba, con sus fallos
+  y sondas explícitos; no es una certificación de todas las mejoras ni de exactitud general.
 - Riesgos previstos en vivo: otros avisos vagos sin precio (PC-21, PC-24, PC-25) pueden reportar la
   misma desviación de enrutamiento que PC-01; los casos que dependen de calibración (PC-06, PC-13,
   PC-23, PC-35, PC-51, PC-53) pueden terminar en verificación pendiente; y PC-26 depende de que el
