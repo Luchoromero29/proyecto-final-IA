@@ -126,11 +126,17 @@ el propio caso lo prevea; nunca se cuenta como cumplido.
 El ejecutor real necesita el catálogo PG3 cargado (`Procesador`, `Linea`, `CapacidadRAM`). Sin él
 toda publicación termina en `ConocimientoFaltante` y no tiene sentido gastar tokens. `--verificar`
 hace un chequeo previo —proveedor configurado, conexión a Neo4j, criterios y costos, conteos del
-catálogo— y aborta con código `2` si falta algo. Estado medido en esta máquina tras la carga:
+catálogo— y aborta con código `2` si falta algo. Estado medido después de actualizar únicamente
+PG3 en la rama integrada (333 avisos de mercado):
 
 ```
-Catálogo PG3: Procesador=83 (con precio=18) · Linea=45 · CapacidadRAM=11
+Catálogo PG3: Procesador=93 (con precio=24) · Linea=46 · CapacidadRAM=11
 ```
+
+La actualización se realizó después de respaldar el volumen, restaurar el dump en un destino
+vacío, comprobar su consistencia y comparar el contenido restaurado con el original. No se
+importó el dump versionado ni se ejecutó el reset de PG2. La carga de PG3 también borra y
+reconstruye líneas y avisos: no debe confundirse con una migración puramente aditiva.
 
 `--verificar` valida la **configuración** y el grafo, no que el proveedor remoto responda: eso solo
 lo muestra una llamada real. Si falta el catálogo, el ejecutor **no** recarga nada: mirá la sección
