@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>EvalTIC — Infografía</title>
+<style>
+@page { size: A4; margin: 10mm; }
+body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; margin: 0; }
+.cab { background: #0b3d6e; color: #fff; padding: 16px 20px; border-radius: 10px; }
+.cab h1 { margin: 0; font-size: 24pt; } .cab p { margin: 4px 0 0; font-size: 11pt; opacity: .9; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.card { border: 1.5px solid #b9c4d0; border-radius: 10px; padding: 10px 12px; font-size: 9.6pt; line-height: 1.4; }
+.card h2 { font-size: 11.5pt; margin: 0 0 6px; color: #0b3d6e; }
+.full { grid-column: 1 / 3; }
+.paso { display: inline-block; background: #e6eef6; border-radius: 8px; padding: 6px 9px; margin: 3px 2px; font-size: 9pt; }
+.flecha { color: #0b3d6e; font-weight: 700; }
+.num { font-size: 20pt; font-weight: 700; color: #0b3d6e; display: block; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+.dec { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; font-size: 9pt; }
+.dec div { border-radius: 8px; padding: 8px 4px; font-weight: 600; }
+ul { margin: 4px 0 0 16px; padding: 0; } li { margin: 2px 0; }
+.pie { font-size: 8.5pt; color: #555; margin-top: 8px; text-align: center; }
+</style></head><body>
+<div class="cab"><h1>EvalTIC</h1><p>Asistente inteligente para decidir si conviene comprar una notebook usada para reventa · Grupo 20 · IA 5K09 · UTN FRM · 2026</p></div>
+
+<div class="grid">
+<div class="card full"><h2>¿Cómo funciona? (patrón sándwich)</h2>
+<span class="paso">📝 Aviso o consulta</span><span class="flecha">→</span>
+<span class="paso">🧭 LLM enrutador (System Prompt maestro)</span><span class="flecha">→</span>
+<span class="paso">🔎 LLM extrae JSON</span><span class="flecha">→</span>
+<span class="paso">✅ Validación contra el texto</span><span class="flecha">→</span>
+<span class="paso">🧠 Neo4j: reglas + difusa + componentes</span><span class="flecha">→</span>
+<span class="paso">💬 LLM explica (con control anti-alucinación)</span>
+</div>
+
+<div class="card"><h2>🛠️ SM1 · Diagnóstico técnico</h2>
+<ul><li>Falla insalvable → inviable (R1.1)</li><li>Batería y temperatura con lógica difusa Mamdani</li>
+<li>Plan: RAM, SSD, pantalla, teclado, cargador, mano de obra</li><li>Costos desde <i>CostoReparacion</i></li></ul></div>
+
+<div class="card"><h2>📊 SM2 · Valuación por componentes</h2>
+<ul><li>Valor del <b>procesador</b> × factor de <b>línea</b> × factor de <b>RAM</b></li>
+<li>Calibrado con medianas de avisos reales</li><li>ThinkPad ×1,08 · Latitude ×0,72 · Gamer ×1,7</li>
+<li>Riesgo de obsolescencia y demanda (difusa)</li></ul></div>
+
+<div class="card"><h2>⚖️ SM3 · Decisión</h2>
+<ul><li>R3.7 reparación &gt; 50 % del VMA → descartar</li><li>R3.8 riesgo Alto + demanda Baja → descartar</li>
+<li>Margen requerido: base → R3.4 / R3.5 → R3.6</li><li>Conveniencia difusa → contraoferta en pesos</li></ul></div>
+
+<div class="card"><h2>🧾 Trazabilidad</h2>
+<ul><li>Cada número sale de un nodo con fuente, versión y estado</li><li>Decisión <b>Firme</b> o <b>Provisional</b></li>
+<li>Falta un dato → <b>pendiente</b>; no está en el grafo → <b>error</b></li><li>Reglas activadas visibles en la interfaz</li></ul></div>
+
+<div class="card full"><h2>Resultados</h2>
+<div class="kpis">
+<div><span class="num">289</span>avisos de Mercado Libre relevados</div>
+<div><span class="num">13 %</span>error mediano de la valuación</div>
+<div><span class="num">5 / 5</span>casos integrales correctos</div>
+<div><span class="num">4 / 4</span>rutas del enrutador correctas</div>
+</div></div>
+
+<div class="card full"><h2>Decisiones posibles</h2>
+<div class="dec">
+<div style="background:#e8f5e9">✅ Comprar</div><div style="background:#fff8e1">🤝 Comprar con oferta menor</div>
+<div style="background:#ffebee">🛑 Descartar (inviabilidad o riesgo)</div><div style="background:#e3f2fd">🔎 Verificar antes de decidir</div>
+</div></div>
+
+<div class="card full"><h2>Tecnología</h2>
+Neo4j 5.26 (grafo, Cypher, LOAD CSV) · Python · Ollama + Qwen2.5 1.5B · Streamlit · Docker Compose ·
+Lógica difusa Mamdani evaluada dentro de Neo4j</div>
+</div>
+<div class="pie">Álvaro Tapia (SM1) · Leonel Navarta (SM2) · Luciano Romero (SM3) — Valores provisionales, pendientes de validación con el experto.</div>
+</body></html>

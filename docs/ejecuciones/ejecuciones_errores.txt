@@ -1,0 +1,77 @@
+$ python orquestador_evaltic.py "asdf qwerty 123"
+
+[Enrutador] Intención: fuera_de_dominio (LLM) — no contiene información relevante para clasificar en una de las cuatro intenciones posibles
+
+================================================================================
+  RESPUESTA
+================================================================================
+EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valuación comercial y decisión de compra. Pegá un aviso de venta o hacé una consulta sobre una notebook.
+================================================================================
+
+################################################################################
+
+$ python orquestador_evaltic.py "Vendo notebook Lenovo Legion con Intel Core i9 13980HX, 32GB, RTX 4080. Precio $2.500.000"
+
+[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Pregunta sobre el valor de una notebook
+
+================================================================================
+  EVALTIC — ASISTENTE INTELIGENTE INTEGRADO (ORQUESTACIÓN PG3)
+  Grafo de Conocimiento Neo4j: Local Offline (Docker) (bolt://neo4j:7687)
+================================================================================
+[Paso 1/4] Extracción y parseo de datos estructurados con el LLM...
+      Datos extraídos por el LLM:
+      {
+            "marca": "Lenovo",
+            "modelo": "Legion",
+            "procesador": "Intel Core i9 13980HX",
+            "precio_publicado": 2500000,
+            "anio_fabricacion": null,
+            "salud_bateria_pct": null,
+            "ciclos_bateria": null,
+            "temperatura_cpu_c": null,
+            "thermal_throttling": null,
+            "ram_gb": null,
+            "tipo_disco": "SSD",
+            "pantalla_danada": null,
+            "teclado_danado": null,
+            "cargador_incluido": null,
+            "soporte_windows_11": null,
+            "fallas": [
+                  "Intel Core i9 13980HX",
+                  "32GB",
+                  "RTX 4080",
+                  "sin cargador"
+            ]
+      }
+      Fallas reportadas (4): ['Intel Core i9 13980HX', '32GB', 'RTX 4080', 'sin cargador']
+
+[Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...
+      SM1: 1 intervenciones | Costo: $75,000 ARS
+      [ERROR BASE DE CONOCIMIENTO] El procesador 'Intel Core i9 13980HX' no está en la base de conocimiento (Neo4j :Procesador).
+
+################################################################################
+
+$ python orquestador_evaltic.py "Vendo notebook a $1"
+
+[Enrutador] Intención: evaluacion_integral (regla (el mensaje tiene precio)) — Vendo notebook a $1
+
+================================================================================
+  EVALTIC — ASISTENTE INTELIGENTE INTEGRADO (ORQUESTACIÓN PG3)
+  Grafo de Conocimiento Neo4j: Local Offline (Docker) (bolt://neo4j:7687)
+================================================================================
+[Paso 1/4] Extracción y parseo de datos estructurados con el LLM...
+
+################################################################################
+
+$ python orquestador_evaltic.py "¿Me pasás una receta de empanadas?"
+
+[Enrutador] Intención: fuera_de_dominio (LLM) — No es una consulta relacionada con el enrutador de EvalTIC o su función de evaluación de notebooks usadas para reventa.
+
+================================================================================
+  RESPUESTA
+================================================================================
+EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valuación comercial y decisión de compra. Pegá un aviso de venta o hacé una consulta sobre una notebook.
+================================================================================
+
+################################################################################
+

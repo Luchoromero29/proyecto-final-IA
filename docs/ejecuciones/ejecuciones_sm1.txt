@@ -1,0 +1,70 @@
+$ python orquestador_evaltic.py "La batería de mi notebook está al 45% con 850 ciclos y calienta a 90 grados con cuelgues. ¿Qué hay que reparar y cuánto sale?"
+
+[Enrutador] Intención: diagnostico_tecnico (LLM) — La batería de mi notebook está al 45% con 850 ciclos y calienta a 90 grados con cuelgues.
+      Datos extraídos (SM1): {"marca": null, "modelo": null, "salud_bateria_pct": 45, "ciclos_bateria": 850, "temperatura_cpu_c": 90, "thermal_throttling": null, "ram_gb": null, "tipo_disco": null, "pantalla_danada": null, "teclado_danado": null, "cargador_incluido": null, "fallas": ["batería al 45%", "850 ciclos", "calienta a 90 grados"]}
+      Plan: Reemplazo de batería ($75,000), Service térmico (pasta térmica y limpieza) ($30,000), Mano de obra y control de calidad ($40,000) | Costo: $145,000 ARS
+
+================================================================================
+  RESPUESTA
+================================================================================
+El diagnóstico técnico de tu notebook indica que se requiere un reemplazo de la batería (costo: $75,000) y un servicio térmico (costo: $30,000). Además, se necesita mano de obra y control de calidad (costo: $40,000). El costo total es de $145,000. Los datos pendientes son la memoria RAM y el tipo de disco. La caída de frecuencia no se informa, por lo que se asume como leve (5%).
+================================================================================
+
+################################################################################
+
+$ python orquestador_evaltic.py "Tengo una notebook con 4GB de RAM y disco HDD, la batería al 80%. ¿Qué le conviene hacer?"
+
+[Enrutador] Intención: diagnostico_tecnico (LLM) — Tengo una notebook con 4GB de RAM y disco HDD, la batería al 80%.
+      Datos extraídos (SM1): {"marca": null, "modelo": null, "salud_bateria_pct": 80, "ciclos_bateria": null, "temperatura_cpu_c": null, "thermal_throttling": null, "ram_gb": 4, "tipo_disco": "HDD", "pantalla_danada": null, "teclado_danado": null, "cargador_incluido": null, "fallas": []}
+      Plan: Ampliación de RAM a 8 GB ($40,000), Reemplazo de HDD por SSD 480 GB ($45,000), Mano de obra y control de calidad ($40,000) | Costo: $125,000 ARS
+
+================================================================================
+  RESPUESTA
+================================================================================
+El notebook necesita reparaciones para mejorar la RAM a 8 GB y reemplazar el HDD por SSD 480 GB. El costo total es de 125,000 ARS, incluyendo la mano de obra. Las reglas activadas son para mejorar la RAM, cambiar el disco duro por SSD y contratar mano de obra. Los datos pendientes son la prueba de estrés para la temperatura bajo carga.
+================================================================================
+
+################################################################################
+
+$ python orquestador_evaltic.py "Mi Dell Inspiron tiene la pantalla con rayas y el teclado con teclas que no andan, no tiene cargador. ¿Qué arreglos necesita?"
+
+[Enrutador] Intención: diagnostico_tecnico (LLM) — ¿Qué arreglos necesita?
+      Datos extraídos (SM1): {"marca": "Dell", "modelo": "Inspiron", "salud_bateria_pct": null, "ciclos_bateria": null, "temperatura_cpu_c": null, "thermal_throttling": null, "ram_gb": null, "tipo_disco": null, "pantalla_danada": true, "teclado_danado": true, "cargador_incluido": null}
+      Plan: Reemplazo de módulo de pantalla ($160,000), Reemplazo de teclado ($55,000), Mano de obra y control de calidad ($40,000) | Costo: $255,000 ARS
+
+================================================================================
+  RESPUESTA
+================================================================================
+El notebook necesita reemplazo de módulo de pantalla y teclado por $160,000 y $55,000 respectivamente, y mano de obra por $40,000. El costo total es $255,000. Las reglas activadas son para pantalla dañada ($160,000), teclado dañado ($55,000) y mano de obra ($40,000). Hay datos pendientes para salud de batería, temperatura bajo carga y memoria RAM.
+================================================================================
+
+################################################################################
+
+$ python orquestador_evaltic.py "La notebook no da video y tiene la placa quemada en corto. ¿Se puede reparar?"
+
+[Enrutador] Intención: diagnostico_tecnico (LLM) — La notebook no da video y tiene la placa quemada en corto.
+      Datos extraídos (SM1): {"marca": null, "modelo": null, "salud_bateria_pct": null, "ciclos_bateria": null, "temperatura_cpu_c": null, "thermal_throttling": null, "ram_gb": null, "tipo_disco": null, "pantalla_danada": null, "teclado_danado": null, "cargador_incluido": null, "fallas": ["No da video", "Placa quemada en corto"]}
+      Plan: ninguna reparación | Costo: $0 ARS
+
+================================================================================
+  RESPUESTA
+================================================================================
+El técnico de EvalTIC ha diagnosticado que el notebook presenta un problema físico irreparable que no permite el funcionamiento de la visualización de video. No se han realizado reparaciones ni se han activado reglas. Los datos pendientes y inferidos no se han proporcionado. Los costos del plan de reparación son provisionales y aún no han sido validados.
+================================================================================
+
+################################################################################
+
+$ python orquestador_evaltic.py "¿Qué hay que revisar en una notebook con batería al 92% y 16GB de RAM con SSD?"
+
+[Enrutador] Intención: diagnostico_tecnico (LLM) — ¿Qué hay que revisar en una notebook con batería al 92% y 16GB de RAM con SSD?
+      Datos extraídos (SM1): {"marca": null, "modelo": null, "salud_bateria_pct": 92, "ciclos_bateria": null, "temperatura_cpu_c": null, "thermal_throttling": null, "ram_gb": 16, "tipo_disco": "SSD", "pantalla_danada": null, "teclado_danado": null, "cargador_incluido": null, "fallas": []}
+      Plan: ninguna reparación | Costo: $0 ARS
+
+================================================================================
+  RESPUESTA
+================================================================================
+El notebook está en buen estado. No se han realizado reparaciones ni se activaron reglas. El costo total es provisional (no validado por experto). No se requieren datos adicionales para este diagnóstico.
+================================================================================
+
+################################################################################
+

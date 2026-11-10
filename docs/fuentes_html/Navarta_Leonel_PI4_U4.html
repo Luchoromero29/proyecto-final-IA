@@ -1,0 +1,205 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Navarta_Leonel_PI4_U4</title><style>
+@page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 10.5pt; color: #1a1a1a; line-height: 1.45; }
+h1 { font-size: 18pt; color: #0b3d6e; margin: 0 0 6px; }
+h2 { font-size: 14pt; color: #0b3d6e; border-bottom: 2px solid #0b3d6e; padding-bottom: 3px; margin-top: 22px; page-break-after: avoid; }
+h3 { font-size: 11.5pt; color: #174f86; margin: 14px 0 4px; page-break-after: avoid; }
+p { margin: 5px 0; text-align: justify; }
+table { border-collapse: collapse; width: 100%; margin: 8px 0 12px; font-size: 9pt; page-break-inside: auto; }
+th, td { border: 1px solid #b9c4d0; padding: 4px 6px; vertical-align: top; text-align: left; }
+th { background: #e6eef6; }
+tr { page-break-inside: avoid; }
+code { font-family: Consolas, 'Courier New', monospace; font-size: 8.8pt; background: #f2f4f7; padding: 0 3px; }
+pre { font-family: Consolas, 'Courier New', monospace; font-size: 8pt; background: #f6f8fa; border: 1px solid #d0d7de;
+      padding: 8px; white-space: pre-wrap; word-break: break-word; page-break-inside: auto; }
+.terminal { background: #0c0c0c; color: #e6e6e6; border: none; border-radius: 0 0 6px 6px; margin-top: 0; font-size: 7.6pt; }
+.term-bar { background: #2d2d2d; color: #cfcfcf; font: 8pt Consolas, monospace; padding: 4px 8px; border-radius: 6px 6px 0 0; margin-top: 10px; }
+.portada { text-align: center; padding-top: 70px; page-break-after: always; }
+.portada .inst { font-size: 12pt; color: #333; }
+.portada h1 { font-size: 22pt; margin-top: 60px; }
+.portada .sub { font-size: 13pt; color: #174f86; margin: 10px 0 50px; }
+.portada table { width: 70%; margin: 30px auto; font-size: 10.5pt; }
+.nota { background: #fff8e1; border-left: 4px solid #e0a800; padding: 6px 10px; margin: 8px 0; font-size: 9.5pt; }
+.ok { color: #1a7f37; font-weight: 600; } .mal { color: #c62828; font-weight: 600; }
+.fig { text-align: center; margin: 10px 0; page-break-inside: avoid; } .fig svg { max-width: 100%; height: auto; }
+.cap { font-size: 9pt; color: #555; text-align: center; margin-top: 2px; }
+.salto { page-break-before: always; }
+</style></head><body><div class="portada">
+<div class="inst"><b>Universidad Tecnológica Nacional — Facultad Regional Mendoza</b><br>Ingeniería en Sistemas de Información<br>Cátedra: Inteligencia Artificial — Comisión 5K09 — Ciclo 2026</div>
+<h1>Actividad PI4 — Unidad 4 (Individual)</h1><div class="sub">Integración de Modelos de Lenguaje con la Base de Conocimiento</div>
+<table><tr><th>Proyecto</th><td>EvalTIC — Asistente inteligente para la evaluación de notebooks usadas</td></tr>
+<tr><th>Grupo</th><td>Grupo 20</td></tr><tr><th>Autor</th><td>Leonel Navarta</td></tr>
+<tr><th>Rol</th><td>SM2 — Valuación comercial, obsolescencia y demanda</td></tr><tr><th>Fecha</th><td>9 de noviembre de 2026</td></tr>
+<tr><th>Repositorio</th><td>github.com/Luchoromero29/proyecto-final-IA</td></tr></table></div><h2>b) Revisión de consultas y conocimiento recuperable</h2><p>En el PG3 la valuación pasó de "precio de un equipo nuevo del segmento × depreciación" a una
+<b>valuación por componentes</b> (precios hedónicos): el valor de un usado se explica por su procesador, su línea y su
+RAM, no por el modelo exacto. Se relevaron <b>289 avisos reales de Mercado Libre</b> (9/11/2026) que se cargan en Neo4j
+como <code>:AvisoMercado</code> y, con medianas calculadas en Cypher, se calibra el valor de cada <code>:Procesador</code> y el
+factor de cada <code>:Linea</code> (si la línea tiene menos de 3 avisos, usa el de su <code>:GrupoLinea</code>).</p>
+<h3>Consulta principal — valuación por componentes</h3><pre>    WITH toLower($procesador) AS tp, toLower($texto) AS tt
+    OPTIONAL MATCH (p:Procesador) WHERE tp =~ p.patron
+    WITH tt, p ORDER BY p.prioridad DESC LIMIT 1
+    OPTIONAL MATCH (l:Linea) WHERE tt =~ l.patron
+    WITH p, l ORDER BY l.prioridad DESC LIMIT 1
+    OPTIONAL MATCH (l)-[:PERTENECE_A_GRUPO]-&gt;(g:GrupoLinea)
+    OPTIONAL MATCH (ri:CapacidadRAM {gb: $ram_informada})
+    OPTIONAL MATCH (r:CapacidadRAM {gb: $ram_final})
+    MATCH (cd:CriterioExperto {nombre: &#x27;descuento_negociacion&#x27;}), (cs:CriterioExperto {nombre: &#x27;reval_ssd&#x27;})
+    WITH p, l, g, ri, r, cd, cs,
+         CASE WHEN p.valor_ref_ars IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
+              THEN p.valor_ref_ars * l.factor_precio * r.factor END AS valor_mercado
+    RETURN p {.nombre, .familia, .gama, .anio, .soporte_w11, .valor_ref_ars, .n_muestras,
+              .fuente_valor, .estado_validacion} AS procesador,
+           l {.nombre, .marca, .factor_precio, .origen_factor, .estado_validacion} AS linea,
+           g {.nombre, .dias_promedio_venta, .indice_repuestos} AS grupo,
+           ri IS NOT NULL AS ram_informada_existe,
+           r {.gb, .factor} AS ram,
+           valor_mercado,
+           CASE WHEN valor_mercado IS NULL THEN null
+                ELSE toInteger(round((valor_mercado * (1 - cd.valor / 100.0)
+                                      + CASE WHEN $hdd_a_ssd THEN cs.valor ELSE 0 END) / 1000.0)) * 1000
+           END AS vma
+    </pre>
+<h3>Consulta 2 — inferencia Mamdani de riesgo de obsolescencia (SM2-RIE)</h3><pre>            WITH $antiguedad AS antiguedad, $repuestos AS repuestos, $win11 AS win11
+            MATCH (r:ReglaDifusa {base:&#x27;SM2-RIE&#x27;})-[a:ANTECEDENTE]-&gt;(cj:ConjuntoDifuso)&lt;-[:TIENE_CONJUNTO]-(var:VariableDifusa)
+            WITH antiguedad, repuestos, win11, r, a.grupo AS grupo,
+                 max(CASE cj.tipo
+                       WHEN &#x27;crisp&#x27; THEN CASE WHEN (CASE var.nombre WHEN &#x27;Soporte_W11&#x27; THEN win11 END) = cj.valor THEN 1.0 ELSE 0.0 END
+                       ELSE exp(-0.5 * (((CASE var.nombre WHEN &#x27;Antiguedad_Hardware&#x27; THEN antiguedad ELSE repuestos END) - cj.c) / cj.sigma)^2)
+                     END) AS mu_grupo
+            WITH antiguedad, repuestos, win11, r, min(mu_grupo) AS fuerza
+            WHERE fuerza &gt;= 0.01
+            MATCH (r)-[:CONSECUENTE]-&gt;(sal:ConjuntoDifuso)&lt;-[:TIENE_CONJUNTO]-(vs:VariableDifusa {nombre:&#x27;Riesgo_Obsolescencia&#x27;})
+            WITH vs, collect({regla: r.id, fuerza: fuerza, c: sal.c, sigma: sal.sigma}) AS reglas
+            UNWIND range(0, 100) AS i
+            WITH vs, reglas, vs.min + (vs.max - vs.min) * i / 100.0 AS y
+            UNWIND reglas AS rg
+            WITH vs, reglas, y, rg, exp(-0.5 * ((y - rg.c) / rg.sigma)^2) AS mu_sal
+            WITH vs, reglas, y, max(CASE WHEN rg.fuerza &lt; mu_sal THEN rg.fuerza ELSE mu_sal END) AS altura
+            WITH vs, reglas, sum(y * altura) / sum(altura) AS centroide
+            MATCH (vs)-[:TIENE_CONJUNTO]-&gt;(s:ConjuntoDifuso)
+            WITH reglas, centroide, s, exp(-0.5 * ((centroide - s.c) / s.sigma)^2) AS mu
+            ORDER BY mu DESC
+            WITH reglas, centroide, collect(s.etiqueta)[0] AS categoria
+            RETURN round(centroide, 4) AS centroide, categoria
+            </pre>
+<h3>Factores de línea calibrados</h3><table><tr><th>Línea</th><th>Grupo</th><th>Avisos</th><th>Factor</th><th>Origen del factor</th></tr><tr><td>TUF</td><td>Gamer</td><td>3</td><td>1.907</td><td>Línea (3 avisos)</td></tr><tr><td>Nitro</td><td>Gamer</td><td>5</td><td>1.692</td><td>Línea (5 avisos)</td></tr><tr><td>IdeaPad Gaming</td><td>Gamer</td><td>1</td><td>1.682</td><td>Grupo Gamer (la línea tiene 1 avisos)</td></tr><tr><td>Legion</td><td>Gamer</td><td>3</td><td>1.59</td><td>Línea (3 avisos)</td></tr><tr><td>MSI</td><td>Gamer</td><td>3</td><td>1.286</td><td>Línea (3 avisos)</td></tr><tr><td>Galaxy Book</td><td>Consumo</td><td>12</td><td>1.264</td><td>Línea (12 avisos)</td></tr><tr><td>VivoBook</td><td>Consumo</td><td>24</td><td>1.077</td><td>Línea (24 avisos)</td></tr><tr><td>ThinkPad</td><td>Corporativa</td><td>23</td><td>1.075</td><td>Línea (23 avisos)</td></tr><tr><td>MacBook Pro</td><td>Premium</td><td>10</td><td>1.032</td><td>Línea (10 avisos)</td></tr><tr><td>Lenovo V</td><td>Consumo</td><td>2</td><td>1.005</td><td>Grupo Consumo (la línea tiene 2 avisos)</td></tr><tr><td>Pavilion</td><td>Consumo</td><td>1</td><td>1.005</td><td>Grupo Consumo (la línea tiene 1 avisos)</td></tr><tr><td>HP (otras)</td><td>Consumo</td><td>2</td><td>1.005</td><td>Grupo Consumo (la línea tiene 2 avisos)</td></tr><tr><td>Dell (otras)</td><td>Consumo</td><td>2</td><td>1.005</td><td>Grupo Consumo (la línea tiene 2 avisos)</td></tr><tr><td>HP 15/240/250</td><td>Consumo</td><td>25</td><td>1.0</td><td>Línea (25 avisos)</td></tr><tr><td>MacBook Air</td><td>Premium</td><td>17</td><td>1.0</td><td>Línea (17 avisos)</td></tr><tr><td>Enova</td><td>Nacional / genérica</td><td>7</td><td>1.0</td><td>Línea (7 avisos)</td></tr><tr><td>Bangho</td><td>Nacional / genérica</td><td>4</td><td>0.996</td><td>Línea (4 avisos)</td></tr><tr><td>Yoga</td><td>Premium</td><td>2</td><td>0.983</td><td>Grupo Premium (la línea tiene 2 avisos)</td></tr><tr><td>Envy</td><td>Premium</td><td>1</td><td>0.983</td><td>Grupo Premium (la línea tiene 1 avisos)</td></tr><tr><td>MateBook</td><td>Premium</td><td>1</td><td>0.983</td><td>Grupo Premium (la línea tiene 1 avisos)</td></tr><tr><td>ZenBook</td><td>Premium</td><td>3</td><td>0.974</td><td>Línea (3 avisos)</td></tr><tr><td>Aspire</td><td>Consumo</td><td>9</td><td>0.972</td><td>Línea (9 avisos)</td></tr><tr><td>Inspiron</td><td>Consumo</td><td>8</td><td>0.969</td><td>Línea (8 avisos)</td></tr><tr><td>Lenovo (otras)</td><td>Consumo</td><td>6</td><td>0.935</td><td>Línea (6 avisos)</td></tr><tr><td>IdeaPad</td><td>Consumo</td><td>16</td><td>0.892</td><td>Línea (16 avisos)</td></tr><tr><td>Exo</td><td>Nacional / genérica</td><td>2</td><td>0.891</td><td>Grupo Nacional / genérica (la línea tiene 2 avisos)</td></tr><tr><td>CX</td><td>Nacional / genérica</td><td>1</td><td>0.891</td><td>Grupo Nacional / genérica (la línea tiene 1 avisos)</td></tr><tr><td>Gadnic</td><td>Nacional / genérica</td><td>1</td><td>0.891</td><td>Grupo Nacional / genérica (la línea tiene 1 avisos)</td></tr><tr><td>Aiwa</td><td>Nacional / genérica</td><td>1</td><td>0.891</td><td>Grupo Nacional / genérica (la línea tiene 1 avisos)</td></tr><tr><td>Haier</td><td>Nacional / genérica</td><td>1</td><td>0.891</td><td>Grupo Nacional / genérica (la línea tiene 1 avisos)</td></tr><tr><td>HDC</td><td>Nacional / genérica</td><td>1</td><td>0.891</td><td>Grupo Nacional / genérica (la línea tiene 1 avisos)</td></tr><tr><td>Philco</td><td>Nacional / genérica</td><td>1</td><td>0.891</td><td>Grupo Nacional / genérica (la línea tiene 1 avisos)</td></tr><tr><td>Hyundai</td><td>Nacional / genérica</td><td>1</td><td>0.891</td><td>Grupo Nacional / genérica (la línea tiene 1 avisos)</td></tr><tr><td>Juana Manso</td><td>Nacional / genérica</td><td>1</td><td>0.891</td><td>Grupo Nacional / genérica (la línea tiene 1 avisos)</td></tr><tr><td>ThinkBook</td><td>Corporativa</td><td>1</td><td>0.853</td><td>Grupo Corporativa (la línea tiene 1 avisos)</td></tr><tr><td>ProBook</td><td>Corporativa</td><td>9</td><td>0.847</td><td>Línea (9 avisos)</td></tr><tr><td>Asus (otras)</td><td>Consumo</td><td>3</td><td>0.774</td><td>Línea (3 avisos)</td></tr><tr><td>Generica</td><td>Nacional / genérica</td><td>7</td><td>0.733</td><td>Línea (7 avisos)</td></tr><tr><td>Latitude</td><td>Corporativa</td><td>17</td><td>0.717</td><td>Línea (17 avisos)</td></tr><tr><td>Vostro</td><td>Corporativa</td><td>11</td><td>0.699</td><td>Línea (11 avisos)</td></tr><tr><td>EliteBook</td><td>Corporativa</td><td>6</td><td>0.671</td><td>Línea (6 avisos)</td></tr></table>
+<h3>Valor de referencia por procesador (equivalente a 8 GB y línea de factor 1,00)</h3><table><tr><th>Procesador</th><th>Avisos</th><th>Mediana bruta</th><th>Valor de referencia</th></tr><tr><td>Apple M3</td><td>3</td><td>$1.650.000</td><td>$1.650.000</td></tr><tr><td>Apple M2</td><td>8</td><td>$1.499.499</td><td>$1.499.000</td></tr><tr><td>Apple M1</td><td>4</td><td>$1.345.000</td><td>$1.345.000</td></tr><tr><td>Ryzen 5 5000</td><td>3</td><td>$1.050.000</td><td>$1.177.000</td></tr><tr><td>Ryzen 7 7030</td><td>3</td><td>$1.250.000</td><td>$1.157.000</td></tr><tr><td>Core i7 11va gen</td><td>13</td><td>$1.237.530</td><td>$1.130.000</td></tr><tr><td>Core i7</td><td>25</td><td>$990.024</td><td>$966.000</td></tr><tr><td>Ryzen 5</td><td>10</td><td>$883.199</td><td>$964.000</td></tr><tr><td>Ryzen 7</td><td>9</td><td>$990.000</td><td>$952.000</td></tr><tr><td>Core i7 10ma gen</td><td>6</td><td>$1.047.500</td><td>$911.000</td></tr><tr><td>Ryzen 7 5000</td><td>7</td><td>$929.999</td><td>$886.000</td></tr><tr><td>Core i5 12va gen</td><td>10</td><td>$792.850</td><td>$803.000</td></tr><tr><td>Core i5 13va gen</td><td>4</td><td>$1.025.000</td><td>$780.000</td></tr><tr><td>Ryzen 5 3000</td><td>4</td><td>$770.000</td><td>$780.000</td></tr><tr><td>Core i3 12va gen</td><td>4</td><td>$757.500</td><td>$762.000</td></tr><tr><td>Ryzen 5 7020</td><td>7</td><td>$739.999</td><td>$740.000</td></tr><tr><td>Core i5 10ma gen</td><td>12</td><td>$648.699</td><td>$704.000</td></tr><tr><td>Core i5</td><td>38</td><td>$775.000</td><td>$687.000</td></tr><tr><td>Core i5 11va gen</td><td>17</td><td>$700.000</td><td>$682.000</td></tr><tr><td>Core i5 8va gen</td><td>7</td><td>$470.000</td><td>$672.000</td></tr><tr><td>Core i5 7ma gen</td><td>4</td><td>$575.000</td><td>$624.000</td></tr><tr><td>Core i3 11va gen</td><td>9</td><td>$615.999</td><td>$616.000</td></tr><tr><td>Core i7 7ma gen</td><td>4</td><td>$650.000</td><td>$605.000</td></tr><tr><td>Core i3</td><td>20</td><td>$600.000</td><td>$576.000</td></tr><tr><td>Core i7 8va gen</td><td>6</td><td>$545.000</td><td>$569.000</td></tr><tr><td>Ryzen 3</td><td>5</td><td>$450.000</td><td>$505.000</td></tr><tr><td>Celeron N4020</td><td>8</td><td>$290.000</td><td>$326.000</td></tr><tr><td>Celeron</td><td>4</td><td>$270.000</td><td>$319.000</td></tr><tr><td>Core i3 N305</td><td>2</td><td>—</td><td>pendiente (&lt; 3 avisos)</td></tr><tr><td>AMD A9</td><td>2</td><td>—</td><td>pendiente (&lt; 3 avisos)</td></tr></table>
+<p><b>Validación:</b> comparando el valor que estima el modelo con el precio publicado de cada aviso tasable
+(254 avisos), el error mediano es de <b>13,0 %</b> y el 72,8 % de las estimaciones
+cae dentro de ±25 %. Es una medida de ajuste sobre los mismos datos de la calibración, no de predicción.</p>
+<h2>c) Diseño del flujo de orquestación</h2>
+<p>El flujo sigue el patrón sándwich con dos prompts separados. El enrutador (System Prompt maestro, común a todo el
+asistente) decide que la consulta corresponde a SM2; el prompt de extracción la convierte en JSON estricto; ese JSON se
+valida contra el texto original y alimenta las consultas Cypher sobre Neo4j; el resultado estructurado vuelve al LLM
+con el prompt de explicación, que solo puede redactar con esos datos.</p>
+<div class="fig"><svg viewBox="0 0 700 240" xmlns="http://www.w3.org/2000/svg"><defs><marker id="fl" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#333"/></marker></defs><rect x="20" y="20" width="140" height="64" rx="8" fill="#fdf0e0" stroke="#b26a00" stroke-width="1.5"/><text x="90.0" y="48.666666666666664" font-size="11" text-anchor="middle" font-family="Segoe UI, Arial"><tspan x="90.0" dy="0">Entrada en lenguaje</tspan><tspan x="90.0" dy="14">natural</tspan></text><rect x="192" y="20" width="140" height="64" rx="8" fill="#ede7f6" stroke="#5e35b1" stroke-width="1.5"/><text x="262.0" y="48.666666666666664" font-size="11" text-anchor="middle" font-family="Segoe UI, Arial"><tspan x="262.0" dy="0">Enrutador</tspan><tspan x="262.0" dy="14">(intención)</tspan></text><rect x="364" y="20" width="140" height="64" rx="8" fill="#ede7f6" stroke="#5e35b1" stroke-width="1.5"/><text x="434.0" y="48.666666666666664" font-size="11" text-anchor="middle" font-family="Segoe UI, Arial"><tspan x="434.0" dy="0">LLM extracción</tspan><tspan x="434.0" dy="14">PROMPT_EXTRACCION_SM2</tspan></text><rect x="536" y="20" width="140" height="64" rx="8" fill="#fff8e1" stroke="#b28704" stroke-width="1.5"/><text x="606.0" y="48.666666666666664" font-size="11" text-anchor="middle" font-family="Segoe UI, Arial"><tspan x="606.0" dy="0">Validación contra</tspan><tspan x="606.0" dy="14">el texto</tspan></text><rect x="536" y="140" width="140" height="64" rx="8" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.5"/><text x="606.0" y="168.66666666666666" font-size="11" text-anchor="middle" font-family="Segoe UI, Arial"><tspan x="606.0" dy="0">Consulta Cypher</tspan><tspan x="606.0" dy="14">consultar_mercado_componentes</tspan></text><rect x="364" y="140" width="140" height="64" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/><text x="434.0" y="168.66666666666666" font-size="11" text-anchor="middle" font-family="Segoe UI, Arial"><tspan x="434.0" dy="0">Resultado</tspan><tspan x="434.0" dy="14">estructurado (JSON)</tspan></text><rect x="192" y="140" width="140" height="64" rx="8" fill="#ede7f6" stroke="#5e35b1" stroke-width="1.5"/><text x="262.0" y="168.66666666666666" font-size="11" text-anchor="middle" font-family="Segoe UI, Arial"><tspan x="262.0" dy="0">LLM explicación</tspan><tspan x="262.0" dy="14">PROMPT_EXPLICACION_SM2</tspan></text><rect x="20" y="140" width="140" height="64" rx="8" fill="#fdf0e0" stroke="#b26a00" stroke-width="1.5"/><text x="90.0" y="168.66666666666666" font-size="11" text-anchor="middle" font-family="Segoe UI, Arial"><tspan x="90.0" dy="0">Respuesta al</tspan><tspan x="90.0" dy="14">usuario</tspan></text><line x1="160" y1="52" x2="192" y2="52" stroke="#333" stroke-width="1.4" marker-end="url(#fl)"/><line x1="332" y1="52" x2="364" y2="52" stroke="#333" stroke-width="1.4" marker-end="url(#fl)"/><line x1="504" y1="52" x2="536" y2="52" stroke="#333" stroke-width="1.4" marker-end="url(#fl)"/><line x1="606" y1="84" x2="606" y2="140" stroke="#333" stroke-width="1.4" marker-end="url(#fl)"/><line x1="536" y1="172" x2="504" y2="172" stroke="#333" stroke-width="1.4" marker-end="url(#fl)"/><line x1="364" y1="172" x2="332" y2="172" stroke="#333" stroke-width="1.4" marker-end="url(#fl)"/><line x1="192" y1="172" x2="160" y2="172" stroke="#333" stroke-width="1.4" marker-end="url(#fl)"/><text x="350" y="232" font-size="11" text-anchor="middle" fill="#555" font-family="Segoe UI, Arial">Flujo de SM2 — Leonel Navarta</text></svg><div class="cap">Figura 1. Flujo de orquestación de SM2.</div></div>
+<h2>d) Diseño de prompts</h2>
+<h3>System Prompt maestro de enrutamiento (común al asistente)</h3><pre>Sos el enrutador de EvalTIC, un asistente que evalúa notebooks usadas para reventa.
+Tu única tarea es clasificar el mensaje del usuario en UNA intención. No respondas la consulta.
+Límites: el conocimiento experto (precios, costos, umbrales y reglas) está en la base de conocimiento Neo4j;
+vos nunca das valores ni recomendaciones propias.
+
+Intenciones posibles:
+- &quot;evaluacion_integral&quot;: un aviso o una oferta de venta de una notebook con precio pedido, o la pregunta
+  de si conviene comprarla. Usa los tres submódulos (técnico, comercial y decisión).
+- &quot;diagnostico_tecnico&quot;: preguntas sobre el estado físico o la reparación de una notebook (batería, temperatura,
+  RAM, disco, pantalla, teclado, cargador, fallas) SIN precio de compra. Submódulo SM1.
+- &quot;valuacion_comercial&quot;: preguntas sobre cuánto vale o a cuánto se revende una notebook según su procesador,
+  marca/línea o RAM, SIN pedir una decisión de compra. Submódulo SM2.
+- &quot;fuera_de_dominio&quot;: cualquier otra cosa (otros productos, charla general, pedidos sin relación).
+
+Respondé ÚNICAMENTE un JSON: {&quot;intencion&quot;: &quot;&lt;una de las cuatro&gt;&quot;, &quot;motivo&quot;: &quot;&lt;frase corta&gt;&quot;}</pre>
+<h3>System Prompt de extracción (PROMPT_EXTRACCION_SM2)</h3><pre>Extraé en un único objeto JSON los datos comerciales de la notebook que figuran en el mensaje.
+Si un dato NO aparece, poné null. No inventes valores ni completes modelos de procesador que no estén escritos.
+No agregues texto fuera del JSON.
+Campos:
+- &quot;marca&quot;, &quot;modelo&quot;: string o null
+- &quot;procesador&quot;: procesador copiado textual del mensaje o null
+- &quot;ram_gb&quot;: entero o null
+- &quot;tipo_disco&quot;: &quot;HDD&quot; o &quot;SSD&quot; o null
+- &quot;anio_fabricacion&quot;: entero o null
+- &quot;soporte_windows_11&quot;: bool o null
+Respondé ÚNICAMENTE el JSON.</pre>
+<h3>System Prompt de explicación (PROMPT_EXPLICACION_SM2)</h3><pre>Sos el tasador de EvalTIC. Explicá al usuario, en español claro y en menos de 120 palabras,
+cuánto vale su notebook en el mercado de usados y por qué. Usá ÚNICAMENTE los datos del resultado que te paso
+(vienen de la base de conocimiento Neo4j): valor de referencia del procesador y cantidad de avisos relevados,
+factor de la línea, factor de la RAM, valor de mercado, VMA, riesgo de obsolescencia y demanda.
+No inventes precios ni factores. Si el resultado está pendiente o con error, explicá qué dato falta.
+Aclarás en una frase que los valores son provisionales (relevamiento de Mercado Libre del 9/11/2026).</pre>
+<p>Los ejemplos de entrada y de salida de ambos prompts están en la sección f) (columnas "Información extraída" y
+"Respuesta generada"), tomados de ejecuciones reales.</p>
+<h2>e) Implementación desarrollada</h2><p><code>consultar_sm2()</code> extrae con el prompt de SM2, valida el procesador contra el texto (descarta modelos que
+el LLM completa), ejecuta <code>ejecutar_motor_sm2()</code> y redacta con el prompt de explicación. La valuación entera
+(identificación de procesador, línea, grupo y RAM por expresiones regulares, y cálculo del VMA) es una sola consulta Cypher:</p>
+<pre>VMA = valor_ref(procesador) × factor(línea) × factor(RAM final) × (1 − CE-30 descuento de negociación)
+      + CE reval_ssd (si SM1 planifica cambiar HDD por SSD)</pre>
+<p>Después, la lógica difusa encadenada en Cypher estima el riesgo de obsolescencia (antigüedad, índice de repuestos del
+grupo y soporte de Windows 11) y la demanda (riesgo y días de rotación del grupo). Política de datos: lo que el aviso
+menciona y no existe en el grafo da <b>error</b>; lo que falta o no tiene evidencia suficiente queda <b>pendiente</b>.</p>
+<h2>f) Pruebas de ejecución</h2>
+<p>Se ejecutaron cinco consultas representativas. Todas las salidas son reales (LLM local <code>qwen2.5:1.5b</code> en
+Ollama y Neo4j 5.26 en Docker), corridas el 9 de noviembre de 2026.</p><table><tr><th>Consulta del usuario</th><th>Información extraída (JSON)</th><th>Consulta ejecutada</th><th>Resultado recuperado (Neo4j)</th><th>Respuesta generada</th></tr><tr><td>¿Cuánto vale una Lenovo ThinkPad con Intel Core i5 10ma gen y 16GB de RAM?</td><td><code>{&quot;marca&quot;: &quot;Lenovo&quot;, &quot;modelo&quot;: &quot;ThinkPad&quot;, &quot;procesador&quot;: &quot;intel core i5 10ma gen&quot;, &quot;ram_gb&quot;: 16, &quot;tipo_disco&quot;: &quot;SSD&quot;, &quot;anio_fabricacion&quot;: null, &quot;soporte_windows_11&quot;: null}</code></td><td>consultar_mercado_componentes (Procesador, Linea, GrupoLinea, CapacidadRAM, CE-30) + Mamdani SM2-RIE/SM2-DEM</td><td>Core i5 10ma gen ($704.000, 12 avisos) × ThinkPad (1.075) × RAM 16 GB (1.08) → mercado $817.000; VMA $736.000; riesgo Medio, demanda Alta</td><td>El notebook es un ThinkPad Core i5 10ma gen con 16 GB de RAM, con una antigüedad de 6 años. Su valor en el mercado de usados es de 736,000 ARS, considerando un descuento de 10% y factores de mercado y RAM.</td></tr><tr><td>¿A cuánto se revende una Dell Latitude con Core i5 8va gen y 8GB?</td><td><code>{&quot;marca&quot;: &quot;Dell&quot;, &quot;modelo&quot;: &quot;Latitude&quot;, &quot;procesador&quot;: &quot;core i5 8va gen&quot;, &quot;ram_gb&quot;: 8, &quot;tipo_disco&quot;: &quot;null&quot;, &quot;anio_fabricacion&quot;: null, &quot;soporte_windows_11&quot;: null}</code></td><td>consultar_mercado_componentes (Procesador, Linea, GrupoLinea, CapacidadRAM, CE-30) + Mamdani SM2-RIE/SM2-DEM</td><td>Core i5 8va gen ($672.000, 7 avisos) × Latitude (0.717) × RAM 8 GB (1.0) → mercado $482.000; VMA $434.000; riesgo Medio, demanda Alta</td><td>Core i5 8va gen en línea Latitude: valor de mercado $482,000 ARS; VMA $434,000 ARS. Riesgo Medio, demanda Alta (valores provisionales).</td></tr><tr><td>¿Cuánto vale una MacBook Air M1 con 8GB de RAM?</td><td><code>{&quot;marca&quot;: &quot;Apple&quot;, &quot;modelo&quot;: &quot;MacBook Air M1&quot;, &quot;procesador&quot;: null, &quot;ram_gb&quot;: 8, &quot;tipo_disco&quot;: &quot;SSD&quot;, &quot;anio_fabricacion&quot;: null, &quot;soporte_windows_11&quot;: null}</code></td><td>consultar_mercado_componentes (Procesador, Linea, GrupoLinea, CapacidadRAM, CE-30) + Mamdani SM2-RIE/SM2-DEM</td><td>Apple M1 ($1.345.000, 4 avisos) × MacBook Air (1.0) × RAM 8 GB (1.0) → mercado $1.345.000; VMA $1.211.000; riesgo Medio, demanda Media</td><td>Apple M1 en línea MacBook Air: valor de mercado $1,345,000 ARS; VMA $1,211,000 ARS. Riesgo Medio, demanda Media (valores provisionales).</td></tr><tr><td>¿Qué valor tiene una Bangho con Intel Core i5 10ma gen y 8GB?</td><td><code>{&quot;marca&quot;: &quot;Bangho&quot;, &quot;modelo&quot;: &quot;Intel Core i5 10ma gen 8GB&quot;, &quot;procesador&quot;: &quot;intel core i5 10ma gen&quot;, &quot;ram_gb&quot;: 8, &quot;tipo_disco&quot;: &quot;SSD&quot;, &quot;anio_fabricacion&quot;: null, &quot;soporte_windows_11&quot;: null}</code></td><td>consultar_mercado_componentes (Procesador, Linea, GrupoLinea, CapacidadRAM, CE-30) + Mamdani SM2-RIE/SM2-DEM</td><td>Core i5 10ma gen ($704.000, 12 avisos) × Bangho (0.996) × RAM 8 GB (1.0) → mercado $701.000; VMA $631.000; riesgo Medio, demanda Media</td><td>El notebook se valora en 631,000 ARS en el mercado de usados, debido a su procesador Core i5 10ma gen, línea Bangho, RAM de 8 GB, antiguedad de 6 años, y una demanda media. Los factores de mercado y la antiguedad influyen en su valor, con un descuento de negociación del 10%.</td></tr><tr><td>¿Cuánto puedo sacar por una HP con Core i5 4ta gen y 8GB?</td><td><code>{&quot;marca&quot;: &quot;HP&quot;, &quot;modelo&quot;: &quot;Core i5 4th gen 8GB&quot;, &quot;procesador&quot;: &quot;core i5 gen&quot;, &quot;ram_gb&quot;: 8, &quot;tipo_disco&quot;: &quot;HDD&quot;, &quot;anio_fabricacion&quot;: null, &quot;soporte_windows_11&quot;: null}</code></td><td>consultar_mercado_componentes (Procesador, Linea, GrupoLinea, CapacidadRAM, CE-30) + Mamdani SM2-RIE/SM2-DEM</td><td>Año de fabricación del equipo</td><td>No se pudo tasar: Año de fabricación del equipo.</td></tr></table>
+<h3>Capturas de la terminal</h3>
+<p>Salida completa de la terminal de dos interacciones exitosas (comando <code>python orquestador_evaltic.py "&lt;consulta&gt;"</code>
+dentro del contenedor de la aplicación).</p><div class="term-bar">PS proyecto-final&gt; docker compose exec app python orquestador_evaltic.py &quot;¿Cuánto vale una Lenovo ThinkPad con Intel Core i5 10ma gen y 16GB de RAM?&quot;</div><pre class="terminal">[Enrutador] Intención: valuacion_comercial (LLM) — ¿Cuánto vale una Lenovo ThinkPad con Intel Core i5 10ma gen y 16GB de RAM?
+      [Cypher Neo4j SM2] Core i5 10ma gen · ThinkPad · 16 GB → VMA $736,000
+      Datos extraídos (SM2): {&quot;marca&quot;: &quot;Lenovo&quot;, &quot;modelo&quot;: &quot;ThinkPad&quot;, &quot;procesador&quot;: &quot;intel core i5 10ma gen&quot;, &quot;ram_gb&quot;: 16, &quot;tipo_disco&quot;: &quot;SSD&quot;, &quot;anio_fabricacion&quot;: null, &quot;soporte_windows_11&quot;: null}
+      Resultado SM2: Tasado | VMA $736,000 ARS
+
+================================================================================
+  RESPUESTA
+================================================================================
+El notebook es un ThinkPad Core i5 10ma gen con 16 GB de RAM, con una antigüedad de 6 años. Su valor en el mercado de usados es de 736,000 ARS, considerando un descuento de 10% y factores de mercado y RAM.
+================================================================================</pre><div class="term-bar">PS proyecto-final&gt; docker compose exec app python orquestador_evaltic.py &quot;¿Qué valor tiene una Bangho con Intel Core i5 10ma gen y 8GB?&quot;</div><pre class="terminal">[Enrutador] Intención: valuacion_comercial (LLM) — ¿Qué valor tiene una Bangho con Intel Core i5 10ma gen y 8GB?
+      [Cypher Neo4j SM2] Core i5 10ma gen · Bangho · 8 GB → VMA $631,000
+      Datos extraídos (SM2): {&quot;marca&quot;: &quot;Bangho&quot;, &quot;modelo&quot;: &quot;Intel Core i5 10ma gen 8GB&quot;, &quot;procesador&quot;: &quot;intel core i5 10ma gen&quot;, &quot;ram_gb&quot;: 8, &quot;tipo_disco&quot;: &quot;SSD&quot;, &quot;anio_fabricacion&quot;: null, &quot;soporte_windows_11&quot;: null}
+      Resultado SM2: Tasado | VMA $631,000 ARS
+
+================================================================================
+  RESPUESTA
+================================================================================
+El notebook se valora en 631,000 ARS en el mercado de usados, debido a su procesador Core i5 10ma gen, línea Bangho, RAM de 8 GB, antiguedad de 6 años, y una demanda media. Los factores de mercado y la antiguedad influyen en su valor, con un descuento de negociación del 10%.
+================================================================================</pre>
+<h2>g) Análisis de errores</h2>
+<p>Se probaron entradas absurdas, incompletas o fuera del conocimiento cargado. El sistema nunca rellena un dato
+faltante con un valor favorable: o pide aclaración, o responde que está fuera de dominio, o corta con un error que
+dice qué falta en la base de conocimiento.</p><table><tr><th>Entrada</th><th>Ruta del enrutador</th><th>Respuesta del sistema</th></tr><tr><td>asdf qwerty 123</td><td>fuera_de_dominio</td><td>EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valuación comercial y decisión de compra. Pegá un aviso de venta o hacé una consulta sobre una notebook.</td></tr><tr><td>Vendo notebook Lenovo Legion con Intel Core i9 13980HX, 32GB, RTX 4080. Precio $2.500.000</td><td>evaluacion_integral</td><td>Base de conocimiento incompleta: El procesador &#x27;Intel Core i9 13980HX&#x27; no está en la base de conocimiento (Neo4j :Procesador).</td></tr><tr><td>Vendo notebook a $1</td><td>evaluacion_integral</td><td>Entrada rechazada: falta marca/modelo o precio comercial válido.</td></tr><tr><td>¿Me pasás una receta de empanadas?</td><td>fuera_de_dominio</td><td>EvalTIC solo evalúa notebooks usadas para reventa: diagnóstico técnico, valuación comercial y decisión de compra. Pegá un aviso de venta o hacé una consulta sobre una notebook.</td></tr></table>
+<ul>
+<li><b>Texto sin sentido o de otro tema:</b> el System Prompt maestro lo clasifica como <code>fuera_de_dominio</code>
+y se responde con un mensaje fijo, sin consultar los motores ni dejar que el LLM improvise.</li>
+<li><b>Aviso sin marca/modelo o sin precio válido:</b> se rechaza la entrada con un mensaje que indica el formato esperado.</li>
+<li><b>Componente que no existe en el grafo</b> (por ejemplo un Core i9): error explícito <code>ConocimientoFaltante</code>
+con el nodo que falta (<code>:Procesador</code>, <code>:Linea</code> o <code>:CapacidadRAM</code>).</li>
+<li><b>Dato faltante o sin evidencia suficiente</b> (sin procesador, sin año, procesador con menos de 3 avisos relevados):
+<code>VerificacionPendiente</code> con el dato a verificar.</li>
+<li><b>Salida del LLM mal formada:</b> se reintenta una vez con una instrucción más estricta; si vuelve a fallar se informa el error.</li>
+<li><b>El LLM completa datos que no están en el aviso</b> (por ejemplo "Ryzen 3" → "Ryzen 3 3250U"): el procesador, el precio y
+el año se validan contra el texto original y se descarta lo que no figura.</li>
+</ul>
+<h2>h) Análisis de explicabilidad</h2><ul>
+<li><b>Del grafo provienen</b> todos los valores con los que se decide: criterios expertos (con id, versión y estado de
+validación), costos de reparación, reglas difusas, valores de procesadores, factores de línea y de RAM, y las propias
+reglas de enrutamiento de datos pendientes.</li>
+<li><b>El LLM genera</b> solo dos cosas: el JSON de entrada (a partir del texto del usuario) y la redacción de la respuesta.
+No calcula ni decide.</li>
+<li><b>Para evitar que invente criterios:</b> (1) el prompt de explicación le prohíbe usar datos que no estén en el
+resultado; (2) un control anti-alucinación compara cada número de la respuesta con el resultado de Neo4j y, si aparece
+uno que no está, descarta la redacción y usa una respuesta determinística; (3) los estados pendientes o con error no
+pasan por el LLM; (4) la traza (reglas activadas, criterios y costos usados, datos inferidos y pendientes) acompaña cada
+respuesta y se muestra en la interfaz.</li>
+</ul>
+<h2>i) Limitaciones y mejoras</h2><ul><li>El LLM local (1,5 B parámetros) a veces completa datos que no están en el aviso o mete cosas positivas como
+"fallas"; se mitiga con validaciones contra el texto y el control anti-alucinación, pero un modelo más grande (o Groq)
+mejoraría la extracción.</li>
+<li>Todos los criterios, costos y factores son provisionales: falta la entrevista de validación con el experto (M. Romero),
+por eso las decisiones salen como "Provisional".</li><li>Los precios relevados son precios <i>pedidos</i>, no de venta; el CE-30 (10 %) aproxima la negociación.</li><li>Varios procesadores tienen menos de 3 avisos y quedan pendientes; hay que ampliar el relevamiento (idealmente con un script offline que actualice el CSV, no scraping en tiempo real, para mantener la reproducibilidad).</li><li>El factor de RAM es una estimación del grupo; con más datos podría calibrarse igual que la línea.</li></ul>
+<h2>j) Referencias y fuentes consultadas</h2><ul>
+<li>Cátedra de Inteligencia Artificial UTN FRM (2026). Consignas PG0–PG3 y PI0–PI4; Unidad 4 — Implementación de modelos de IA.</li>
+<li>Russell, S. y Norvig, P. (2021). <i>Artificial Intelligence: A Modern Approach</i>, 4.ª ed. Pearson.</li>
+<li>Mamdani, E. H. y Assilian, S. (1975). An experiment in linguistic synthesis with a fuzzy logic controller. <i>Int. J. Man-Machine Studies</i>, 7(1).</li>
+<li>Rosen, S. (1974). Hedonic prices and implicit markets. <i>Journal of Political Economy</i>, 82(1). (Base de la valuación por componentes.)</li>
+<li>Lewis, P. et al. (2020). Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. NeurIPS.</li>
+<li>Neo4j, Inc. (2026). <i>Cypher Manual</i> v5 (LOAD CSV, percentileCont, expresiones regulares).</li>
+<li>Ollama (2026). Documentación de la API <code>/api/generate</code>; modelo Qwen2.5 1.5B (Alibaba Cloud).</li>
+<li>Mercado Libre Argentina. Búsquedas de notebooks usadas relevadas el 9/11/2026 (datos/relevamiento_mercado.csv).</li>
+</ul></body></html>

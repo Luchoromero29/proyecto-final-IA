@@ -1,85 +1,40 @@
-# EvalTIC — Asistente Inteligente Neuro-Simbólico Integrado (PG3)
+# EvalTIC — Carpeta de entrega (PG3 y PI4)
 
-**Proyecto Grupal 3 — Inteligencia Artificial (5K09)**  
-**Universidad Tecnológica Nacional — Facultad Regional Mendoza (Ciclo 2026)**  
-**Equipo: Grupo 20**  
-- **Álvaro Tapia** (SM1: Diagnóstico Técnico y Plan de Reacondicionamiento)
-- **Leonel Navarta** (SM2: Valuación Comercial, Obsolescencia y Demanda)
-- **Luciano Romero** (SM3: Evaluación de la Operación y Decisión Financiera)
+**Grupo 20 — Inteligencia Artificial 5K09 — UTN FRM — 2026**
+Álvaro Tapia (SM1) · Leonel Navarta (SM2) · Luciano Romero (SM3)
 
----
+## Documentación
+| Archivo | Qué es |
+|---|---|
+| `Grupo_20_PG3_ProyectoFinal.pdf` | Informe ejecutivo final del PG3 (arquitectura, base de conocimiento, casos de uso, pruebas, evaluación, trazabilidad, manual de uso en el anexo) |
+| `Grupo_20_PG3_Infografia.pdf` | Infografía / resumen ejecutivo de una página |
+| `PI4/Tapia_Alvaro_PI4_U4.pdf` | PI4 de SM1 (diagnóstico técnico) |
+| `PI4/Navarta_Leonel_PI4_U4.pdf` | PI4 de SM2 (valuación por componentes) |
+| `PI4/Romero_Luciano_PI4_U4.pdf` | PI4 de SM3 (decisión y orquestación) |
+| `diagramas/` | Arquitectura y modelo del grafo (SVG) |
+| `ejecuciones/` | Salidas reales de terminal: casos integrales, SM1, SM2 y entradas con error |
+| `neo4j/neo4j.dump` | Exportación de la base Neo4j 5.26 (`neo4j-admin database load neo4j --from-path=docs/neo4j`) |
+| `fuentes_html/` | Fuentes editables de los informes (se convierten a PDF con Edge/Chrome) |
 
-## 1. Descripción del Sistema
+## Implementación (raíz del repositorio)
+- `app/` — código Python (`orquestador_evaltic.py`, `app_web.py`) y `requirements.txt`.
+- `cypher/` — scripts de carga (PG2 y PG3) y consultas de ejemplo.
+- `datos/relevamiento_mercado.csv` — 289 avisos de Mercado Libre (9/11/2026), seed de la base.
+- `docker-compose.yml`, `Dockerfile`, `.env.example`, `*.bat`, `scripts/` — configuración y arranque.
 
-EvalTIC es un Asistente Inteligente Neuro-Simbólico diseñado para asistir a comerciantes y técnicos en la evaluación integral de notebooks usadas. Mediante el **Patrón Sándwich**, el sistema combina:
-1. **Modelos de Lenguaje (LLM)**: Interfaz de procesamiento semántico para extracción estructurada (JSON) de avisos en lenguaje natural y redacción ejecutiva de dictámenes comerciales.
-2. **Grafo de Conocimiento y Reglas Crisp**: Inferencia determinística de inviabilidad técnica, filtros de riesgo financiero y base de reglas expertas (R1.1 a R3.8).
-3. **Lógica Difusa (Mamdani)**:
-   - **SM1**: Degradación de batería y degradación térmica.
-   - **SM2**: Riesgo de obsolescencia tecnológica y días de rotación en inventario.
-   - **SM3**: Conveniencia de compra/negociación y cálculo de contraofertas sugeridas.
-
----
-
-## 2. Requisitos de Instalación
-
-```bash
-# Crear y activar entorno virtual (opcional pero recomendado)
-python3 -m venv venv
-source venv/bin/activate
-
-# Instalar dependencias
-pip install -r requirements.txt
+## Uso rápido
 ```
-
----
-
-## 3. Configuración de Modelos de Lenguaje (.env)
-
-El archivo `.env` permite alternar de forma transparente entre ejecución local (Ollama) o APIs remotas sin modificar el código fuente:
-
-```env
-# Proveedor: "ollama" o "openai"
-LLM_PROVIDER=ollama
-
-# Configuración Ollama (Local)
-OLLAMA_URL=http://localhost:11434/api/generate
-OLLAMA_MODEL=qwen2.5:1.5b
-
-# Configuración API Remota (opcional)
-OPENAI_API_KEY=
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4o-mini
+docker compose up -d --build                                  # levanta Neo4j, carga el grafo y la app
+docker compose exec app python orquestador_evaltic.py --test  # 5 casos integrales + enrutador
 ```
+App: http://localhost:8501 · Neo4j Browser: http://localhost:7474 (neo4j / evaltic2026).
+Requiere Ollama con `qwen2.5:1.5b` corriendo en la máquina (ver `LEVANTAR.md`).
 
----
-
-## 4. Modos de Ejecución
-
-### A. Interfaz Gráfica Web (Streamlit)
-Permite interactuar visualmente con el asistente, cargar los escenarios de prueba con un clic y visualizar las métricas y explicaciones en tiempo real:
-```bash
-streamlit run app_web.py
-```
-
-### B. Modo Consola / CLI
-```bash
-# Modo interactivo
-python3 orquestador_evaltic.py
-
-# Evaluación directa por línea de comandos
-python3 orquestador_evaltic.py "Vendo Acer Aspire 5 2020 piden $115.000..."
-
-# Batería completa de pruebas de integración E2E (5 casos oficiales)
-python3 orquestador_evaltic.py --test
-```
-
----
-
-## 5. Casos de Prueba Oficiales Incluidos
-
-1. **Caso 1 (Acer Aspire 5 2020)**: Caso difuso con contraoferta fundamentada ($115k pedido ➔ Contraoferta $75k).
-2. **Caso 2 (Lenovo ThinkPad T490 2019)**: Compra directa aprobada por margen neto holgado (34.3% vs 12% requerido).
-3. **Caso 3 (Dell Inspiron 15)**: Descarte inmediato por falla física catastrófica (CPU en corto, cortocircuito temprano en SM1).
-4. **Caso 4 (Lenovo ThinkPad T440p 2014)**: Descarte por riesgo comercial cruzado de obsolescencia e iliquidez (R3.8).
-5. **Caso 5 (HP 15 Ryzen 3 2021)**: Compra aprobada con plan de upgrades planificado (margen neto 21% vs 20% requerido).
+## Casos de prueba integrales (resultados del 9/11/2026)
+| Caso | Decisión |
+|---|---|
+| 1 · Acer Aspire 5 i5 10ma gen, $350.000, 4 reparaciones | Comprar con oferta menor |
+| 2 · ThinkPad T490 i5 8va gen 16 GB, $400.000 | Comprar |
+| 3 · Dell Inspiron 15 con CPU quemada | Descartar por inviabilidad |
+| 4 · ThinkPad T470 i5 7ma gen sin W11, $300.000 | Descartar por riesgo (R3.8) |
+| 5 · HP 15 Ryzen 3 2021, $220.000 | Comprar |
