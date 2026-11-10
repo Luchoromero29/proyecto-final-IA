@@ -9,20 +9,18 @@
     - Leonel Navarta (SM2: Valuación Comercial y Demanda)
     - Luciano Romero (SM3: Evaluación de la Operación y Decisión Final)
 ================================================================================
-  Arquitectura:
-    1. Extracción Estructurada: El LLM se encarga ÚNICA Y EXCLUSIVAMENTE de
-       parsear el aviso en lenguaje natural a JSON (sin sesgar ni catalogar
-       fallas críticas; extrae todas las fallas reportadas).
-    2. Consulta en Grafo Neo4j (Cypher): Se busca en el grafo si el equipo o caso
-       ya existe para recuperar su evaluación certificada. Si no existe, todos
-       los criterios, costos, segmentos, referencias y reglas se consultan en
-       Neo4j sin hardcodear.
-    3. Motores Simbólicos y Difusos:
-       - SM1 (Técnico): Plan de reacondicionamiento, inferencias difusas en Cypher.
-       - SM2 (Comercial): Catálogo y segmento en Cypher, depreciación, inferencia difusa.
-       - SM3 (Financiero): Filtros crisp, márgenes, inferencia difusa Mamdani de conveniencia.
-    4. Dictamen Ejecutivo: Generación determinística a partir de los datos
-       obtenidos en el grafo y las fallas registradas, sin invocar al LLM.
+  Arquitectura (patrón sándwich):
+    1. Extracción (LLM): el LLM solo pasa el aviso a JSON (datos y lista de fallas).
+    2. Base de conocimiento en Neo4j (Cypher): criterios expertos, costos, reglas
+       difusas y catálogo de componentes (procesadores, líneas, RAM) calibrado con
+       avisos reales de Mercado Libre. Nada de precios ni umbrales en Python; si el
+       aviso menciona un componente que no está en el grafo, la evaluación da error.
+    3. Motores simbólicos y difusos:
+       - SM1 (Técnico): plan y costo de reacondicionamiento; difusa SM1-BAT / SM1-TER.
+       - SM2 (Comercial): valuación por componentes en Cypher; difusa SM2-RIE / SM2-DEM.
+       - SM3 (Financiero): filtros crisp, margen requerido y difusa SM3-CONV.
+    4. Dictamen (LLM): redacta la síntesis con los números ya calculados
+       (si el LLM falla, se arma un dictamen determinístico de respaldo).
 ================================================================================
 """
 
@@ -98,93 +96,6 @@ def obtener_driver_neo4j():
 # ==============================================================================
 # Consultas en Cypher sobre Neo4j (Todo se consulta en el Grafo - Sin Hardcodear)
 # ==============================================================================
-
-def buscar_caso_existente_en_grafo(marca: str, modelo: str, texto: str) -> Optional[str]:
-    """
-    Busca mediante Cypher en Neo4j si el equipo o publicación ya existe en el Grafo de Conocimiento.
-    No se harcodea ningún caso: la búsqueda se realiza dinámicamente con Cypher sobre los nodos
-    :Equipo y :Publicacion registrados en la base de datos.
-    """
-    driver = obtener_driver_neo4j()
-    if not driver:
-        return None
-    try:
-        with driver.session(database=NEO4J_DATABASE) as session:
-            q = """
-            MATCH (op:Operacion)-[:EVALUA]->(e:Equipo)
-            OPTIONAL MATCH (p:Publicacion)-[:OFRECE]->(e)
-            WITH e, op, p,
-                 toLower(coalesce(e.marca, '')) AS em,
-                 toLower(coalesce(e.modelo, '')) AS emod,
-                 toLower(coalesce(p.texto, '')) AS ptxt,
-                 toLower($texto) AS txt,
-                 toLower($marca) AS m_in,
-                 toLower($modelo) AS mod_in
-            WHERE (e.id STARTS WITH 'NB-')
-              AND (
-                 (ptxt <> '' AND (txt CONTAINS ptxt OR ptxt CONTAINS txt))
-                 OR (emod <> '' AND txt CONTAINS emod)
-                 OR (em <> '' AND txt CONTAINS em AND emod <> '' AND all(w IN split(emod, ' ') WHERE size(w) <= 1 OR txt CONTAINS w))
-                 OR (mod_in <> '' AND emod <> '' AND (emod CONTAINS mod_in OR mod_in CONTAINS emod))
-                 OR (m_in <> '' AND em = m_in AND mod_in <> '' AND (emod CONTAINS mod_in OR mod_in CONTAINS emod))
-              )
-            RETURN e.id AS id
-            ORDER BY e.id
-            LIMIT 1
-            """
-            rec = session.run(q, marca=marca or "", modelo=modelo or "", texto=texto or "").single()
-            if rec and rec["id"]:
-                return rec["id"]
-    except Exception as e:
-        print(f"      [Aviso Cypher Neo4j] Error buscando caso en grafo: {e}", flush=True)
-    return None
-
-
-def consultar_grafo_neo4j_d1(equipo_id: str) -> Optional[dict]:
-    """
-    Ejecuta la Consulta D1 del PG2 sobre el Grafo de Conocimiento en Neo4j mediante Cypher.
-    Recupera el contexto completo evaluado en el grafo para un equipo dado.
-    """
-    driver = obtener_driver_neo4j()
-    with driver.session(database=NEO4J_DATABASE) as session:
-        q_d1 = '''
-        MATCH (op:Operacion)-[:EVALUA]->(e:Equipo {id: $equipoId})<-[:OFRECE]-(p:Publicacion)
-        OPTIONAL MATCH (e)-[:RECIBE_DECISION]->(dec:Decision)
-        OPTIONAL MATCH (op)-[:TIENE_INDICADORES]->(ind:IndicadoresEconomicos)
-        RETURN {
-          id:               e.id,
-          equipo:           e.marca + ' ' + e.modelo,
-          marca:            e.marca,
-          modelo:           e.modelo,
-          precio_publicado: p.precio,
-          estado_operacion: op.estado,
-          accion_pendiente: op.accion_pendiente,
-          dato_solicitado:  op.dato_solicitado,
-          fallas:           [(e)-[:PRESENTA]->(fa:Falla) | {id: fa.id, descripcion: fa.descripcion, tipo: [lbl IN labels(fa) WHERE lbl <> 'Falla'][0]}],
-          bloqueos:         [(e)-[:TIENE_BLOQUEO]->(b:Bloqueo) | {id: b.id, tipo: b.tipo, estado: b.estado}],
-          sm1: {
-            dictamen:       head([(e)-[:TIENE_DICTAMEN]->(d) | d.resultado]),
-            causa:          head([(e)-[:TIENE_DICTAMEN]->(d) | d.causa_inviabilidad]),
-            intervenciones: [(e)-[:TIENE_PLAN]->()<-[:FORMA_PARTE_DE]-(i) | {tarea: i.tipo_tarea, costo: i.costo_ars, mandatoria: i.es_mandatoria, origen: i.origen}],
-            costo_total:    head([(e)-[:TIENE_PLAN]->()-[:GENERA]->(x) | x.monto_total])
-          },
-          sm2: {
-            vma:      head([(e)-[:TIENE_VALUACION]->(x) | x.monto_tasado_ars]),
-            riesgo:   head([(e)-[:TIENE_RIESGO]->(x) | {nivel: x.nivel, indice: x.indice}]),
-            demanda:  head([(e)-[:TIENE_DEMANDA]->(x) | {nivel: x.nivel, indice: x.indice}]),
-            dictamen: head([(e)-[:TIENE_DICTAMEN_COMERCIAL]->(x) | x.veredicto])
-          },
-          indicadores: ind {.margen_neto, .margen_requerido, .ratio_reparacion, .contraoferta},
-          reglas_crisp: CASE WHEN dec IS NULL THEN [] ELSE [(dec)-[:APLICA_REGLA]->(r) | r.id + ': ' + r.texto] END
-                      + CASE WHEN ind IS NULL THEN [] ELSE [(ind)-[:APLICA_REGLA]->(r) | r.id + ': ' + r.texto] END,
-          decision:  dec {.tipo, .motivo, .contraoferta}
-        } AS contexto_llm
-        '''
-        rec = session.run(q_d1, equipoId=equipo_id).single()
-        if rec and rec['contexto_llm']:
-            return rec['contexto_llm']
-    return None
-
 
 def consultar_fallas_catastroficas_en_grafo() -> list:
     """Consulta en Neo4j mediante Cypher las descripciones de fallas catastróficas registradas."""
@@ -494,8 +405,24 @@ def consultar_llm(system_prompt: str, user_content: str, json_mode: bool = False
 # ------------------------------------------------------------------------------
 _CONOCIMIENTO = None
 
+# Nodos obligatorios: si falta alguno en Neo4j la evaluación se corta con error
+# (no se reemplaza por un valor por defecto).
+CRITERIOS_REQUERIDOS = [
+    "bateria_reemplazo", "ram_objetivo", "anio_referencia", "anio_min_w11", "reval_ssd",
+    "descuento_negociacion", "min_muestras_mercado",
+    "margen_base", "margen_alta_liquidez", "margen_riesgo_alto",
+    "umbral_intervenciones", "prima_fallas", "ratio_reparacion_max",
+]
+COSTOS_REQUERIDOS = ["bateria", "pantalla", "teclado", "ssd_upgrade", "ram_upgrade",
+                     "service_termico", "cargador", "mano_de_obra"]
+
+
+class ConocimientoFaltante(Exception):
+    """El aviso menciona algo que no está en la base de conocimiento (procesador, línea, RAM)."""
+
+
 def cargar_conocimiento(forzar: bool = False) -> dict:
-    """Lee dinámicamente de Neo4j todos los criterios expertos y costos de reparación (sin hardcodear)."""
+    """Lee de Neo4j los criterios expertos y los costos de reparación (con caché)."""
     global _CONOCIMIENTO
     if _CONOCIMIENTO is not None and not forzar:
         return _CONOCIMIENTO
@@ -511,6 +438,12 @@ def cargar_conocimiento(forzar: bool = False) -> dict:
                 "MATCH (c:CostoReparacion) RETURN c.tarea AS tarea, c.id AS id, c.costo_ars AS costo, "
                 "c.descripcion AS descripcion, c.version AS version, c.estado_validacion AS estado")
         }
+    faltan = [f"CriterioExperto '{n}'" for n in CRITERIOS_REQUERIDOS if n not in criterios]
+    faltan += [f"CostoReparacion '{t}'" for t in COSTOS_REQUERIDOS if t not in costos]
+    if faltan:
+        raise RuntimeError(
+            "[ERROR BASE DE CONOCIMIENTO] Faltan nodos en Neo4j: " + ", ".join(faltan) +
+            ". Cargá cypher/Grupo_20_PG3_mercado.cypher (en Docker: actualizar.bat).")
     _CONOCIMIENTO = {"criterios": criterios, "costos": costos}
     return _CONOCIMIENTO
 
@@ -522,58 +455,64 @@ def nueva_traza() -> dict:
 
 
 def CE(nombre: str, traza: dict) -> float:
-    """Devuelve el valor vigente de un CriterioExperto desde Neo4j y lo registra en la traza."""
+    """Devuelve el valor vigente de un CriterioExperto de Neo4j y lo registra en la traza."""
     c = cargar_conocimiento()["criterios"].get(nombre)
     if not c:
-        return 0.0
-    traza["criterios_usados"][nombre] = {k: c[k] for k in ("id", "valor", "unidad", "version", "estado") if k in c}
+        raise RuntimeError(f"[ERROR BASE DE CONOCIMIENTO] No existe el CriterioExperto '{nombre}' en Neo4j.")
+    traza["criterios_usados"][nombre] = {k: c[k] for k in ("id", "valor", "unidad", "version", "estado")}
     return float(c["valor"])
 
 
 def costo(tarea: str, traza: dict) -> int:
-    """Devuelve el costo de una intervención desde :CostoReparacion en Neo4j y lo registra en la traza."""
+    """Devuelve el costo de una intervención desde :CostoReparacion y lo registra en la traza."""
     c = cargar_conocimiento()["costos"].get(tarea)
     if not c:
-        return 0
-    traza["costos_usados"][tarea] = {k: c[k] for k in ("id", "costo", "version", "estado") if k in c}
+        raise RuntimeError(f"[ERROR BASE DE CONOCIMIENTO] No existe el CostoReparacion '{tarea}' en Neo4j.")
+    traza["costos_usados"][tarea] = {k: c[k] for k in ("id", "costo", "version", "estado")}
     return int(c["costo"])
 
 
-def buscar_referencia_mercado(texto: str) -> dict:
+def consultar_mercado_componentes(procesador: str, texto: str, ram_informada: Optional[int],
+                                  ram_final: int, hdd_a_ssd: bool) -> dict:
     """
-    Busca en Neo4j mediante Cypher el modelo de referencia y el segmento de mercado correspondientes.
-    No se harcodea: se consulta directamente el catálogo en el grafo.
+    Valuación por componentes, resuelta en Cypher sobre Neo4j:
+      - identifica el :Procesador (regex sobre el procesador que extrajo el LLM),
+      - identifica la :Linea y su :GrupoLinea (regex sobre marca + modelo + texto),
+      - toma el factor de la :CapacidadRAM final (después de los upgrades de SM1),
+      - calcula valor de mercado = valor del procesador × factor de línea × factor de RAM
+        y VMA = valor de mercado × (1 − CE descuento_negociacion) + CE reval_ssd si se cambia HDD por SSD.
+    Devuelve lo que encontró (None en lo que no existe en el grafo).
     """
     driver = obtener_driver_neo4j()
     q = """
-    WITH toLower($texto) AS t
-    OPTIONAL MATCH (m:ModeloReferencia) WHERE t =~ m.patron
-    WITH t, m ORDER BY m.prioridad DESC LIMIT 1
-    OPTIONAL MATCH (m)-[:PERTENECE_A_SEGMENTO]->(ms:SegmentoMercado)
-    OPTIONAL MATCH (s:SegmentoMercado) WHERE t =~ s.patron
-    WITH m, ms, s ORDER BY s.prioridad DESC LIMIT 1
-    WITH m, CASE WHEN ms IS NOT NULL AND (s IS NULL OR ms.prioridad >= s.prioridad) THEN ms ELSE s END AS seg
-    RETURN m {.id, .nombre, .anio_lanzamiento, .soporte_w11, .dias_promedio_venta, .indice_repuestos} AS modelo,
-           seg {.id, .nombre, .precio_nuevo_ref_ars, .dias_promedio_venta, .indice_repuestos,
-                .fuente, .estado_validacion} AS segmento
+    WITH toLower($procesador) AS tp, toLower($texto) AS tt
+    OPTIONAL MATCH (p:Procesador) WHERE tp =~ p.patron
+    WITH tt, p ORDER BY p.prioridad DESC LIMIT 1
+    OPTIONAL MATCH (l:Linea) WHERE tt =~ l.patron
+    WITH p, l ORDER BY l.prioridad DESC LIMIT 1
+    OPTIONAL MATCH (l)-[:PERTENECE_A_GRUPO]->(g:GrupoLinea)
+    OPTIONAL MATCH (ri:CapacidadRAM {gb: $ram_informada})
+    OPTIONAL MATCH (r:CapacidadRAM {gb: $ram_final})
+    MATCH (cd:CriterioExperto {nombre: 'descuento_negociacion'}), (cs:CriterioExperto {nombre: 'reval_ssd'})
+    WITH p, l, g, ri, r, cd, cs,
+         CASE WHEN p.valor_ref_ars IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
+              THEN p.valor_ref_ars * l.factor_precio * r.factor END AS valor_mercado
+    RETURN p {.nombre, .familia, .gama, .anio, .soporte_w11, .valor_ref_ars, .n_muestras,
+              .fuente_valor, .estado_validacion} AS procesador,
+           l {.nombre, .marca, .factor_precio, .origen_factor, .estado_validacion} AS linea,
+           g {.nombre, .dias_promedio_venta, .indice_repuestos} AS grupo,
+           ri IS NOT NULL AS ram_informada_existe,
+           r {.gb, .factor} AS ram,
+           valor_mercado,
+           CASE WHEN valor_mercado IS NULL THEN null
+                ELSE toInteger(round((valor_mercado * (1 - cd.valor / 100.0)
+                                      + CASE WHEN $hdd_a_ssd THEN cs.valor ELSE 0 END) / 1000.0)) * 1000
+           END AS vma
     """
     with driver.session(database=NEO4J_DATABASE) as s:
-        r = s.run(q, texto=texto).single()
-    return {"modelo": r["modelo"] if r else None, "segmento": r["segmento"] if r else None}
-
-
-def buscar_generacion_procesador(texto: str) -> dict | None:
-    """Busca en Neo4j la :GeneracionProcesador que coincide con el aviso (para estimar el año)."""
-    driver = obtener_driver_neo4j()
-    q = """
-    WITH toLower($texto) AS t
-    MATCH (g:GeneracionProcesador) WHERE t =~ g.patron
-    RETURN g {.id, .familia, .anio, .estado_validacion} AS gen
-    ORDER BY g.prioridad DESC LIMIT 1
-    """
-    with driver.session(database=NEO4J_DATABASE) as s:
-        r = s.run(q, texto=texto).single()
-    return r["gen"] if r else None
+        r = s.run(q, procesador=procesador or "", texto=texto or "", ram_informada=ram_informada,
+                  ram_final=ram_final, hdd_a_ssd=bool(hdd_a_ssd)).single()
+    return dict(r) if r else {}
 
 
 # ------------------------------------------------------------------------------
@@ -670,11 +609,14 @@ def ejecutar_motor_sm1(datos: dict, traza: dict) -> dict:
         traza["datos_pendientes"].append("Tipo de disco")
 
     # Mapeo de fallas informadas a tareas en CostoReparacion de Neo4j
-    txt_fallas = " ".join(str(f).lower() for f in fallas)
-    if "pantalla" in txt_fallas or "display" in txt_fallas or "raya" in txt_fallas:
-        agregar("pantalla", "Plan: reparación de pantalla informada en fallas")
-    if "teclado" in txt_fallas or "tecla" in txt_fallas:
-        agregar("teclado", "Plan: reparación de teclado informada en fallas")
+    #  El LLM a veces lista como "falla" algo positivo ("pantalla perfecta"): esas se ignoran.
+    positivos = ("perfect", "impecable", "excelente", "funciona", "sin detalle", "sin rayas", "nuev", "ok", "bien")
+    fallas_negativas = [str(f).lower() for f in fallas if not any(p in str(f).lower() for p in positivos)]
+    txt_fallas = " ".join(fallas_negativas)
+    if datos.get("pantalla_danada") is True or any(k in txt_fallas for k in ("pantalla", "display", "raya")):
+        agregar("pantalla", "Plan: pantalla dañada")
+    if datos.get("teclado_danado") is True or any(k in txt_fallas for k in ("teclado", "tecla")):
+        agregar("teclado", "Plan: teclado dañado")
     if datos.get("cargador_incluido") is False or "sin cargador" in txt_fallas:
         agregar("cargador", "Plan: reposición de cargador")
 
@@ -697,50 +639,84 @@ def ejecutar_motor_sm1(datos: dict, traza: dict) -> dict:
 # 5. Módulo SM2: Valuación Comercial y Demanda (Leonel Navarta)
 # ------------------------------------------------------------------------------
 def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> dict:
-    """VMA con precio de referencia, rotación y repuestos tomados de Neo4j."""
-    texto_busqueda = " ".join(str(x) for x in (datos.get("marca"), datos.get("modelo"),
-                                               datos.get("procesador"), texto) if x)
-    ref = buscar_referencia_mercado(texto_busqueda)
-    modelo, seg = ref["modelo"], ref["segmento"]
-    traza["referencia_mercado"] = ref
+    """
+    Valuación por componentes (precios de mercado relevados) y riesgo/demanda difusos.
+      - Procesador, línea o RAM informados que no existen en el grafo → ConocimientoFaltante (error).
+      - Procesador no informado, año desconocido o procesador sin muestras de mercado suficientes
+        → Verificacion_pendiente (falta de dato ≠ valor favorable).
+    """
+    pendiente = lambda regla, dato: (traza["reglas"].append(f"{regla} → Verificacion_pendiente"),
+                                     {"estado": "Verificacion_pendiente", "dato_faltante": dato,
+                                      "vma_estimado_ars": 0})[1]
 
-    if not seg:
-        traza["reglas"].append("R3.3b: sin segmento de mercado en Neo4j → Verificacion_pendiente")
-        return {"estado": "Verificacion_pendiente",
-                "dato_faltante": "Procesador o línea del equipo (no coincide con ningún segmento del catálogo de Neo4j)",
-                "vma_estimado_ars": 0}
+    proc_txt = str(datos.get("procesador") or "").strip()
+    if not proc_txt or proc_txt.lower() in ("null", "none"):
+        return pendiente("R3.3b: procesador no informado", "Procesador del equipo (no figura en el aviso)")
 
-    # Año: del aviso → modelo de referencia → generación del procesador
+    # RAM final: la que queda después del plan de SM1 (si se amplía, la de CE ram_objetivo)
+    ram_objetivo = int(CE("ram_objetivo", traza))
+    ram = datos.get("ram_gb")
+    try:
+        ram = int(ram) if ram is not None else None
+    except (TypeError, ValueError):
+        ram = None
+    if ram is None:
+        ram_final = ram_objetivo
+        traza["datos_inferidos"].append(
+            f"RAM no informada: se tasa con la configuración de referencia ({ram_objetivo} GB, CE ram_objetivo)")
+    else:
+        ram_final = ram_objetivo if res_sm1.get("upgrades", {}).get("ram") else ram
+    hdd_a_ssd = bool(res_sm1.get("upgrades", {}).get("ssd"))
+
+    texto_busqueda = " ".join(str(x) for x in (datos.get("marca"), datos.get("modelo"), texto) if x)
+    ref = consultar_mercado_componentes(proc_txt, texto_busqueda, ram, ram_final, hdd_a_ssd)
+    traza["referencia_mercado"] = {k: ref.get(k) for k in ("procesador", "linea", "grupo", "ram")}
+    proc, linea, grupo = ref.get("procesador"), ref.get("linea"), ref.get("grupo")
+
+    # Lo que el aviso menciona y no está en la base de conocimiento → error explícito
+    if not proc:
+        raise ConocimientoFaltante(
+            f"El procesador '{proc_txt}' no está en la base de conocimiento (Neo4j :Procesador).")
+    if not linea:
+        equipo = f"{datos.get('marca') or ''} {datos.get('modelo') or ''}".strip() or "sin marca"
+        raise ConocimientoFaltante(
+            f"La marca o línea del equipo ('{equipo}') no está en la base de conocimiento (Neo4j :Linea).")
+    if ram is not None and not ref.get("ram_informada_existe"):
+        raise ConocimientoFaltante(
+            f"La capacidad de RAM informada ({ram} GB) no está en la base de conocimiento (Neo4j :CapacidadRAM).")
+    if not ref.get("ram"):
+        raise ConocimientoFaltante(
+            f"La capacidad de RAM {ram_final} GB no está en la base de conocimiento (Neo4j :CapacidadRAM).")
+
+    # Procesador reconocido pero sin avisos suficientes para tener un precio de referencia
+    min_muestras = int(CE("min_muestras_mercado", traza))
+    if proc.get("valor_ref_ars") is None:
+        return pendiente(
+            f"R3.3b: {proc['nombre']} con {proc.get('n_muestras', 0)} avisos relevados (< CE min_muestras_mercado)",
+            f"Precio de mercado para {proc['nombre']} (hay {proc.get('n_muestras', 0)} avisos relevados; "
+            f"se necesitan {min_muestras})")
+
+    # Año: aviso → generación del procesador (dato inferido)
     anio = datos.get("anio_fabricacion")
-    if anio is None and modelo and modelo.get("anio_lanzamiento"):
-        anio = modelo["anio_lanzamiento"]
-        traza["datos_inferidos"].append(f"Año tomado del modelo de referencia {modelo['nombre']}: {anio}")
+    if anio is None and proc.get("anio"):
+        anio = proc["anio"]
+        traza["datos_inferidos"].append(f"Año estimado por el procesador {proc['nombre']} (Neo4j): {anio}")
     if anio is None:
-        gen = buscar_generacion_procesador(texto_busqueda)
-        if gen:
-            anio = gen["anio"]
-            traza["datos_inferidos"].append(
-                f"Año estimado por la generación del procesador ({gen['familia']}, Neo4j {gen['id']}): {anio}")
-    if anio is None:
-        traza["reglas"].append("R3.3b: año de fabricación desconocido → Verificacion_pendiente")
-        return {"estado": "Verificacion_pendiente", "dato_faltante": "Año de fabricación del equipo",
-                "vma_estimado_ars": 0}
+        return pendiente("R3.3b: año de fabricación desconocido", "Año de fabricación del equipo")
     antiguedad = max(0.0, CE("anio_referencia", traza) - float(anio))
 
-    # Soporte de Windows 11: aviso → modelo en Neo4j → criterio de año
+    # Soporte de Windows 11: aviso → procesador → año ≥ CE anio_min_w11
     win11 = datos.get("soporte_windows_11")
     if win11 is None:
-        if modelo and modelo.get("soporte_w11") is not None:
-            win11 = bool(modelo["soporte_w11"])
-            traza["datos_inferidos"].append(f"Soporte de Windows 11 según el modelo {modelo['nombre']}: {win11}")
+        if proc.get("soporte_w11") is not None:
+            win11 = bool(proc["soporte_w11"])
+            traza["datos_inferidos"].append(f"Soporte de Windows 11 según el procesador {proc['nombre']}: {win11}")
         else:
             win11 = float(anio) >= CE("anio_min_w11", traza)
             traza["datos_inferidos"].append(f"Soporte de Windows 11 inferido por el año ({anio}): {win11}")
 
-    fuente_mercado = modelo if (modelo and modelo.get("indice_repuestos") is not None) else seg
-    repuestos = float(fuente_mercado["indice_repuestos"])
-    dias_rotacion = float(fuente_mercado["dias_promedio_venta"])
-    precio_base = float(seg["precio_nuevo_ref_ars"])
+    repuestos = float(grupo["indice_repuestos"])
+    dias_rotacion = float(grupo["dias_promedio_venta"])
 
     # Lógica difusa en Neo4j: riesgo de obsolescencia y demanda (encadenadas)
     res_rie = inferir_sm2_rie_cypher(antiguedad, repuestos, win11)
@@ -752,44 +728,40 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
         raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM2-DEM.")
     demanda = res_dem[1]
 
-    # Depreciación cronológica (parámetros en :CriterioExperto de Neo4j)
-    n_ini = CE("anios_deprec_inicial", traza)
-    perdida = (min(antiguedad, n_ini) * CE("deprec_anual_inicial", traza)
-               + max(0.0, antiguedad - n_ini) * CE("deprec_anual_posterior", traza)) / 100.0
-    factor_deprec = max(CE("valor_residual_min", traza) / 100.0, 1.0 - perdida)
-    if categoria_riesgo == "Alto":
-        factor_riesgo = CE("factor_riesgo_alto", traza) / 100.0
-    elif categoria_riesgo == "Medio":
-        factor_riesgo = CE("factor_riesgo_medio", traza) / 100.0
-    else:
-        factor_riesgo = 1.0
+    # Criterios que usó la consulta de valuación (para la trazabilidad)
+    descuento = CE("descuento_negociacion", traza)
+    reval = 0
+    if hdd_a_ssd:
+        reval = int(CE("reval_ssd", traza))
+        traza["reglas"].append("R2.3: revalorización por upgrade a SSD (CE reval_ssd)")
+    traza["reglas"].append(
+        f"SM2 componentes: {proc['nombre']} (${proc['valor_ref_ars']:,}) × {linea['nombre']} ({linea['factor_precio']}) "
+        f"× RAM {ram_final} GB ({ref['ram']['factor']}) − {descuento:.0f} % de negociación")
 
-    # R2.3: revalorización por los upgrades que planificó SM1 (se tasa el estado final)
-    reval = 0.0
-    if res_sm1.get("upgrades", {}).get("ssd"):
-        reval += CE("reval_ssd", traza)
-        traza["reglas"].append("R2.3: revalorización por upgrade a SSD")
-    if res_sm1.get("upgrades", {}).get("ram"):
-        reval += CE("reval_ram", traza)
-        traza["reglas"].append("R2.3: revalorización por ampliación de RAM")
-
-    vma = round(precio_base * factor_deprec * factor_riesgo + reval, -3)
+    vma = int(ref["vma"])
+    print(f"      [Cypher Neo4j SM2] {proc['nombre']} · {linea['nombre']} · {ram_final} GB → VMA ${vma:,}", flush=True)
     return {
         "estado": "Tasado",
-        "segmento": seg["nombre"],
-        "modelo_referencia": modelo["nombre"] if modelo else None,
-        "fuente_precio": f"Neo4j :SegmentoMercado {seg['id']} ({seg.get('fuente')})",
-        "precio_base_referencia": int(precio_base),
+        "procesador": proc["nombre"],
+        "linea": linea["nombre"],
+        "grupo_linea": grupo["nombre"],
+        "valor_ref_procesador_ars": int(proc["valor_ref_ars"]),
+        "muestras_procesador": proc.get("n_muestras"),
+        "factor_linea": linea["factor_precio"],
+        "origen_factor_linea": linea.get("origen_factor"),
+        "ram_tasada_gb": ram_final,
+        "factor_ram": ref["ram"]["factor"],
+        "valor_mercado_ars": int(round(ref["valor_mercado"], -3)),
+        "descuento_negociacion_pct": descuento,
+        "revalorizaciones_ars": reval,
+        "fuente_precio": proc.get("fuente_valor"),
         "antiguedad_anios": antiguedad,
-        "factor_depreciacion": round(factor_deprec, 3),
-        "factor_riesgo": factor_riesgo,
-        "revalorizaciones_ars": int(reval),
         "riesgo_obsolescencia": categoria_riesgo,
         "score_riesgo": score_riesgo,
         "demanda_comercial": demanda,
         "dias_rotacion_estimados": dias_rotacion,
         "indice_repuestos": repuestos,
-        "vma_estimado_ars": int(vma),
+        "vma_estimado_ars": vma,
     }
 
 
@@ -859,7 +831,7 @@ NO clasifiques ni catalogues fallas críticas: incluye en "fallas" TODAS las fal
 Campos del JSON:
 - "marca": marca comercial (string o null)
 - "modelo": modelo comercial (string o null)
-- "procesador": procesador tal como aparece (ej: "i5 10ma gen", "Ryzen 3 3250U") o null
+- "procesador": procesador copiado textual del aviso, sin completar modelos que no estén escritos (o null)
 - "precio_publicado": precio entero en pesos (ej: "$115.000" -> 115000) o null
 - "anio_fabricacion": año entero (ej: 2020) o null
 - "salud_bateria_pct": entero 0-100 o null
@@ -868,14 +840,16 @@ Campos del JSON:
 - "thermal_throttling": bool o null
 - "ram_gb": entero (4, 8, 16) o null
 - "tipo_disco": "HDD" o "SSD" o null
+- "pantalla_danada": true solo si el aviso dice que la pantalla está dañada; false si dice que está bien; si no, null
+- "teclado_danado": true solo si el aviso dice que el teclado está dañado; false si dice que está bien; si no, null
 - "cargador_incluido": bool o null
 - "soporte_windows_11": bool o null
-- "fallas": lista con TODAS las fallas, daños, desgastes o problemas reportados (lista de strings)
+- "fallas": lista con TODAS las fallas, daños, desgastes o problemas reportados (lista de strings). NO incluyas cosas que están bien.
 
 Ejemplo:
 Texto: "Vendo Acer Aspire 5 2020 i5 w11 $115.000. Batería 42% 780 ciclos, calienta 92C cuelgues térmicos, 4GB RAM, HDD 500GB, pantalla con rayas, teclado roto, sin cargador."
 JSON:
-{"marca": "Acer", "modelo": "Aspire 5", "procesador": "i5", "precio_publicado": 115000, "anio_fabricacion": 2020, "salud_bateria_pct": 42, "ciclos_bateria": 780, "temperatura_cpu_c": 92, "thermal_throttling": true, "ram_gb": 4, "tipo_disco": "HDD", "cargador_incluido": false, "soporte_windows_11": true, "fallas": ["batería baja duración (42%, 780 ciclos)", "calienta 92°C con cuelgues térmicos", "disco HDD", "pantalla con rayas", "teclado roto", "sin cargador"]}
+{"marca": "Acer", "modelo": "Aspire 5", "procesador": "i5", "precio_publicado": 115000, "anio_fabricacion": 2020, "salud_bateria_pct": 42, "ciclos_bateria": 780, "temperatura_cpu_c": 92, "thermal_throttling": true, "ram_gb": 4, "tipo_disco": "HDD", "pantalla_danada": true, "teclado_danado": true, "cargador_incluido": false, "soporte_windows_11": true, "fallas": ["batería baja duración (42%, 780 ciclos)", "calienta 92°C con cuelgues térmicos", "disco HDD", "pantalla con rayas", "teclado roto", "sin cargador"]}
 
 Responde ÚNICAMENTE el objeto JSON."""
 
@@ -1044,7 +1018,7 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
     """
     Pipeline completo neuro-simbólico:
       1. El LLM se encarga de parsear el JSON y extraer todas las fallas sin catalogar fallas críticas aisladas.
-      2. El sistema consulta en Cypher a Neo4j para buscar información preexistente del equipo.
+      2. Cada aviso se evalúa con la base de conocimiento de Neo4j (sin reutilizar casos guardados).
       3. Toda la base de conocimiento (costos, criterios, modelos, reglas, bloqueos) se consulta en Neo4j.
       4. El sistema preserva y pone TODAS las fallas detectadas en el informe.
       5. Síntesis general ejecutiva redactada de forma no determinista con el LLM (con fallback determinístico).
@@ -1071,6 +1045,27 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
         if datos.get("precio_publicado") is None or abs((datos.get("precio_publicado") or 0) - val_p) > 1000:
             datos["precio_publicado"] = val_p
 
+    # Validación defensiva del procesador: el LLM a veces completa un modelo que no está en el aviso
+    # (ej. "Ryzen 3" → "Ryzen 3 3250U"). Solo se conservan las palabras que aparecen en el texto original.
+    proc_llm = str(datos.get("procesador") or "")
+
+    def _en_texto(tk: str) -> bool:
+        if tk in txt_lower:
+            return True
+        m = re.match(r"(\d+)(st|nd|rd|th|ma|va|na|ta|ra|da|a|°|º)$", tk)  # "10th" ≈ "10ma" del aviso
+        return bool(m and re.search(r"\b" + m.group(1) + r"\s*[a-z°º.]{0,3}\s*gen", txt_lower))
+
+    tokens = [tk for tk in re.findall(r"[a-z0-9°º]+", proc_llm.lower()) if _en_texto(tk)]
+    proc_validado = " ".join(tokens) if any(tk not in ("intel", "amd", "core", "cpu") for tk in tokens) else None
+    if proc_llm and proc_validado != proc_llm.lower():
+        datos["procesador"] = proc_validado
+
+    # Validación defensiva del año: si el LLM no lo extrajo pero el aviso lo dice ("año 2021", "modelo 2021")
+    if datos.get("anio_fabricacion") is None:
+        m_anio = re.search(r"\b(?:año|modelo|del)\s+(20[0-3]\d)\b", txt_lower)
+        if m_anio:
+            datos["anio_fabricacion"] = int(m_anio.group(1))
+
     marca_str = str(datos.get("marca") or "").strip().lower()
     modelo_str = str(datos.get("modelo") or "").strip().lower()
     tiene_equipo = bool(marca_str and marca_str not in ["none", "null", "generica"]) or \
@@ -1090,57 +1085,34 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
 
     precio = float(precio_val)
 
-    # 2. Búsqueda en Cypher sobre Neo4j para ver si el equipo o publicación ya existe
-    if verbose:
-        print("\n[Paso 2/4] Búsqueda de información existente en Neo4j mediante Cypher...", flush=True)
-
-    caso_id_grafo = buscar_caso_existente_en_grafo(datos.get("marca"), datos.get("modelo"), texto_publicacion)
-    ctx_grafo = None
-    if caso_id_grafo:
-        ctx_grafo = consultar_grafo_neo4j_d1(caso_id_grafo)
-        if verbose and ctx_grafo:
-            print(f"      [Cypher Neo4j D1] Caso canónico '{caso_id_grafo}' recuperado del Grafo ({ctx_grafo.get('equipo')}).")
-
-    # Unificación de TODAS las fallas (tanto las extraídas del aviso como las cargadas en el grafo)
     todas_las_fallas = list(fallas_publicacion)
-    if ctx_grafo and ctx_grafo.get("fallas"):
-        for f in ctx_grafo["fallas"]:
-            desc = f.get("descripcion")
-            if desc and desc not in todas_las_fallas:
-                todas_las_fallas.append(desc)
-
     res_sm1 = {"estado": "Sin_evaluar", "es_viable": None, "plan_reparacion": [], "costo_total": 0, "fallas": todas_las_fallas}
     res_sm2 = {"estado": "Sin_evaluar", "vma_estimado_ars": 0}
 
-    # Si el caso ya existe con inferencias certificadas en el grafo Neo4j:
-    if ctx_grafo and (ctx_grafo.get("decision") or ctx_grafo.get("estado_operacion") == "Verificacion_pendiente"):
-        if verbose:
-            print("      [Cypher Neo4j] Utilizando conocimiento certificado del grafo para el caso existente.")
+    # 2. Evaluación simbólica y difusa: cada aviso se calcula con la base de conocimiento de Neo4j
+    #    (no se reutilizan resultados guardados de casos anteriores).
+    if verbose:
+        print("\n[Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...", flush=True)
 
-        if ctx_grafo.get("estado_operacion") == "Verificacion_pendiente":
-            bloqueo_info = ctx_grafo.get("bloqueos", [{}])[0] if ctx_grafo.get("bloqueos") else {}
-            tipo_b = bloqueo_info.get("tipo", "Cuenta")
-            traza["reglas"].append("R3.3: verificación pendiente registrada en Neo4j")
-            res_sm3 = {
-                "decision": "VerificacionPendiente",
-                "regla_aplicada": "R3.3",
-                "motivo": f"El equipo registra bloqueo {tipo_b} en estado Desconocido (R3.3). {ctx_grafo.get('dato_solicitado') or 'Verificar desvinculación'}.",
-                "indicadores": {"precio_publicado": int(precio)}
-            }
-        elif ctx_grafo.get("sm1", {}).get("dictamen") == "Inviabilidad_Fisica_Insalvable":
-            causa_inv = ctx_grafo["sm1"].get("causa", "Falla catastrófica estructural")
-            res_sm1 = {
-                "estado": "Inviable",
-                "es_viable": False,
-                "regla_aplicada": "R1.1",
-                "motivo": f"Falla física irreparable registrada en grafo: {causa_inv}.",
-                "plan_reparacion": [],
-                "costo_total": 0,
-                "cantidad_intervenciones": 0,
-                "fallas": todas_las_fallas
-            }
+    # R3.3: señal de bloqueo en el texto → verificación pendiente (no se descarta sin verificar)
+    senales_bloqueo = consultar_senales_bloqueo_en_grafo()
+    bloqueo_detectado = next((s for s in senales_bloqueo if s in txt_lower), None)
+
+    if bloqueo_detectado:
+        traza["reglas"].append(f"R3.3: señal de bloqueo en el aviso ('{bloqueo_detectado}') → Verificacion_pendiente")
+        res_sm3 = {
+            "decision": "VerificacionPendiente",
+            "regla_aplicada": "R3.3",
+            "motivo": f"El aviso sugiere un posible bloqueo ('{bloqueo_detectado}'). Verificar desvinculación en persona antes del pago (R3.3).",
+            "indicadores": {"precio_publicado": int(precio)}
+        }
+    else:
+        # SM1 Técnico
+        res_sm1 = ejecutar_motor_sm1(datos, traza)
+
+        if not res_sm1["es_viable"]:
             res_sm2 = {"estado": "Omitido_Por_Inviabilidad", "vma_estimado_ars": 0}
-            traza["reglas"].append("R3.2: dictamen técnico insalvable en grafo → DescartarPorInviabilidad")
+            traza["reglas"].append("R3.2: dictamen técnico insalvable → DescartarPorInviabilidad")
             res_sm3 = {
                 "decision": "DescartarPorInviabilidad",
                 "regla_aplicada": "R3.2",
@@ -1148,108 +1120,30 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
                 "indicadores": {"precio_publicado": int(precio), "costo_reparacion": 0, "vma_tasado": 0}
             }
         else:
-            intervenciones_grafo = ctx_grafo.get("sm1", {}).get("intervenciones", [])
-            costo_sm1 = ctx_grafo.get("sm1", {}).get("costo_total", 0) or sum(i.get("costo", 0) for i in intervenciones_grafo)
-            res_sm1 = {
-                "estado": "Viable",
-                "es_viable": True,
-                "plan_reparacion": intervenciones_grafo,
-                "costo_total": costo_sm1,
-                "cantidad_intervenciones": len(intervenciones_grafo),
-                "fallas": todas_las_fallas
-            }
-            vma_g = ctx_grafo.get("sm2", {}).get("vma", 0)
-            rie_g = ctx_grafo.get("sm2", {}).get("riesgo") or {}
-            dem_g = ctx_grafo.get("sm2", {}).get("demanda") or {}
-            res_sm2 = {
-                "estado": "Tasado",
-                "segmento": ctx_grafo.get("equipo"),
-                "modelo_referencia": ctx_grafo.get("modelo"),
-                "fuente_precio": "Neo4j Grafo de Conocimiento (PG2 D1)",
-                "precio_base_referencia": vma_g,
-                "antiguedad_anios": max(0, 2026 - (datos.get("anio_fabricacion") or 2020)),
-                "factor_depreciacion": 1.0,
-                "factor_riesgo": 1.0,
-                "revalorizaciones_ars": 0,
-                "riesgo_obsolescencia": rie_g.get("nivel", "Medio"),
-                "score_riesgo": rie_g.get("indice", 0.5),
-                "demanda_comercial": dem_g.get("nivel", "Media"),
-                "dias_rotacion_estimados": 20,
-                "indice_repuestos": 7,
-                "vma_estimado_ars": vma_g
-            }
-            dec_info = ctx_grafo.get("decision") or {}
-            ind_info = ctx_grafo.get("indicadores") or {}
-            contra_g = dec_info.get("contraoferta")
-            p_orig = ctx_grafo.get("precio_publicado") or int(precio)
-            desc_pct = round(100.0 * (p_orig - contra_g) / p_orig, 1) if (contra_g and p_orig > contra_g) else 0.0
+            if verbose:
+                print(f"      SM1: {res_sm1['cantidad_intervenciones']} intervenciones | Costo: ${res_sm1['costo_total']:,} ARS")
+            # SM2 Comercial (valuación por componentes)
+            try:
+                res_sm2 = ejecutar_motor_sm2(datos, res_sm1, texto_publicacion, traza)
+            except ConocimientoFaltante as e:
+                if verbose:
+                    print(f"      [ERROR BASE DE CONOCIMIENTO] {e}")
+                return {"error": f"Base de conocimiento incompleta: {e}", "datos_extraidos": datos, "traza": traza}
 
-            ind_combinados = {
-                "precio_publicado": p_orig,
-                "costo_reparacion": costo_sm1,
-                "vma_tasado": vma_g,
-                "margen_neto_pct": ind_info.get("margen_neto"),
-                "margen_requerido_pct": ind_info.get("margen_requerido"),
-                "ratio_reparacion": ind_info.get("ratio_reparacion"),
-                "contraoferta_sugerida_ars": contra_g,
-                "descuento_requerido_pct": desc_pct
-            }
-            res_sm3 = {
-                "decision": dec_info.get("tipo", "Comprar"),
-                "motivo": dec_info.get("motivo"),
-                "indicadores": ind_combinados
-            }
-            for r in ctx_grafo.get("reglas_crisp", []):
-                traza["reglas"].append(r)
-
-    else:
-        # Pipeline dinámico: no existe el caso previo, evaluamos con consultas en Cypher
-        if verbose:
-            print("      [Cypher Neo4j] Evaluando dinámicamente con reglas, costos y criterios de Neo4j...")
-
-        # Consulta de señales de bloqueo en el grafo (R3.3)
-        senales_bloqueo = consultar_senales_bloqueo_en_grafo()
-        bloqueo_detectado = next((s for s in senales_bloqueo if s in txt_lower), None)
-
-        if bloqueo_detectado:
-            traza["reglas"].append(f"R3.3: señal de bloqueo en el aviso ('{bloqueo_detectado}') → Verificacion_pendiente")
-            res_sm3 = {
-                "decision": "VerificacionPendiente",
-                "regla_aplicada": "R3.3",
-                "motivo": f"El aviso sugiere un posible bloqueo ('{bloqueo_detectado}'). Verificar desvinculación en persona antes del pago (R3.3).",
-                "indicadores": {"precio_publicado": int(precio)}
-            }
-        else:
-            # SM1 Técnico
-            res_sm1 = ejecutar_motor_sm1(datos, traza)
-
-            if not res_sm1["es_viable"]:
-                res_sm2 = {"estado": "Omitido_Por_Inviabilidad", "vma_estimado_ars": 0}
-                traza["reglas"].append("R3.2: dictamen técnico insalvable → DescartarPorInviabilidad")
+            if res_sm2["estado"] == "Verificacion_pendiente":
                 res_sm3 = {
-                    "decision": "DescartarPorInviabilidad",
-                    "regla_aplicada": "R3.2",
-                    "motivo": res_sm1["motivo"],
-                    "indicadores": {"precio_publicado": int(precio), "costo_reparacion": 0, "vma_tasado": 0}
+                    "decision": "VerificacionPendiente",
+                    "regla_aplicada": "R3.3b",
+                    "motivo": f"Falta un dato para tasar: {res_sm2['dato_faltante']}.",
+                    "indicadores": {"precio_publicado": int(precio), "costo_reparacion": res_sm1["costo_total"]}
                 }
             else:
-                # SM2 Comercial
-                res_sm2 = ejecutar_motor_sm2(datos, res_sm1, texto_publicacion, traza)
-
-                if res_sm2["estado"] == "Verificacion_pendiente":
-                    res_sm3 = {
-                        "decision": "VerificacionPendiente",
-                        "regla_aplicada": "R3.3b",
-                        "motivo": f"Falta un dato para tasar en el catálogo de Neo4j: {res_sm2['dato_faltante']}.",
-                        "indicadores": {"precio_publicado": int(precio), "costo_reparacion": res_sm1["costo_total"]}
-                    }
-                else:
-                    # SM3 Financiero
-                    res_sm3 = ejecutar_motor_sm3(
-                        precio, float(res_sm1["costo_total"]), float(res_sm2["vma_estimado_ars"]),
-                        res_sm1["cantidad_intervenciones"], res_sm2["riesgo_obsolescencia"],
-                        res_sm2["demanda_comercial"], traza
-                    )
+                # SM3 Financiero
+                res_sm3 = ejecutar_motor_sm3(
+                    precio, float(res_sm1["costo_total"]), float(res_sm2["vma_estimado_ars"]),
+                    res_sm1["cantidad_intervenciones"], res_sm2["riesgo_obsolescencia"],
+                    res_sm2["demanda_comercial"], traza
+                )
 
     res_sm3.update(_estado_decision(traza))
     if res_sm3["decision"] == "VerificacionPendiente":
@@ -1308,8 +1202,7 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
         "sm2_comercial": res_sm2,
         "sm3_financiero": res_sm3,
         "traza": traza,
-        "dictamen_gerencial": dictamen,
-        "caso_en_grafo": caso_id_grafo
+        "dictamen_gerencial": dictamen
     }
 
 
@@ -1319,24 +1212,25 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
 CASOS_INTEGRADOS_PG3 = {
     "Caso 1 (Acer Aspire 5 2020 — Caso Integral con Contraoferta)":
         "Publicación: Vendo Acer Aspire 5 año 2020 con Intel i5 10ma gen (soporte Windows 11). "
-        "Precio pedido: $250.000. Detalles: enciende pero la batería dura 20 minutos (salud 42%, 780 ciclos), "
+        "Precio pedido: $350.000. Detalles: enciende pero la batería dura 20 minutos (salud 42%, 780 ciclos), "
         "calienta a 92°C con cuelgues térmicos. Trae 4GB de RAM y disco HDD de 500GB muy lento. "
         "El teclado y la pantalla funcionan perfecto y trae el cargador original.",
 
     "Caso 2 (Lenovo ThinkPad T490 2019 — Compra Directa Aprobada)":
-        "Oportunidad ThinkPad T490 2019 Core i5 8va gen, Windows 11 oficial. Piden $280.000. "
+        "Oportunidad ThinkPad T490 2019 Core i5 8va gen, Windows 11 oficial. Piden $400.000. "
         "Equipo en estado excelente, batería al 91% con 110 ciclos, temperatura bajo carga 68°C sin throttling. "
         "Viene con 16GB RAM y SSD NVMe 512GB rápido. Pantalla y teclado perfectos con cargador original. Alta demanda corporativa.",
 
     "Caso 3 (Dell Inspiron 15 — Descarte por Inviabilidad Catastrófica)":
         "Dell Inspiron 15 piden $150.000 pero no da video, tiene la CPU quemada en corto insalvable y pista de placa perforada.",
 
-    "Caso 4 (Lenovo ThinkPad T440p 2014 — Descarte por Obsolescencia e Iliquidez)":
-        "Vendo ThinkPad T440p año 2014 piden $180.000. Batería agotada al 30% con 900 ciclos que requiere cambio. "
+    "Caso 4 (Lenovo ThinkPad T470 2017 — Descarte por Obsolescencia e Iliquidez)":
+        "Vendo Lenovo ThinkPad T470 año 2017 con Intel Core i5 7ma gen, piden $300.000. "
+        "Batería agotada al 30% con 900 ciclos que requiere cambio. 4GB de RAM y disco HDD de 500GB. "
         "Sin soporte para Windows 11, equipo antiguo.",
 
     "Caso 5 (HP 15 Ryzen 3 2021 — Compra Aprobada con Upgrades Menores)":
-        "HP 15 modelo 2021 Ryzen 3 pide $240.000. Batería al 85% y temperaturas normales. "
+        "HP 15 modelo 2021 Ryzen 3 pide $220.000. Batería al 85% y temperaturas normales. "
         "Tiene 4GB de RAM y disco HDD de 1TB. Requiere service de limpieza y upgrades estándar de memoria y SSD."
 }
 

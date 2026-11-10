@@ -15,6 +15,7 @@ services:
       - "7687:7687"   # Bolt (por si se corre el orquestador fuera de Docker)
     volumes:
       - neo4j_data:/data
+      - ./datos:/var/lib/neo4j/import      # seed del relevamiento de mercado (LOAD CSV)
     healthcheck:
       test: ["CMD-SHELL", "cypher-shell -u neo4j -p ${NEO4J_PASSWORD:-evaltic2026} 'RETURN 1' || exit 1"]
       interval: 10s

@@ -205,13 +205,18 @@ if btn_evaluar and input_texto.strip():
                 elif sm2.get("estado") == "Sin_evaluar":
                     st.info("No se evaluó.")
                 else:
-                    st.write(f"**Segmento (Neo4j):** {sm2.get('segmento')} · **Modelo de referencia:** {sm2.get('modelo_referencia') or 'no catalogado'}")
+                    st.write(f"**Procesador (Neo4j):** {sm2.get('procesador')} · **Línea:** {sm2.get('linea')} "
+                             f"({sm2.get('grupo_linea')}) · **RAM tasada:** {sm2.get('ram_tasada_gb')} GB")
                     st.caption(f"Fuente del precio: {sm2.get('fuente_precio')}")
                     col2_1, col2_2 = st.columns(2)
                     with col2_1:
-                        st.write(f"• **Precio de un equipo nuevo equivalente:** ${sm2.get('precio_base_referencia', 0):,} ARS")
-                        st.write(f"• **Factor de depreciación:** {sm2.get('factor_depreciacion')} · **Factor de riesgo:** {sm2.get('factor_riesgo')}")
-                        st.write(f"• **Revalorización por upgrades:** ${sm2.get('revalorizaciones_ars', 0):,} ARS")
+                        st.write(f"• **Valor de referencia del procesador:** ${sm2.get('valor_ref_procesador_ars', 0):,} ARS "
+                                 f"({sm2.get('muestras_procesador')} avisos)")
+                        st.write(f"• **Factor de línea:** {sm2.get('factor_linea')} ({sm2.get('origen_factor_linea')}) · "
+                                 f"**Factor de RAM:** {sm2.get('factor_ram')}")
+                        st.write(f"• **Valor de mercado estimado:** ${sm2.get('valor_mercado_ars', 0):,} ARS "
+                                 f"(− {sm2.get('descuento_negociacion_pct'):.0f} % de negociación)")
+                        st.write(f"• **Revalorización por upgrade a SSD:** ${sm2.get('revalorizaciones_ars', 0):,} ARS")
                         st.write(f"• **Antigüedad Estimada:** {sm2.get('antiguedad_anios')} años")
                         st.write(f"• **VMA Final Tasado:** ${sm2.get('vma_estimado_ars', 0):,} ARS")
                     with col2_2:
