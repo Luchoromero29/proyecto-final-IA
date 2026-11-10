@@ -64,6 +64,24 @@ queda bloqueada hasta decidir si se mantiene el modelo y se autoriza otra tanda 
 disponible, o se elige explícitamente otro modelo/proveedor. Los casos con precio ausente también
 pueden ocultar fallas del proveedor mediante el respaldo del enrutador.
 
+## Segundo intento autorizado: mismo modelo gratuito
+
+El usuario indicó: «mantenemos el modelo gratuito y reintamos ahora». Se ejecutaron únicamente
+los 32 casos pendientes con el mismo modelo, sin repetir los 29 ya completados.
+
+- Duración: 9 segundos; código de salida: `2`.
+- Intentados: **32**; completados: **0**; cumplidos: **0**; incumplimientos funcionales: **0**;
+  sondas observadas: **0**; errores de infraestructura/proveedor: **32**.
+- El preflight de Neo4j y catálogo pasó; las llamadas a los casos terminaron en `RuntimeError`
+  clasificados como infraestructura. No se registró código HTTP; no se afirma que sea 429.
+- La evidencia acumulada no aumenta: siguen **29 casos completados de 61**, con los resultados
+  de la primera tanda. Los 32 restantes siguen sin validación real.
+- [Salida completa del segundo intento](publicaciones_criticas_openrouter_reintento_1.log).
+- Se conserva el modelo gratuito. No se programan reintentos ni se cambia a un proveedor pago.
+  La tarea vuelve a quedar bloqueada por disponibilidad del proveedor; hace falta una nueva
+  decisión explícita para otro intento más adelante o para diagnosticar la respuesta HTTP con
+  un registro acotado y sin exponer credenciales ni cuerpos de respuesta.
+
 El alcance entregado es la batería y la evidencia: no se corrigió el motor ni se afirma cobertura
 de todas las publicaciones posibles. Los defectos offline se muestran como abiertos/reparados y
 no se exige que permanezcan rotos.
