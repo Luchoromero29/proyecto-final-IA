@@ -1,5 +1,18 @@
 # Pruebas de publicaciones críticas
 
+## Corrección de precio B1
+
+El precio usado por el pipeline se valida contra el primer monto literal con `$` o `pesos`,
+incluyendo cero y montos cortos. Sin respaldo en esos formatos se rechaza antes de tasar;
+no se inventa un monto ni se admite una tolerancia monetaria. No agrega conversión de divisas
+ni una política de precio mínimo.
+
+La [evidencia B0/B1](ejecuciones/mejoras_b0_b1.md) registra **79/79 offline** y una tanda real
+con **50 cumplen, 5 fallan, 6 sondas y 0 infra** sobre 61 completados. PC-29 ahora cumple;
+los otros defectos no se corrigieron en ese bloque. La evidencia histórica se conserva.
+
+## Corpus y ejecutor
+
 Corpus de 61 publicaciones **sintéticas** (avisos escritos para este corpus, no avisos reales
 recolectados) que miden cómo se comporta EvalTIC frente a entradas vagas, incompletas,
 contradictorias y adversariales, sin tocar el motor. 55 casos tienen expectativa automática

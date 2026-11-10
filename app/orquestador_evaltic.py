@@ -1008,7 +1008,7 @@ Campos del JSON:
 - "marca": marca comercial (string o null)
 - "modelo": modelo comercial (string o null)
 - "procesador": procesador copiado textual del aviso, sin completar modelos que no estén escritos (o null)
-- "precio_publicado": precio entero en pesos (ej: "$115.000" -> 115000) o null
+- "precio_publicado": precio entero en pesos copiado del aviso ("$1" -> 1, "$0" -> 0, "320.000 pesos" -> 320000); si no aparece, null. Nunca uses el precio del ejemplo ni un costo de reparación.
 - "anio_fabricacion": año entero (ej: 2020) o null
 - "salud_bateria_pct": entero 0-100 o null
 - "ciclos_bateria": entero o null
@@ -1217,12 +1217,14 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
     datos = extraer_datos_llm(texto_publicacion)
     txt_lower = texto_publicacion.lower()
 
-    # Validación defensiva del precio contra el texto original
-    match_precio = re.search(r"\$\s*([0-9]{1,3}(?:\.[0-9]{3})+|[0-9]{5,8})", texto_publicacion)
-    if match_precio:
-        val_p = int(match_precio.group(1).replace(".", ""))
-        if datos.get("precio_publicado") is None or abs((datos.get("precio_publicado") or 0) - val_p) > 1000:
-            datos["precio_publicado"] = val_p
+    # El precio debe tener respaldo literal: manda el primer monto del aviso, sin tolerancias.
+    # Se admiten pesos con símbolo o unidad explícita y puntos como separadores de miles.
+    monto_ars = r"(?:[0-9]{1,3}(?:\.[0-9]{3})+|[0-9]+)"
+    match_precio = re.search(
+        rf"\$\s*(?P<simbolo>{monto_ars})|(?P<pesos>{monto_ars})\s+pesos\b",
+        texto_publicacion, flags=re.IGNORECASE)
+    monto_textual = (match_precio.group("simbolo") or match_precio.group("pesos")) if match_precio else None
+    datos["precio_publicado"] = int(monto_textual.replace(".", "")) if monto_textual is not None else None
 
     # Validación defensiva del procesador: el LLM a veces completa un modelo que no está en el aviso
     # (ej. "Ryzen 3" → "Ryzen 3 3250U"). Solo se conservan las palabras que aparecen en el texto original.

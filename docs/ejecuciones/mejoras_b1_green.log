@@ -1,0 +1,13 @@
+test_cero_no_se_convierte_en_una_compra_por_el_valor_del_llm (test_integridad_extraccion.IntegridadPrecioTest.test_cero_no_se_convierte_en_una_compra_por_el_valor_del_llm) ... ok
+test_el_precio_literal_manda_sin_tolerancia_monetaria (test_integridad_extraccion.IntegridadPrecioTest.test_el_precio_literal_manda_sin_tolerancia_monetaria) ... ok
+test_los_formatos_ya_admitidos_conservan_su_contrato (test_integridad_extraccion.IntegridadPrecioTest.test_los_formatos_ya_admitidos_conservan_su_contrato) ... ok
+test_los_montos_cortos_se_validan_igual_que_los_miles (test_integridad_extraccion.IntegridadPrecioTest.test_los_montos_cortos_se_validan_igual_que_los_miles) ... ok
+test_pesos_sin_simbolo_tienen_respaldo_aunque_el_llm_no_extraiga_precio (test_integridad_extraccion.IntegridadPrecioTest.test_pesos_sin_simbolo_tienen_respaldo_aunque_el_llm_no_extraiga_precio) ... ok
+test_sin_precio_en_el_texto_no_se_acepta_el_precio_inventado (test_integridad_extraccion.IntegridadPrecioTest.test_sin_precio_en_el_texto_no_se_acepta_el_precio_inventado) ... ok
+test_un_peso_no_se_reemplaza_por_el_precio_inventado_del_llm (test_integridad_extraccion.IntegridadPrecioTest.test_un_peso_no_se_reemplaza_por_el_precio_inventado_del_llm) ... ok
+test_un_tipo_incorrecto_del_llm_no_rompe_un_monto_explicito (test_integridad_extraccion.IntegridadPrecioTest.test_un_tipo_incorrecto_del_llm_no_rompe_un_monto_explicito) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.021s
+
+OK
