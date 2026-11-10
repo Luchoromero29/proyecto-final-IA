@@ -125,9 +125,10 @@ UNWIND [
   {num:'8',  suf:'va', anio:2018, w11:true,  mod:'8\\d{3}(u|h|hq|y)'},
   {num:'9',  suf:'na', anio:2019, w11:true,  mod:'9\\d{3}(h|hk)'},
   {num:'10', suf:'ma', anio:2020, w11:true,  mod:'10\\d{3}(u|h|g\\d)'},
-  {num:'11', suf:'va', anio:2021, w11:true,  mod:'11\\d{2}(g\\d|h)'},
-  {num:'12', suf:'va', anio:2022, w11:true,  mod:'12\\d{2}(u|h|p)'},
-  {num:'13', suf:'va', anio:2023, w11:true,  mod:'13\\d{2}(u|h|p|hx)'},
+  // Serie U/G: 4 dígitos (1135G7, 1255U, 1355U); serie H: 5 dígitos (11800H, 12700H, 13700H)
+  {num:'11', suf:'va', anio:2021, w11:true,  mod:'11(\\d{2}(g\\d|h)|\\d{3}h)'},
+  {num:'12', suf:'va', anio:2022, w11:true,  mod:'12\\d{2,3}(u|h|p|hx)?'},
+  {num:'13', suf:'va', anio:2023, w11:true,  mod:'13\\d{2,3}(u|h|p|hx)?'},
   {num:'14', suf:'va', anio:2024, w11:true,  mod:'14\\d{3}(hx|h)'}
 ] AS g
 UNWIND [{t:'3', gama:'entrada'}, {t:'5', gama:'media'}, {t:'7', gama:'alta'}] AS f
@@ -167,8 +168,10 @@ UNWIND [
   {n:'Intel N100',    fam:'Intel N',     gama:'basica',  anio:2023, w11:true,  pri:50, p:'(?s).*\\bn100\\b.*'},
   {n:'Core i3 N305',  fam:'Core i3',     gama:'entrada', anio:2023, w11:true,  pri:50, p:'(?s).*n305.*'},
   {n:'Core 3',        fam:'Core',        gama:'entrada', anio:2024, w11:true,  pri:50, p:'(?s).*\\bcore\\s+3\\b.*'},
-  {n:'Core Ultra 5',  fam:'Core Ultra',  gama:'media',   anio:2023, w11:true,  pri:50, p:'(?s).*ultra\\s*5.*'},
-  {n:'Core Ultra 7',  fam:'Core Ultra',  gama:'alta',    anio:2023, w11:true,  pri:50, p:'(?s).*ultra\\s*7.*'},
+  // Core Ultra 5/7/9 suceden a i5/i7/i9: misma familia, así R2.4 usa la generación i5/i7/i9 anterior
+  {n:'Core Ultra 5',  fam:'Core i5',     gama:'media',   anio:2023, w11:true,  pri:50, p:'(?s).*ultra\\s*5.*'},
+  {n:'Core Ultra 7',  fam:'Core i7',     gama:'alta',    anio:2023, w11:true,  pri:50, p:'(?s).*ultra\\s*7.*'},
+  {n:'Core Ultra 9',  fam:'Core i9',     gama:'alta',    anio:2024, w11:true,  pri:50, p:'(?s).*ultra\\s*9.*'},
   {n:'Athlon Silver', fam:'Athlon',      gama:'basica',  anio:2020, w11:true,  pri:50, p:'(?s).*athlon\\s*silver.*'},
   {n:'Athlon 3150U',  fam:'Athlon',      gama:'basica',  anio:2020, w11:true,  pri:50, p:'(?s).*3150u.*'},
   {n:'AMD A9',        fam:'AMD A',       gama:'basica',  anio:2016, w11:false, pri:50, p:'(?s).*\\ba9[\\s-]*9\\d{3}.*|(?s).*amd\\s*a9\\b.*'},
@@ -228,6 +231,7 @@ UNWIND [
   {n:'Lenovo V',       m:'Lenovo',  g:'GRP-CONSUMO',  pri:55, p:'(?s).*lenovo.*\\bv(14|15|130|330|340)\\b.*'},
   // Dell
   {n:'Latitude',       m:'Dell',    g:'GRP-CORP',     pri:60, p:'(?s).*latitude.*'},
+  {n:'XPS',            m:'Dell',    g:'GRP-PREMIUM',  pri:60, p:'(?s).*\\bxps\\b.*'},
   {n:'Vostro',         m:'Dell',    g:'GRP-CORP',     pri:60, p:'(?s).*vostro.*'},
   {n:'Inspiron',       m:'Dell',    g:'GRP-CONSUMO',  pri:60, p:'(?s).*inspiron.*'},
   // HP

@@ -22,7 +22,7 @@ app/requirements.txt
 cypher/Grupo_20_PG2_U1_carga.cypher      base del PG2 (bloques 0–20; el bloque 0 BORRA todo)
 cypher/Grupo_20_PG3_mercado.cypher       componentes, líneas, RAM, avisos, costos y criterios (idempotente)
 cypher/Grupo_20_PG2_U1_consultas.cypher  consultas de ejemplo
-datos/relevamiento_mercado.csv           289 avisos de Mercado Libre (9/11/2026); seed que carga el PG3 con LOAD CSV
+datos/relevamiento_mercado.csv           333 avisos de Mercado Libre (9 y 10/11/2026); seed que carga el PG3 con LOAD CSV
 scripts/cargar_grafo.sh      lo ejecuta el contenedor neo4j-init (LF obligatorio)
 docker-compose.yml, Dockerfile, *.bat, LEVANTAR.md, docs/ (informes)
 ```
@@ -91,7 +91,7 @@ Evaluación integral (`evaluar_publicacion_integral`):
 
 ## Estado (9/11/2026)
 - [x] Probado contra Neo4j real. `--test`: 5/5 casos integrales + 4/4 enrutador.
-- [x] Valuación por componentes calibrada con 289 avisos; error mediano 14,9 % contra el precio publicado
+- [x] Valuación por componentes calibrada con 333 avisos; error mediano 14,9 % contra el precio publicado
       (67,7 % dentro de ±25 %, CE-29 = 5; medido sobre los mismos datos de la calibración).
 - [x] Se quitó el atajo de Leonel que devolvía decisiones guardadas de casos del PG2 (matcheaba mal: HP 15 → Dell Inspiron 15).
 - [ ] Entregables: PI4 de cada integrante y PG3 (informe PDF, diagramas, zip con export de Neo4j, video/infografía).
