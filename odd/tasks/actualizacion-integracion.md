@@ -13,7 +13,7 @@ S6. «dale, hacelo y ejecuta las pruebas por favor, no hace falta que preguntes 
 ## Tasks
 T1 | S1,S3,S4 | worker por context backstop; padre integra | done | Fixture adaptado sin cambiar producción/corpus; RED2tests exit1, GREEN2/2 exit0, suite71/71 exit0. Commit 3f94304.
 T2 | S2,S4,S5 | padre mantenimiento; verifier independiente | done | PG3exit0,backuprestore/check/cmpOK;333avisos93CPU24precio46lineas11RAM. VerifierindependientePASS S2/S4/S5/S6(T2),Risk1;118nodos/320rels/19constraintsintactos. Commit 057412c.
-T3 | S3,S4,S6 | padre; explorer analiza resultados | done | Job-8:61/61completados,49cumplen6fallan6sondas0infra,exit1en7m12. Resultado fallido del producto registrado, no aprobado ni corregido. Resumen,links,históricos y fuentes verificados; commit de evidencia pendiente.
+T3 | S3,S4,S6 | padre; explorer analiza resultados | done | Job-8:61/61completados,49cumplen6fallan6sondas0infra,exit1en7m12. Resultado fallido del producto registrado, no aprobado ni corregido. Resumen,links,históricos y fuentes verificados; commit de evidencia 6202a74.
 
 ## Log
 L1. Pedido original: «Claro, actualiza todo lo necesario. Quizaas haya que actualizar todo el grafo de NEO4J. Y si lo haces esta bien para que quede en la ultima version. Hacelo, y luego corre las pruebas. Te autorizo a tomas decisiones obvias. Si hay algo destructivo para y decime».
