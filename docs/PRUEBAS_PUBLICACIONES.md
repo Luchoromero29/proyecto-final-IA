@@ -149,8 +149,10 @@ host y el mismo modelo en otros hosts no reciben el campo.
 Esa adaptación está cubierta por 5 pruebas nuevas del cliente (69 pruebas offline en total).
 El [smoke real NVIDIA](ejecuciones/publicaciones_criticas_nvidia_smoke.log) verificó los 9 campos
 esperados y una evaluación integral: 4 respuestas HTTP 200, finalización `stop` y 0 tokens de
-razonamiento. **No** se afirma todavía una tanda completa con NVIDIA. La evidencia original que
-aparece más abajo corresponde a OpenRouter y se conserva tal como se registró.
+razonamiento. La [tanda de 32 pendientes con NVIDIA](ejecuciones/publicaciones_criticas_nvidia_pendientes.log)
+completó los 32 sin errores de infraestructura: 27 cumplen, 2 fallan y 3 son sondas. Los otros 29
+casos se completaron con OpenRouter; no se presenta como una corrida homogénea de 61 con NVIDIA.
+La evidencia original de OpenRouter se conserva tal como se registró.
 
 ## Costos y límites
 
@@ -185,7 +187,9 @@ y 32 no completados por infraestructura/proveedor. Uno de los 8 incumplimientos 
 oráculo PC-16: el origen del enrutamiento debe ser una regla solo en el fixture que simula una
 clasificación equivocada. Se corrigió sin repetir llamadas al proveedor.
 
-Consultá el [resumen y la decisión pendiente](ejecuciones/publicaciones_criticas_resumen.md) y
-la [salida original](ejecuciones/publicaciones_criticas_openrouter.log). No se corrigió el motor,
-no se cambiaron modelos y no se afirma que los 61 hayan pasado. Para completar la evidencia real
-hace falta decidir cuándo reintentar los 32 casos pendientes o elegir otro modelo explícitamente.
+Consultá el [resumen final con todas las tandas](ejecuciones/publicaciones_criticas_resumen.md) y
+la [salida original](ejecuciones/publicaciones_criticas_openrouter.log). Después se autorizó cambiar
+a NVIDIA directa y adaptar su cliente. Los 32 pendientes ya se completaron: 27 cumplen, 2 fallan,
+3 sondas y 0 errores de infraestructura. Hay evidencia real para los 61 casos entre ambos
+proveedores; eso **no** significa que los 61 hayan pasado ni que se haya corregido la lógica de
+negocio. Los incumplimientos y límites de las sondas están registrados en el resumen.

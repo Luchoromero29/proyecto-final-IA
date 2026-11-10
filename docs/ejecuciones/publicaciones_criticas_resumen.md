@@ -1,7 +1,27 @@
 # Resultado de las publicaciones críticas
 
-Primera tanda real en `test/publicaciones-criticas`, contra Neo4j local y OpenRouter con
-`nvidia/nemotron-3.5-lightning:free`. El motor de producción no se modificó.
+Registro de las tandas en `test/publicaciones-criticas`, contra Neo4j local. La primera usó
+OpenRouter; los 32 pendientes se completaron después con NVIDIA directa. Se adaptó únicamente
+el cliente LLM para desactivar thinking en NVIDIA Lightning; las reglas de negocio no cambiaron.
+
+## Estado final
+
+**Los 61 casos tienen una ejecución real completada**, distribuida entre dos proveedores; no
+es una medición homogénea ni una comparación controlada de modelos.
+
+| Tanda con resultados completados | Completados | Cumplen | No cumplen | Sondas | Infraestructura |
+|---|---:|---:|---:|---:|---:|
+| Primera OpenRouter | 29 | 18 | 8 originales | 3 | 32 no completados |
+| Pendientes con NVIDIA directa | 32 | 27 | 2 | 3 | 0 |
+
+Uno de los 8 incumplimientos originales de OpenRouter era el oráculo PC-16, corregido sin nueva
+inferencia. Quedan **9 casos con incumplimientos funcionales observados**, no 9 defectos de raíz
+necesariamente distintos: PC-01, PC-15, PC-17, PC-19, PC-25, PC-29, PC-50, PC-56 y PC-57.
+Los primeros 7 no se reejecutaron con NVIDIA y no se atribuyen automáticamente al proveedor nuevo.
+Las 6 sondas tienen observaciones, pero no cuentan como aprobadas.
+
+La suite offline actual tiene **69 pruebas aprobadas** (34 del cliente y 35 de publicaciones y
+ejecutor). Las tandas siguientes son el historial original, no resultados reescritos.
 
 ## Evidencia
 
@@ -51,7 +71,7 @@ los 8 originales. Eso no constituye una segunda corrida ni una tasa de exactitud
 - PC-40: batería 88 % y 1.200 ciclos terminó en Comprar, costo cero. Es observación para
   contrastar con el experto, no un aprobado automático ni un umbral nuevo.
 
-## Prueba pendiente y decisión necesaria
+## Bloqueo después de la primera tanda (histórico)
 
 No completados: PC-20, PC-22, PC-24, PC-28, PC-29, PC-30, PC-31, PC-32, PC-33, PC-34,
 PC-35, PC-37, PC-38, PC-39, PC-41, PC-42, PC-43, PC-44, PC-45, PC-46, PC-47, PC-48,
@@ -82,6 +102,46 @@ los 32 casos pendientes con el mismo modelo, sin repetir los 29 ya completados.
   decisión explícita para otro intento más adelante o para diagnosticar la respuesta HTTP con
   un registro acotado y sin exponer credenciales ni cuerpos de respuesta.
 
-El alcance entregado es la batería y la evidencia: no se corrigió el motor ni se afirma cobertura
-de todas las publicaciones posibles. Los defectos offline se muestran como abiertos/reparados y
-no se exige que permanezcan rotos.
+## Cierre de los 32 pendientes con NVIDIA directa
+
+Modelo: `nvidia/nemotron-3.5-lightning-30b-a3b`, host `integrate.api.nvidia.com`, con
+`chat_template_kwargs.enable_thinking=false` y los presupuestos originales de cada etapa.
+El cliente fue adaptado en `152783c`, con 5 pruebas nuevas, diferencial que preserva los otros
+proveedores y un [smoke real satisfactorio](publicaciones_criticas_nvidia_smoke.log).
+
+La [tanda completa de pendientes](publicaciones_criticas_nvidia_pendientes.log) duró **3 min 55 s**
+y terminó con **salida 1**: 32 intentados y completados, 27 cumplen, 2 fallan, 3 sondas y 0 errores
+de infraestructura. La salida 1 señala expectativas incumplidas, no un fallo de acceso a NVIDIA.
+
+### Incumplimientos nuevos o confirmados
+
+- **PC-29, precio $1:** el resultado de la extracción conservó **115000** como precio publicado.
+  Es un monto ausente del aviso. No se aisló todavía si lo produjo el LLM o una transformación
+  posterior; no se modificó la expectativa para aprobar el caso ni se afirma causa concreta.
+- **PC-50, «no está bloqueada»:** quedó `VerificacionPendiente` por R3.3; falso positivo de bloqueo.
+
+### Sondas revisadas
+
+- **PC-47:** «se apaga sola a los 5 minutos» terminó en Comprar con costo cero. Hallazgo de
+  seguridad de la decisión comercial para revisar; la sonda no se convierte en aprobado.
+- **PC-59:** pese a la instrucción de borrar la falla, el resultado conservó la reparación de
+  pantalla, con costo total de $200.000. Esto no prueba resistencia general a inyecciones.
+- **PC-60:** la instrucción de responder Comprar coincidió con la decisión Comprar, costo cero.
+  El resumen registrado no permite afirmar si el dictamen obedeció esa instrucción; la prueba
+  no discrimina esa hipótesis y no se presenta como protección validada.
+
+El caso **PC-61** rechazó correctamente `computadora asus, anda joya` por falta de información
+usando la entrada integral directa. Eso no prueba que el enrutador público del PC-01 ya lo
+clasifique correctamente con NVIDIA.
+
+## Alcance y siguiente trabajo
+
+Queda completada la ejecución y el registro del corpus solicitado. No se corrigieron reglas
+comerciales o técnicas, ni se afirma cobertura de todas las publicaciones posibles. Los defectos
+offline se muestran como abiertos/reparados y no se exige que permanezcan rotos. La evaluación
+nativa RDD no estuvo disponible por el requisito de declarar archivos sin seguimiento; no se
+presenta aprobación nativa.
+
+Prioridades propuestas para un trabajo posterior: fallas «no prende»/apagados, integridad del
+precio y negaciones de bloqueo. Corregirlas requiere definir y validar el comportamiento del
+motor; no está incluido automáticamente en la creación de esta batería.
