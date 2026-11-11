@@ -204,15 +204,20 @@ RETURN CASE WHEN regla_descarte IS NULL THEN null ELSE 'DescartarPorRiesgo' END 
                           version: c.version, estado: c.estado_validacion}] AS criterios
 """
 
-# Mapeo de la categoría difusa de SM3-CONV al tipo de decisión del dominio. Está declarado
-# en la consulta (inferencia), no en Python; la contraoferta solo se informa al negociar.
-# El grafo no representa hoy esta correspondencia como relación (ver docs/DECISION_NEO4J.md).
+# Correspondencia y habilitación leídas del conjunto existente, no elegidas por categoría.
+# La lista de tipos admitidos valida el contrato público; no asigna una decisión a un nombre.
+# Configuración ausente/ambigua/inválida conserva la fila nula que rechaza el orquestador.
 CONSULTA_DECISION = """
 WITH $categoria AS categoria, toFloat($contraoferta) AS contraoferta
-RETURN CASE categoria WHEN 'Comprar' THEN 'Comprar'
-                      WHEN 'Negociar' THEN 'ComprarConOfertaMenor'
-                      WHEN 'Descartar' THEN 'DescartarPorRiesgo' END AS decision,
-       CASE WHEN categoria = 'Negociar' THEN contraoferta END AS contraoferta_sugerida_ars
+OPTIONAL MATCH (:VariableDifusa {nombre:'Conveniencia'})-[:TIENE_CONJUNTO]->(c:ConjuntoDifuso)
+WHERE c.etiqueta = categoria
+WITH contraoferta, collect(c) AS conjuntos
+WITH contraoferta, CASE WHEN size(conjuntos)=1 THEN head(conjuntos) END AS candidato
+WITH contraoferta, CASE WHEN candidato.representacion_version = 'politicas-P1-v1'
+       AND candidato.resultado_decision IN ['Comprar', 'ComprarConOfertaMenor', 'DescartarPorRiesgo']
+       AND candidato.contraoferta_habilitada IN [true, false] THEN candidato END AS conocimiento
+RETURN conocimiento.resultado_decision AS decision,
+       CASE WHEN conocimiento.contraoferta_habilitada THEN contraoferta END AS contraoferta_sugerida_ars
 """
 
 
@@ -249,8 +254,8 @@ def inferir_sm3_crisp_cypher(driver, base: str, precio: float, costo_rep: float,
 
 def resolver_decision_sm3_cypher(driver, base: str, categoria: str, contraoferta: float) -> dict:
     """
-    Traduce la categoría difusa de SM3-CONV al tipo de decisión y habilita la contraoferta
-    solo cuando la decisión es negociar. Devuelve None si el grafo no responde.
+    Lee la decisión y la habilitación de contraoferta del conjunto difuso de SM3-CONV.
+    Sin correspondencia válida devuelve la fila nula; sin respuesta del driver, None.
     """
     return _una_fila(driver, base, CONSULTA_DECISION,
                      {"categoria": categoria, "contraoferta": contraoferta})

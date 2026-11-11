@@ -1,11 +1,13 @@
 # La decisión de SM3 se infiere en Neo4j
 
-La política crisp de la operación (R3.7, R3.8, margen requerido, contraoferta y mapeo de la
-categoría difusa a la decisión) dejó de estar escrita en Python: hoy son consultas Cypher en
-[`app/inferencia_sm3.py`](../app/inferencia_sm3.py). El motor de
-[`ejecutar_motor_sm3`](../app/orquestador_evaltic.py) solo valida la entrada, registra la
-procedencia que devuelve el grafo y arma la salida pública. Cumple el criterio S9: el LLM no
-toma decisiones de negocio y Python no lee criterios para decidir.
+SM3 ejecuta la inferencia en Neo4j mediante consultas de
+[`app/inferencia_sm3.py`](../app/inferencia_sm3.py). **Ejecutar una política en Neo4j no
+significa que esté representada como conocimiento:** las condiciones/fórmulas de
+`CONSULTA_CRISP` todavía requieren la migración P3. P1 sí representa la correspondencia de
+categoría y habilitación de contraoferta en los tres conjuntos `Conveniencia.*` existentes.
+El [contrato de migración](CONTRATO_POLITICAS_NEO4J.md) fija las etapas restantes; no se
+declara S9 completo. El LLM no toma decisiones; el adaptador valida, registra procedencia y
+presenta el resultado.
 
 ## Camino rápido
 
@@ -32,7 +34,7 @@ toma decisiones de negocio y Python no lee criterios para decidir.
 | Consulta | Resuelve | Devuelve además |
 |---|---|---|
 | `CONSULTA_CRISP` | margen neto y ratio de reparación (aritmética + cuantización decimal en el grafo), R3.7 → R3.8 → margen requerido (base → R3.4 o R3.5 → R3.6) → contraoferta → brecha y descuento | decisión y regla de descarte, criterios usados con su procedencia, textos de las reglas activadas en orden, aviso `division_por_cero` |
-| `CONSULTA_DECISION` | categoría difusa de SM3-CONV → tipo de decisión; contraoferta habilitada solo al negociar | decisión y contraoferta sugerida |
+| `CONSULTA_DECISION` | lee `resultado_decision` y `contraoferta_habilitada` del ConjuntoDifuso correspondiente; valida cardinalidad y contrato, sin elegir por categoría | decisión y contraoferta sugerida |
 
 Los umbrales, márgenes y primas se leen de `:CriterioExperto` **dentro** de la consulta. La
 difusa SM3-CONV se sigue evaluando con la función que ya existía (`inferir_sm3_conv_cypher`):
@@ -109,10 +111,10 @@ La traza conserva su forma: `traza["criterios_usados"]` guarda `id`, `valor`, `u
 | Límite | Detalle |
 |---|---|
 | Cuantización decimal | Reproduce el redondeo IEEE-754 de la política anterior en todo el rango verificado de magnitudes (2⁻⁶⁰ a 2¹⁰²³, incluidos empates exactos e inexactos). No hay precisión arbitraria ni dependencias nuevas: el atajo de representación binaria cubre los extremos. |
-| Mapeo categoría → decisión | El grafo no representa hoy esa correspondencia como relación; está declarada explícitamente en `CONSULTA_DECISION`. Candidato a conocimiento versionado en un bloque futuro. |
+| Mapeo categoría → decisión | P1: propiedades de los tres conjuntos existentes, con `representacion_version=politicas-P1-v1`. Sin configuración válida se devuelve la fila nula que el orquestador rechaza explícitamente, no una compra por defecto. |
 | VMA igual a cero | Se conserva el contrato anterior: `ZeroDivisionError("division by zero")`. La consulta informa `division_por_cero` y el adapter traduce el código a la misma excepción, con la traza vacía. Un VMA negativo se evalúa como antes (ratio 0, contraoferta acotada a cero). |
 | Dominio de entrada | Se conserva el de la política anterior: `int`, `float` y `bool` como 0/1. Cualquier otro tipo falla con `TypeError` —la misma clase que producía la aritmética anterior— con un mensaje propio que nombra el campo, en lugar de dejar que la consulta convierta `"350000"` en silencio. |
-| Alcance | Este cambio cubre SM3. Las decisiones crisp que todavía viven en SM1 (fallas, cargador, pantalla) y en SM2 (pendientes de tasación) no se tocaron. |
+| Alcance | La ejecución/paridad previa de SM1/SM2/SM3 no acredita representación completa. P1 cubre I8; P2–P5 migran condiciones, fórmulas, estados y señales sobre el modelo existente, sin recalibrar ni reactivar reglas reemplazadas. |
 
 ## Verificación
 
@@ -121,8 +123,44 @@ La traza conserva su forma: `traza["criterios_usados"]` guarda `id`, `valor`, `u
 - [ ] El dictamen del LLM no cambia la decisión ni los indicadores del grafo.
 - [ ] Los criterios declarados en la traza son los del grafo, no los que lea Python.
 
+## Actualización P1: datos antes del consumidor
+
+El artefacto [Grupo_20_PG3_politicas.cypher](../cypher/Grupo_20_PG3_politicas.cypher) es
+una sola consulta aditiva. No ejecuta PG2, no refresca mercado ni modifica parámetros
+Mamdani, costos, CE o validación experta. Antes de cambiar nada exige los tres nodos/enlaces
+correctos y propiedades nuevas ausentes o iguales a lo esperado. Cualquier conflicto
+rechaza el conjunto completo: `configuradas=0`, `actualizadas=0`, `errores` no vacío.
+
+Se ejecuta en una transacción explícita, comprobando `configuradas=3` y `errores=[]`
+**antes** de confirmar. Primera aplicación sin datos P1: `actualizadas=3`; segunda:
+`actualizadas=0`. No ejecutar la recarga general ni continuar ante un resultado rechazado.
+En esta etapa sólo se aplicó al scratch marcado. La aplicación original sigue pendiente
+del acceso permitido, inventario, respaldo y recuperación P6; no desplegar el consumidor
+nuevo contra una base que todavía no tenga esta actualización.
+
+La actualización conserva `c`, `sigma`, `tipo`, `etiqueta`, relaciones y
+`estado_validacion`. La versión de representación no valida el conocimiento experto ni
+altera Firme/Provisional. Los valores originales siguen habilitando oferta sólo en
+Negociar; cambiar ese dato en el grafo, no el nombre de categoría en código, decide ahora
+la habilitación.
+
+Pruebas de representación y protección, en transacciones que se revierten:
+
+```bash
+EVALTIC_NEO4J_PRUEBAS_URI=bolt://127.0.0.1:17687 \
+  PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python \
+  -m unittest discover -s app/tests -p test_politicas_neo4j.py -v
+```
+
+Evidencia P1: RED 3 fallos → GREEN 7/7; suite completa 191/191 sin omisiones;
+diferencial de 12 entradas/rutas públicas contra `c46164f`, sin diferencias de resultado,
+excepción, stdout o stderr. Se conserva el primer intento de carga fallido por el
+comparador Date/DateTime del arnés: rollback confirmado, corregida serialización, sin
+ampliar allowlist. Logs y JSON en `docs/ejecuciones/politicas_p1_*`.
+
 ## Siguiente paso
 
-Revisar con el experto si el mapeo categoría difusa → decisión y las reglas R3.9/R3.10/R3.11
-deben representarse como relaciones del grafo, y registrar el bloque en
-[`odd/tasks/mejoras-evaltic.md`](../odd/tasks/mejoras-evaltic.md).
+P2: representar condiciones/precedencias técnicas, sin cambiar diagnóstico ni costos.
+Continuidad y requisitos en
+[`odd/tasks/migracion-politicas-neo4j.md`](../odd/tasks/migracion-politicas-neo4j.md).
+R3.9/R3.10/R3.11 siguen reemplazadas; no activarlas por enumerar todas las reglas.
