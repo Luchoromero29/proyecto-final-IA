@@ -1,0 +1,67 @@
+test_configuracion_invalida_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_falla_con_el_error_existente) ... 
+  test_configuracion_invalida_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_falla_con_el_error_existente) (propiedades={'filtro_campo': 'margen_neto'}) ... FAIL
+  test_configuracion_invalida_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_falla_con_el_error_existente) (propiedades={'filtro_comparador': '='}) ... FAIL
+test_el_comparador_guardado_en_el_grafo_cambia_el_filtro_publico (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_el_comparador_guardado_en_el_grafo_cambia_el_filtro_publico) ... FAIL
+test_el_criterio_enlazado_es_la_autoridad_del_umbral (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_el_criterio_enlazado_es_la_autoridad_del_umbral) ... FAIL
+test_politica_por_defecto_conserva_el_umbral_y_la_traza (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_politica_por_defecto_conserva_el_umbral_y_la_traza) ... ok
+test_seed_es_idempotente_y_un_conflicto_no_escribe (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_seed_es_idempotente_y_un_conflicto_no_escribe) ... ok
+
+======================================================================
+FAIL: test_configuracion_invalida_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_falla_con_el_error_existente) (propiedades={'filtro_campo': 'margen_neto'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm3_filtro_neo4j.py", line 92, in test_configuracion_invalida_falla_con_el_error_existente
+    self.assertIsNone(self._inferir(int(1000000 * 0.6)))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'decision': 'DescartarPorRiesgo', 'regla': 'R3.7', 'margen_neto': 0.0, 'ratio_reparacion': 0.6, 'margen_req': None, 'brecha': None, 'descuento': None, 'contraoferta': None, 'ratio_max': 0.5, 'division_por_cero': False, 'reglas_activadas': ['R3.7: costo / VMA > CE ratio_reparacion_max → DescartarPorRiesgo'], 'criterios': [{'unidad': 'adimensional', 'estado': 'Provisional', 'valor': 0.5, 'id': 'CE-19', 'nombre': 'ratio_reparacion_max', 'version': 'v1'}]} is not None
+
+======================================================================
+FAIL: test_configuracion_invalida_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_falla_con_el_error_existente) (propiedades={'filtro_comparador': '='})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm3_filtro_neo4j.py", line 92, in test_configuracion_invalida_falla_con_el_error_existente
+    self.assertIsNone(self._inferir(int(1000000 * 0.6)))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'decision': 'DescartarPorRiesgo', 'regla': 'R3.7', 'margen_neto': 0.0, 'ratio_reparacion': 0.6, 'margen_req': None, 'brecha': None, 'descuento': None, 'contraoferta': None, 'ratio_max': 0.5, 'division_por_cero': False, 'reglas_activadas': ['R3.7: costo / VMA > CE ratio_reparacion_max → DescartarPorRiesgo'], 'criterios': [{'unidad': 'adimensional', 'estado': 'Provisional', 'valor': 0.5, 'id': 'CE-19', 'nombre': 'ratio_reparacion_max', 'version': 'v1'}]} is not None
+
+======================================================================
+FAIL: test_el_comparador_guardado_en_el_grafo_cambia_el_filtro_publico (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_el_comparador_guardado_en_el_grafo_cambia_el_filtro_publico)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm3_filtro_neo4j.py", line 73, in test_el_comparador_guardado_en_el_grafo_cambia_el_filtro_publico
+    self.assertEqual(("R3.7", "DescartarPorRiesgo"), (fila["regla"], fila["decision"]))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('R3.7', 'DescartarPorRiesgo') != (None, None)
+
+First differing element 0:
+'R3.7'
+None
+
+- ('R3.7', 'DescartarPorRiesgo')
++ (None, None)
+
+======================================================================
+FAIL: test_el_criterio_enlazado_es_la_autoridad_del_umbral (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_el_criterio_enlazado_es_la_autoridad_del_umbral)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm3_filtro_neo4j.py", line 84, in test_el_criterio_enlazado_es_la_autoridad_del_umbral
+    self.assertEqual(("R3.7", umbral), (fila["regla"], fila["ratio_max"]))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('R3.7', 20) != ('R3.7', 0.5)
+
+First differing element 1:
+20
+0.5
+
+- ('R3.7', 20)
+?          -
+
++ ('R3.7', 0.5)
+?           ++
+
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.890s
+
+FAILED (failures=4)
+exit=1

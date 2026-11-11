@@ -9,6 +9,15 @@ El [contrato de migración](CONTRATO_POLITICAS_NEO4J.md) fija las etapas restant
 declara S9 completo. El LLM no toma decisiones; el adaptador valida, registra procedencia y
 presenta el resultado.
 
+**Alcance P3a (condición de R3.7).** La condición del filtro R3.7 ya se lee como datos: la
+`Regla` `R3.7` guarda `filtro_campo` y `filtro_comparador`, y el umbral es el criterio que ya
+enlaza su `USA_CRITERIO` (sin nodos, criterios ni valores nuevos). `CONSULTA_CRISP` consume
+esos datos y una configuración ausente, ambigua o inválida no devuelve fila (el adaptador
+conserva el error existente); no decide nada en Python. El artefacto
+`cypher/Grupo_20_PG3_politicas_sm3_filtro.cypher` está probado en una transacción revertida,
+y activado **sólo en el scratch marcado**: dos propiedades nuevas, primera aplicación 1 y segunda 0; grafo protegido validado antes del commit (`ejecuciones/politicas_p3a_activacion.log`). La base original sigue pendiente de P6. No se
+migraron las consecuencias de R3.7 ni el resto de la política financiera.
+
 ## Camino rápido
 
 1. Ver qué resuelve el grafo: `app/inferencia_sm3.py` (la cuantización decimal

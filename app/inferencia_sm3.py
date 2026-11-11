@@ -135,19 +135,27 @@ CONSULTA_CRISP = """
 // SM3 — política crisp, aritmética y cuantización decimal resueltas en el grafo.
 WITH toFloat($precio) AS precio, toFloat($costo_rep) AS costo, toFloat($vma) AS vma,
      toFloat($n_interv) AS n_interv, $riesgo AS riesgo, $demanda AS demanda
-MATCH (cr:CriterioExperto {nombre: 'ratio_reparacion_max'})
 MATCH (cmb:CriterioExperto {nombre: 'margen_base'})
 MATCH (cal:CriterioExperto {nombre: 'margen_alta_liquidez'})
 MATCH (cra:CriterioExperto {nombre: 'margen_riesgo_alto'})
 MATCH (cum:CriterioExperto {nombre: 'umbral_intervenciones'})
 MATCH (cpf:CriterioExperto {nombre: 'prima_fallas'})
-WITH cr, cmb, cal, cra, cum, cpf, precio, costo, vma, n_interv, riesgo, demanda,
+WITH cmb, cal, cra, cum, cpf, precio, costo, vma, n_interv, riesgo, demanda,
      vma = 0.0 AS division_por_cero,
      CASE WHEN vma = 0.0 THEN null ELSE 100.0 * (vma - precio - costo) / vma END AS margen_bruto,
      CASE WHEN vma > 0 THEN costo / vma ELSE 0.0 END AS ratio_bruto
 """ + _cuantizar("margen_bruto", 1, "margen_neto") + _cuantizar("ratio_bruto", 2, "ratio_reparacion") + """
+// R3.7: el campo, el comparador y el criterio salen de la Regla existente y de su vínculo
+// USA_CRITERIO. Configuración ausente/ambigua/inválida no produce fila (error explícito).
+MATCH (r37:Regla {id:'R3.7'})
+WITH *, [(r37)-[:USA_CRITERIO]->(c:CriterioExperto) | c] AS criterios37
+WITH *, CASE WHEN size(criterios37) = 1 AND r37.filtro_campo = 'ratio_reparacion'
+              AND r37.filtro_comparador IN ['>', '<']
+             THEN criterios37[0] END AS ce37
+WHERE ce37 IS NOT NULL AND ce37.valor IS NOT NULL
 // R3.7 y luego R3.8: gana el primer filtro crisp que se cumple.
-WITH *, CASE WHEN ratio_reparacion > toFloat(cr.valor) THEN 'R3.7'
+WITH *, CASE WHEN r37.filtro_comparador = '>' AND ratio_reparacion > toFloat(ce37.valor) THEN 'R3.7'
+             WHEN r37.filtro_comparador = '<' AND ratio_reparacion < toFloat(ce37.valor) THEN 'R3.7'
              WHEN riesgo = 'Alto' AND demanda = 'Baja' THEN 'R3.8' END AS regla_descarte
 // Margen requerido: paso 0 (base), paso 1 (R3.4 o R3.5, excluyentes), paso 2 (R3.6).
 WITH *, CASE WHEN regla_descarte IS NOT NULL THEN null
@@ -175,8 +183,8 @@ WITH *, CASE WHEN contraoferta IS NULL THEN null
              WHEN descuento_cuantizado IS NULL THEN 0.0
              ELSE descuento_cuantizado END AS descuento
 // Procedencia: los criterios que usó efectivamente la rama aplicada, en su orden de lectura.
-WITH *, CASE WHEN regla_descarte IS NOT NULL THEN [cr]
-             ELSE [cr, cmb]
+WITH *, CASE WHEN regla_descarte IS NOT NULL THEN [ce37]
+             ELSE [ce37, cmb]
                   + CASE WHEN demanda = 'Alta' AND riesgo = 'Bajo' THEN [cal]
                          WHEN riesgo = 'Alto' THEN [cra] ELSE [] END
                   + [cum]
@@ -197,7 +205,7 @@ WITH *, CASE WHEN regla_descarte = 'R3.7' THEN ['R3.7: costo / VMA > CE ratio_re
 RETURN CASE WHEN regla_descarte IS NULL THEN null ELSE 'DescartarPorRiesgo' END AS decision,
        regla_descarte AS regla,
        margen_neto, ratio_reparacion, margen_req, brecha, descuento, contraoferta,
-       toFloat(cr.valor) AS ratio_max,
+       toFloat(ce37.valor) AS ratio_max,
        division_por_cero,
        reglas_activadas,
        [c IN criterios | {nombre: c.nombre, id: c.id, valor: c.valor, unidad: c.unidad,
