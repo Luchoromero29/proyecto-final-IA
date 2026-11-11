@@ -103,7 +103,8 @@ Evaluación integral (`evaluar_publicacion_integral`):
 - [x] Se quitó el atajo de Leonel que devolvía decisiones guardadas de casos del PG2 (matcheaba mal: HP 15 → Dell Inspiron 15).
 - [ ] Entregables: PI4 de cada integrante y PG3 (informe PDF, diagramas, zip con export de Neo4j, video/infografía).
 - [ ] R1.4 `NoAmpliable`; R3.1b rechazo comercial directo.
-- [x] B2 técnico: síntomas/diagnóstico, fallas→tareas, valuación y decisión en Cypher; verificación independiente y 184 pruebas en Neo4j aislado.
+- [x] Evidencia funcional B2: ejecución en Cypher, verificación independiente y 184 pruebas en Neo4j aislado.
+- [ ] B2 arquitectura: representar también las políticas y condiciones en el grafo, no sólo ejecutarlas allí. Plan incremental en `docs/PLAN_MIGRACION_POLITICAS_NEO4J.md`; aún no implementado.
 - [ ] B2 despliegue (T2P): vía segura para aplicar sólo el seed aditivo a la base original y repetir 61 publicaciones reales.
 - [ ] B3: interpretar señales de bloqueo por contexto; no confundirlo con el diagnóstico B2.
 - [ ] qwen2.5:1.5b extrae mal a veces (completa procesadores, mete positivos en fallas); alternativa: Groq.
@@ -115,7 +116,9 @@ grafo aislado. El loader completo **no es una migración aditiva**: corre primer
 mercado. No usar una recarga completa para aplicar sólo B2 sobre datos de trabajo. Ese paso
 sigue pendiente de un procedimiento seguro del operador; ver `docs/DIAGNOSTICO_TECNICO.md`.
 La verificación independiente final de RIE→DEM dio PASS (184 pruebas con grafo, sin omisiones).
-Eso completa el cierre técnico del código, no una corrida real nueva de las 61 publicaciones.
+Eso acredita ejecución y paridad funcional, no una corrida real nueva de las 61 publicaciones.
+T2/S9 se reabrieron porque aún hay políticas incrustadas en consultas del código: se requiere
+su representación en el grafo existente, según `docs/PLAN_MIGRACION_POLITICAS_NEO4J.md`.
 La evidencia, los intentos fallidos preservados y las limitaciones están en
 `docs/ejecuciones/mejoras_b2_cierre.md`. No hay aprobación nativa de revisión ni push/PR.
 

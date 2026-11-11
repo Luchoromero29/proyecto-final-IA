@@ -5,11 +5,12 @@
 incorrectas sin cambiar de modelo, debilitar las pruebas ni reemplazar el patrón neuro-simbólico.
 Preparado sobre `integracion/mejoras-con-pruebas`, referencia `67de236`.
 
-**B2: código implementado y verificado técnicamente en Neo4j aislado.** La verificación
-independiente final RIE→DEM dio PASS, con 184 pruebas aprobadas sin omisiones. La aplicación
-aditiva sobre la base original y la nueva tanda NVIDIA de 61 siguen pendientes (T2P); no se
-presenta como un cierre end-to-end. B3–B5 permanecen pendientes. Ver
-[evidencia y límites de B2](ejecuciones/mejoras_b2_cierre.md).
+**B2 reabierto por representación del conocimiento.** Las 184 pruebas y la verificación
+independiente anterior acreditan comportamiento e inferencia ejecutada en Neo4j, no que todas
+las políticas y condiciones estén representadas en el grafo. La actualización se planifica en
+[el plan de migración quirúrgica](PLAN_MIGRACION_POLITICAS_NEO4J.md), sin reemplazar el modelo ni
+implementar todavía. Se conserva la [evidencia funcional histórica](ejecuciones/mejoras_b2_cierre.md).
+La aplicación original y los 61 casos NVIDIA siguen pendientes (T2P); B3–B5 conservan sus objetivos.
 
 ## Punto de partida
 

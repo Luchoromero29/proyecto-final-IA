@@ -1,5 +1,10 @@
 # B2 — cierre técnico y límites de la evidencia
 
+> **Alcance rectificado:** este documento conserva evidencia histórica de ejecución y paridad,
+> no acredita que toda política esté representada como conocimiento del grafo. S9/T2 se reabrieron;
+> ver el [plan incremental](../PLAN_MIGRACION_POLITICAS_NEO4J.md). No se invalidan ni reescriben
+> las pruebas, los fallos registrados o los commits anteriores.
+
 La inferencia técnica, la valuación y la decisión se trasladaron a Neo4j.
 Este cierre de código **no certifica una carga sobre la base original ni una nueva corrida real de 61 publicaciones**. La entrevista y la validación del experto siguen pendientes.
 
