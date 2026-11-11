@@ -1,0 +1,290 @@
+{
+  "base_commit": "d93b86d",
+  "base_exit": 0,
+  "actual_exit": 0,
+  "scratch": "_respaldo_original/rie-base.Rjl5bY",
+  "comparaciones": 35,
+  "diferencias": [
+    {
+      "base": {
+        "error": null,
+        "resultado": {
+          "sm1": {
+            "cantidad_intervenciones": 0,
+            "costo_total": 0,
+            "es_viable": true,
+            "plan_reparacion": [],
+            "upgrades": {
+              "ram": false,
+              "ssd": false
+            }
+          },
+          "sm2": {
+            "antiguedad_anios": 7.0,
+            "demanda_comercial": "Alta",
+            "descuento_negociacion_pct": 10.0,
+            "dias_rotacion_estimados": 12.0,
+            "estado": "Tasado",
+            "factor_linea": 1.075,
+            "factor_ram": 1.08,
+            "fuente_precio": "Mediana de 12 avisos de Mercado Libre (9/11/2026), normalizada por línea y RAM",
+            "grupo_linea": "Corporativa",
+            "indice_repuestos": 9.0,
+            "linea": "ThinkPad",
+            "muestras_procesador": 12,
+            "origen_factor_linea": "Línea (23 avisos)",
+            "procesador": "Core i5 10ma gen",
+            "ram_tasada_gb": 16,
+            "revalorizaciones_ars": 0,
+            "riesgo_obsolescencia": "Medio",
+            "score_riesgo": 0.46,
+            "valor_desde_generacion_anterior": null,
+            "valor_mercado_ars": 793000,
+            "valor_ref_procesador_ars": 683000,
+            "vma_estimado_ars": 714000
+          },
+          "sm3": {
+            "categoria_difusa": "Comprar",
+            "conveniencia_score": 0.78,
+            "criterios_pendientes": [
+              "anio_referencia (CE-13 v1)",
+              "descuento_negociacion (CE-30 v1)",
+              "margen_base (CE-14 v1)",
+              "min_muestras_mercado (CE-29 v2)",
+              "ram_objetivo (CE-27 v1)",
+              "ratio_reparacion_max (CE-19 v1)",
+              "umbral_intervenciones (CE-17 v1)"
+            ],
+            "decision": "Comprar",
+            "estado_decision": "Provisional",
+            "indicadores": {
+              "brecha_margen_pp": 49.2,
+              "contraoferta_sugerida_ars": null,
+              "costo_reparacion": 0,
+              "descuento_requerido_pct": 0.0,
+              "margen_neto_pct": 69.2,
+              "margen_requerido_pct": 20.0,
+              "precio_publicado": 220000,
+              "ratio_reparacion": 0.0,
+              "vma_tasado": 714000
+            }
+          }
+        },
+        "ruta": "evaluar_publicacion_integral",
+        "stderr": "",
+        "stdout": "      [Cypher Neo4j SM2] Core i5 10ma gen · ThinkPad · 16 GB → VMA $714,000\n      [Aviso Síntesis LLM] Falla al generar síntesis con LLM (sin LLM en diferencial), recurriendo a síntesis determinística de respaldo.\n"
+      },
+      "actual": {
+        "error": null,
+        "resultado": {
+          "sm1": {
+            "cantidad_intervenciones": 0,
+            "costo_total": 0,
+            "es_viable": true,
+            "plan_reparacion": [],
+            "upgrades": {
+              "ram": false,
+              "ssd": false
+            }
+          },
+          "sm2": {
+            "antiguedad_anios": 7.0,
+            "demanda_comercial": "Alta",
+            "descuento_negociacion_pct": 10.0,
+            "dias_rotacion_estimados": 12.0,
+            "estado": "Tasado",
+            "factor_linea": 1.075,
+            "factor_ram": 1.08,
+            "fuente_precio": "Mediana de 12 avisos de Mercado Libre (9/11/2026), normalizada por línea y RAM",
+            "grupo_linea": "Corporativa",
+            "indice_repuestos": 9.0,
+            "linea": "ThinkPad",
+            "muestras_procesador": 12,
+            "origen_factor_linea": "Línea (23 avisos)",
+            "procesador": "Core i5 10ma gen",
+            "ram_tasada_gb": 16,
+            "revalorizaciones_ars": 0,
+            "riesgo_obsolescencia": "Medio",
+            "score_riesgo": 0.46,
+            "valor_desde_generacion_anterior": null,
+            "valor_mercado_ars": 793000,
+            "valor_ref_procesador_ars": 683000,
+            "vma_estimado_ars": 714000
+          },
+          "sm3": {
+            "categoria_difusa": "Comprar",
+            "conveniencia_score": 0.78,
+            "criterios_pendientes": [
+              "anio_referencia (CE-13 v1)",
+              "caida_termica_sin_throttling (CE-31 v1)",
+              "descuento_negociacion (CE-30 v1)",
+              "margen_base (CE-14 v1)",
+              "min_muestras_mercado (CE-29 v2)",
+              "ram_objetivo (CE-27 v1)",
+              "ratio_reparacion_max (CE-19 v1)",
+              "umbral_intervenciones (CE-17 v1)"
+            ],
+            "decision": "Comprar",
+            "estado_decision": "Provisional",
+            "indicadores": {
+              "brecha_margen_pp": 49.2,
+              "contraoferta_sugerida_ars": null,
+              "costo_reparacion": 0,
+              "descuento_requerido_pct": 0.0,
+              "margen_neto_pct": 69.2,
+              "margen_requerido_pct": 20.0,
+              "precio_publicado": 220000,
+              "ratio_reparacion": 0.0,
+              "vma_tasado": 714000
+            }
+          }
+        },
+        "ruta": "evaluar_publicacion_integral",
+        "stderr": "",
+        "stdout": "      [Cypher Neo4j SM2] Core i5 10ma gen · ThinkPad · 16 GB → VMA $714,000\n      [Aviso Síntesis LLM] Falla al generar síntesis con LLM (sin LLM en diferencial), recurriendo a síntesis determinística de respaldo.\n"
+      }
+    },
+    {
+      "base": {
+        "error": null,
+        "resultado": {
+          "sm1": {
+            "cantidad_intervenciones": 0,
+            "costo_total": 0,
+            "es_viable": true,
+            "plan_reparacion": [],
+            "upgrades": {
+              "ram": false,
+              "ssd": false
+            }
+          },
+          "sm2": {
+            "antiguedad_anios": 7.0,
+            "demanda_comercial": "Alta",
+            "descuento_negociacion_pct": 10.0,
+            "dias_rotacion_estimados": 12.0,
+            "estado": "Tasado",
+            "factor_linea": 1.075,
+            "factor_ram": 1.08,
+            "fuente_precio": "Mediana de 12 avisos de Mercado Libre (9/11/2026), normalizada por línea y RAM",
+            "grupo_linea": "Corporativa",
+            "indice_repuestos": 9.0,
+            "linea": "ThinkPad",
+            "muestras_procesador": 12,
+            "origen_factor_linea": "Línea (23 avisos)",
+            "procesador": "Core i5 10ma gen",
+            "ram_tasada_gb": 16,
+            "revalorizaciones_ars": 0,
+            "riesgo_obsolescencia": "Medio",
+            "score_riesgo": 0.46,
+            "valor_desde_generacion_anterior": null,
+            "valor_mercado_ars": 793000,
+            "valor_ref_procesador_ars": 683000,
+            "vma_estimado_ars": 714000
+          },
+          "sm3": {
+            "categoria_difusa": "Comprar",
+            "conveniencia_score": 0.78,
+            "criterios_pendientes": [
+              "anio_referencia (CE-13 v1)",
+              "descuento_negociacion (CE-30 v1)",
+              "margen_base (CE-14 v1)",
+              "min_muestras_mercado (CE-29 v2)",
+              "ram_objetivo (CE-27 v1)",
+              "ratio_reparacion_max (CE-19 v1)",
+              "umbral_intervenciones (CE-17 v1)"
+            ],
+            "decision": "Comprar",
+            "estado_decision": "Provisional",
+            "indicadores": {
+              "brecha_margen_pp": 49.2,
+              "contraoferta_sugerida_ars": null,
+              "costo_reparacion": 0,
+              "descuento_requerido_pct": 0.0,
+              "margen_neto_pct": 69.2,
+              "margen_requerido_pct": 20.0,
+              "precio_publicado": 220000,
+              "ratio_reparacion": 0.0,
+              "vma_tasado": 714000
+            }
+          }
+        },
+        "ruta": "asistente_evaltic",
+        "stderr": "",
+        "stdout": "      [Cypher Neo4j SM2] Core i5 10ma gen · ThinkPad · 16 GB → VMA $714,000\n      [Aviso Síntesis LLM] Falla al generar síntesis con LLM (sin LLM en diferencial), recurriendo a síntesis determinística de respaldo.\n"
+      },
+      "actual": {
+        "error": null,
+        "resultado": {
+          "sm1": {
+            "cantidad_intervenciones": 0,
+            "costo_total": 0,
+            "es_viable": true,
+            "plan_reparacion": [],
+            "upgrades": {
+              "ram": false,
+              "ssd": false
+            }
+          },
+          "sm2": {
+            "antiguedad_anios": 7.0,
+            "demanda_comercial": "Alta",
+            "descuento_negociacion_pct": 10.0,
+            "dias_rotacion_estimados": 12.0,
+            "estado": "Tasado",
+            "factor_linea": 1.075,
+            "factor_ram": 1.08,
+            "fuente_precio": "Mediana de 12 avisos de Mercado Libre (9/11/2026), normalizada por línea y RAM",
+            "grupo_linea": "Corporativa",
+            "indice_repuestos": 9.0,
+            "linea": "ThinkPad",
+            "muestras_procesador": 12,
+            "origen_factor_linea": "Línea (23 avisos)",
+            "procesador": "Core i5 10ma gen",
+            "ram_tasada_gb": 16,
+            "revalorizaciones_ars": 0,
+            "riesgo_obsolescencia": "Medio",
+            "score_riesgo": 0.46,
+            "valor_desde_generacion_anterior": null,
+            "valor_mercado_ars": 793000,
+            "valor_ref_procesador_ars": 683000,
+            "vma_estimado_ars": 714000
+          },
+          "sm3": {
+            "categoria_difusa": "Comprar",
+            "conveniencia_score": 0.78,
+            "criterios_pendientes": [
+              "anio_referencia (CE-13 v1)",
+              "caida_termica_sin_throttling (CE-31 v1)",
+              "descuento_negociacion (CE-30 v1)",
+              "margen_base (CE-14 v1)",
+              "min_muestras_mercado (CE-29 v2)",
+              "ram_objetivo (CE-27 v1)",
+              "ratio_reparacion_max (CE-19 v1)",
+              "umbral_intervenciones (CE-17 v1)"
+            ],
+            "decision": "Comprar",
+            "estado_decision": "Provisional",
+            "indicadores": {
+              "brecha_margen_pp": 49.2,
+              "contraoferta_sugerida_ars": null,
+              "costo_reparacion": 0,
+              "descuento_requerido_pct": 0.0,
+              "margen_neto_pct": 69.2,
+              "margen_requerido_pct": 20.0,
+              "precio_publicado": 220000,
+              "ratio_reparacion": 0.0,
+              "vma_tasado": 714000
+            }
+          }
+        },
+        "ruta": "asistente_evaltic",
+        "stderr": "",
+        "stdout": "      [Cypher Neo4j SM2] Core i5 10ma gen · ThinkPad · 16 GB → VMA $714,000\n      [Aviso Síntesis LLM] Falla al generar síntesis con LLM (sin LLM en diferencial), recurriendo a síntesis determinística de respaldo.\n"
+      }
+    }
+  ],
+  "base_stderr": "",
+  "actual_stderr": "",
+  "nota": "Proyección integral excluye sólo propiedades nuevas de diagnóstico y procedencia solicitadas por B2; SM2/SM3 y stdout/stderr se comparan completos."
+}

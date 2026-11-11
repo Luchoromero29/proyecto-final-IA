@@ -97,18 +97,28 @@ resultado no soportado falla en vez de ignorarse en silencio.
 |---|---|---|
 | Respuestas del LLM (extracción, enrutador, redacción) | Simuladas con `extraccion_llm` e `intencion_router` | LLM del `.env` |
 | Criterios y costos (`cargar_conocimiento`) | Fixture con valores de prueba | `:CriterioExperto` y `:CostoReparacion` del grafo |
-| Catálogo de componentes (`consultar_mercado_componentes`) | Fixture con la forma del Cypher | Cypher real |
+| Diagnóstico y plan SM1 (`consultar_resolucion_sm1`) | Oráculo con la forma de la resolución | Cypher real con patrones, diagnósticos y costos |
+| Valuación SM2 (`inferir_valuacion_sm2_cypher`) | Fixture de valuación, estados y procedencia | Cypher real; `consultar_mercado_componentes` conserva su firma como wrapper |
+| Política y decisión SM3 (`inferir_sm3_crisp_cypher`, `resolver_decision_sm3_cypher`) | Dobles de política y decisión | Cypher real, incluida la cuantización financiera |
 | Reglas difusas SM1-BAT/TER, SM2-RIE/DEM, SM3-CONV | Fixture `(centroide, categoría)` | Cypher real |
-| Fallas catastróficas y señales de bloqueo | Listas fixture | Nodos del grafo + listas de respaldo |
+| Señales de bloqueo (B3 pendiente) | Lista fixture | Nodos del grafo + respaldo Python |
 | Conexión Neo4j | `obtener_driver_neo4j` simulado | Neo4j local |
 
-No se simula, en ninguna de las dos modalidades: enrutamiento y regla "precio ⇒ integral",
-validaciones defensivas de precio, CPU, año y RAM, reglas crisp SM1 (R1.1, R1.2, R1.3) y su
-mapeo de fallas a tareas, plan y costos con mano de obra, encadenamiento SM1 → SM2 → SM3,
-filtros R3.7 y R3.8, margen requerido R3.4/R3.5/R3.6, contraoferta, `_estado_decision` y el
-control anti-alucinación del dictamen. El resultado que se afirma nunca se mockea.
+En ambas modalidades se ejecutan los adaptadores públicos, el encadenamiento SM1 → SM2 → SM3,
+el enrutamiento con la regla "precio ⇒ integral", las validaciones de transporte,
+`_estado_decision` y el control anti-alucinación del dictamen. El resultado público final no se
+mockea. Desde B2, las fronteras crisp también se simulan en el corpus offline: esa suite prueba
+el cableado y el contrato, **no demuestra inferencia real**. Las pruebas `test_diagnostico_neo4j.py`,
+`test_sm1_neo4j.py`, `test_sm2_neo4j.py` y `test_sm3_neo4j.py` ejecutan la inferencia en el grafo
+local aislado y marcado, con extracción controlada. Sin URI se informan las omisiones.
 
-## Hallazgos actuales
+La integración B2 y su verificación independiente final RIE→DEM están aprobadas técnicamente
+en el grafo aislado: **184 pruebas, sin omisiones**, más sondas independientes de compatibilidad
+y consumidores. La aplicación sobre la base de trabajo y la nueva tanda de 61 con el modelo
+real siguen pendientes (T2P). No se reescriben el corpus ni los resultados históricos siguientes;
+ver [cierre técnico y límites](ejecuciones/mejoras_b2_cierre.md).
+
+## Hallazgos históricos que motivaron las mejoras
 
 1. **PC-01 — el enrutador manda una publicación de notebook a `fuera_de_dominio`.** Con el
    modelo OpenRouter configurado, `asistente_evaltic("computadora asus, anda joya")` devolvió

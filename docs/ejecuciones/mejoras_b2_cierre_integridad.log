@@ -1,0 +1,1 @@
+{"source_hashes_unchanged": 7, "corpus_csv": "identicos a base B1", "nvidia_ast_identicos": ["OPENROUTER_MODELO_SIN_RAZONAMIENTO", "NVIDIA_HOST", "NVIDIA_MODELO_SIN_RAZONAMIENTO", "consultar_llm"], "compile_app": "OK", "app_sha256": "17d748050d5018becfede2cb7765096dcd597823f406e933ae878e1658cc6f25", "LF": "OK", "arbol_runtime_vs_HEAD": "sin diferencias"}

@@ -16,7 +16,9 @@ reales, costos) → LLM.
 
 ## Estructura
 ```
-app/orquestador_evaltic.py   motor completo (enrutador, SM1, SM2, SM3, pipeline, pruebas)
+app/orquestador_evaltic.py   enrutador, adaptadores SM1/SM2/SM3, pipeline y pruebas
+app/inferencia_sm1.py        resolución técnica explícita en Cypher
+app/inferencia_sm3.py        política financiera y cuantización explícitas en Cypher
 app/app_web.py               interfaz Streamlit (usa asistente_evaltic)
 app/requirements.txt
 cypher/Grupo_20_PG2_U1_carga.cypher      base del PG2 (bloques 0–20; el bloque 0 BORRA todo)
@@ -44,7 +46,9 @@ docker-compose.yml, Dockerfile, *.bat, LEVANTAR.md, docs/ (informes)
 ## Principio central (lo pidió la cátedra)
 **Ningún precio, costo ni umbral escrito en Python.** Todo se lee de Neo4j, y si el aviso menciona algo que
 no está en el grafo, la evaluación da **error** (`ConocimientoFaltante`), no un valor por defecto.
-- `(:CriterioExperto {nombre, valor, unidad, version, estado_validacion})` CE-01..CE-30. Se leen con `CE()`.
+- `(:CriterioExperto {nombre, valor, unidad, version, estado_validacion})`: CE-01..CE-30 en PG3 mercado;
+  CE-31/32 Provisionales en el seed diagnóstico B2. Se consultan desde las reglas de Cypher;
+  `CE()` conserva el acceso de los adaptadores.
   CE-21..26 y reval_ram quedaron con `en_uso=false` (los reemplazó la valuación por componentes).
 - `(:CostoReparacion {tarea, costo_ars})`, leídos con `costo()`.
 - `(:Procesador {nombre, familia, gama, anio, soporte_w11, patron, prioridad, valor_ref_ars, n_muestras})`:
@@ -69,9 +73,12 @@ Evaluación integral (`evaluar_publicacion_integral`):
 1. `extraer_datos_llm` (JSON con lista `fallas`). Validaciones contra el texto: precio, procesador (descarta
    modelos que el LLM completa) y año.
 2. **R3.3**: señales de bloqueo → `VerificacionPendiente`.
-3. **SM1**: R1.1 falla catastrófica → inviable (→ R3.2). Batería SM1-BAT / R1.2, temperatura SM1-TER, RAM <
+3. **SM1**: resolución completa en Cypher (`consultar_resolucion_sm1`). Síntoma sin diagnóstico →
+   `VerificacionPendiente` R3.3c; sólo la evidencia separada del operador puede liberar la guarda.
+   Diagnóstico reparable sin costo conocido → `ConocimientoFaltante`; costo conocido en cero no es ausencia.
+   R1.1 falla catastrófica → inviable (→ R3.2). Batería SM1-BAT / R1.2, temperatura SM1-TER, RAM <
    CE ram_objetivo, HDD→SSD, pantalla/teclado (booleans o fallas no redactadas en positivo), cargador, mano de obra.
-4. **SM2** (`consultar_mercado_componentes`, Cypher): VMA = valor del procesador × factor de línea × factor de
+4. **SM2** (`inferir_valuacion_sm2_cypher`; wrapper compatible `consultar_mercado_componentes`, Cypher): VMA = valor del procesador × factor de línea × factor de
    la RAM final (después de upgrades) × (1 − CE descuento_negociacion) + CE reval_ssd si HDD→SSD.
    Año: aviso → procesador (inferido) → pendiente. W11: aviso → procesador → año. Riesgo SM2-RIE (antigüedad,
    repuestos del grupo, W11) → demanda SM2-DEM (rotación del grupo).
@@ -89,15 +96,28 @@ Evaluación integral (`evaluar_publicacion_integral`):
 - Lógica difusa solo para conceptos graduales.
 - PG3: System Prompt maestro que enrute, interfaz unificada y pruebas que crucen submódulos.
 
-## Estado (9/11/2026)
+## Estado del proyecto
 - [x] Probado contra Neo4j real. `--test`: 5/5 casos integrales + 4/4 enrutador.
 - [x] Valuación por componentes calibrada con 333 avisos; error mediano 14,7 % contra el precio publicado
       (66,2 % dentro de ±25 %, CE-29 = 5; medido sobre los mismos datos de la calibración).
 - [x] Se quitó el atajo de Leonel que devolvía decisiones guardadas de casos del PG2 (matcheaba mal: HP 15 → Dell Inspiron 15).
 - [ ] Entregables: PI4 de cada integrante y PG3 (informe PDF, diagramas, zip con export de Neo4j, video/infografía).
 - [ ] R1.4 `NoAmpliable`; R3.1b rechazo comercial directo.
-- [ ] Palabras clave de fallas insalvables, bloqueo y fallas→tareas siguen en Python (pasarlas al grafo).
+- [x] B2 técnico: síntomas/diagnóstico, fallas→tareas, valuación y decisión en Cypher; verificación independiente y 184 pruebas en Neo4j aislado.
+- [ ] B2 despliegue (T2P): vía segura para aplicar sólo el seed aditivo a la base original y repetir 61 publicaciones reales.
+- [ ] B3: interpretar señales de bloqueo por contexto; no confundirlo con el diagnóstico B2.
 - [ ] qwen2.5:1.5b extrae mal a veces (completa procesadores, mete positivos en fallas); alternativa: Groq.
+
+## Migración B2
+
+El seed `cypher/Grupo_20_PG3_diagnostico.cypher` es aditivo e idempotente y se verificó en el
+grafo aislado. El loader completo **no es una migración aditiva**: corre primero el refresco del
+mercado. No usar una recarga completa para aplicar sólo B2 sobre datos de trabajo. Ese paso
+sigue pendiente de un procedimiento seguro del operador; ver `docs/DIAGNOSTICO_TECNICO.md`.
+La verificación independiente final de RIE→DEM dio PASS (184 pruebas con grafo, sin omisiones).
+Eso completa el cierre técnico del código, no una corrida real nueva de las 61 publicaciones.
+La evidencia, los intentos fallidos preservados y las limitaciones están en
+`docs/ejecuciones/mejoras_b2_cierre.md`. No hay aprobación nativa de revisión ni push/PR.
 
 ## Convenciones
 - Todo en español (código, comentarios, UI, commits).

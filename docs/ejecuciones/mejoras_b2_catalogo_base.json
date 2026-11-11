@@ -1,0 +1,218 @@
+{
+  "nodos": [
+    {
+      "etiquetas": [
+        "Bloqueo"
+      ],
+      "propiedades": {
+        "tipo": "Cuenta",
+        "estado": "Desconocido",
+        "id": "BLQ-NB-105"
+      }
+    },
+    {
+      "etiquetas": [
+        "Falla",
+        "FallaCatastrofica"
+      ],
+      "propiedades": {
+        "descripcion": "CPU soldada en cortocircuito",
+        "id": "F-103"
+      }
+    },
+    {
+      "etiquetas": [
+        "Falla",
+        "FallaModular"
+      ],
+      "propiedades": {
+        "descripcion": "Teclado con teclas que no responden",
+        "id": "F-101"
+      }
+    },
+    {
+      "etiquetas": [
+        "Intervencion"
+      ],
+      "propiedades": {
+        "costo_ars": 20000,
+        "es_mandatoria": true,
+        "tipo_tarea": "Reemplazo de teclado",
+        "id": "INT-101-1",
+        "origen": "Diagnóstico (F-101)"
+      }
+    },
+    {
+      "etiquetas": [
+        "Intervencion"
+      ],
+      "propiedades": {
+        "costo_ars": 22000,
+        "es_mandatoria": true,
+        "tipo_tarea": "Upgrade a SSD",
+        "id": "INT-101-2",
+        "origen": "R1.3"
+      }
+    },
+    {
+      "etiquetas": [
+        "Intervencion"
+      ],
+      "propiedades": {
+        "costo_ars": 10000,
+        "es_mandatoria": true,
+        "tipo_tarea": "Ampliación de RAM",
+        "id": "INT-101-3",
+        "origen": "Plan de upgrade"
+      }
+    },
+    {
+      "etiquetas": [
+        "Intervencion"
+      ],
+      "propiedades": {
+        "costo_ars": 25000,
+        "es_mandatoria": true,
+        "tipo_tarea": "Upgrade a SSD",
+        "id": "INT-106-1",
+        "origen": "R1.3"
+      }
+    },
+    {
+      "etiquetas": [
+        "Intervencion"
+      ],
+      "propiedades": {
+        "costo_ars": 12750,
+        "es_mandatoria": true,
+        "tipo_tarea": "Ampliación de RAM",
+        "id": "INT-106-2",
+        "origen": "Plan de upgrade"
+      }
+    },
+    {
+      "etiquetas": [
+        "Intervencion"
+      ],
+      "propiedades": {
+        "es_mandatoria": true,
+        "costo_ars": 30000,
+        "tipo_tarea": "Reemplazo de batería",
+        "id": "INT-NB-101-SM1-BAT",
+        "origen": "Base difusa SM1-BAT (Obligatoria)"
+      }
+    },
+    {
+      "etiquetas": [
+        "Intervencion"
+      ],
+      "propiedades": {
+        "es_mandatoria": true,
+        "costo_ars": 8000,
+        "tipo_tarea": "Service térmico",
+        "id": "INT-NB-101-SM1-TER",
+        "origen": "Base difusa SM1-TER (Obligatoria)"
+      }
+    },
+    {
+      "etiquetas": [
+        "Intervencion"
+      ],
+      "propiedades": {
+        "es_mandatoria": true,
+        "costo_ars": 25000,
+        "tipo_tarea": "Reemplazo de batería",
+        "id": "INT-NB-104-SM1-BAT",
+        "origen": "Base difusa SM1-BAT (Obligatoria)"
+      }
+    }
+  ],
+  "relaciones": [
+    {
+      "origen": {
+        "descripcion": "Teclado con teclas que no responden",
+        "id": "F-101"
+      },
+      "tipo": "INSTANCIA_DE",
+      "etiquetas_destino": [
+        "Frame"
+      ],
+      "destino": {
+        "descripcion": "Falla subsanable con recambio estándar",
+        "nombre": "FallaModular"
+      }
+    },
+    {
+      "origen": {
+        "descripcion": "Teclado con teclas que no responden",
+        "id": "F-101"
+      },
+      "tipo": "INSTANCIA_DE",
+      "etiquetas_destino": [
+        "Frame"
+      ],
+      "destino": {
+        "descripcion": "Problema detectado en el equipo",
+        "nombre": "Falla"
+      }
+    },
+    {
+      "origen": {
+        "descripcion": "CPU soldada en cortocircuito",
+        "id": "F-103"
+      },
+      "tipo": "INSTANCIA_DE",
+      "etiquetas_destino": [
+        "Frame"
+      ],
+      "destino": {
+        "descripcion": "Problema detectado en el equipo",
+        "nombre": "Falla"
+      }
+    },
+    {
+      "origen": {
+        "descripcion": "CPU soldada en cortocircuito",
+        "id": "F-103"
+      },
+      "tipo": "INSTANCIA_DE",
+      "etiquetas_destino": [
+        "Frame"
+      ],
+      "destino": {
+        "descripcion": "Daño estructural irreparable o sin repuesto",
+        "nombre": "FallaCatastrofica"
+      }
+    },
+    {
+      "origen": {
+        "descripcion": "CPU soldada en cortocircuito",
+        "id": "F-103"
+      },
+      "tipo": "DETERMINA",
+      "etiquetas_destino": [
+        "DictamenTecnico"
+      ],
+      "destino": {
+        "resultado": "Inviabilidad_Fisica_Insalvable",
+        "causa_inviabilidad": "CPU soldada en cortocircuito",
+        "id": "DICT-NB-103"
+      }
+    },
+    {
+      "origen": {
+        "estado": "Desconocido",
+        "tipo": "Cuenta",
+        "id": "BLQ-NB-105"
+      },
+      "tipo": "INSTANCIA_DE",
+      "etiquetas_destino": [
+        "Frame"
+      ],
+      "destino": {
+        "descripcion": "Bloqueo de cuenta, firmware o institucional",
+        "nombre": "Bloqueo"
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+test_error_con_verbose_por_defecto (test_diagnostico_neo4j.ConsultaSM1VerboseTest.test_error_con_verbose_por_defecto) ... ERROR
+test_pendiente_con_verbose_por_defecto (test_diagnostico_neo4j.ConsultaSM1VerboseTest.test_pendiente_con_verbose_por_defecto) ... ERROR
+test_viable_conserva_su_salida_verbose (test_diagnostico_neo4j.ConsultaSM1VerboseTest.test_viable_conserva_su_salida_verbose) ... ok
+
+======================================================================
+ERROR: test_error_con_verbose_por_defecto (test_diagnostico_neo4j.ConsultaSM1VerboseTest.test_error_con_verbose_por_defecto)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_diagnostico_neo4j.py", line 258, in test_error_con_verbose_por_defecto
+    resultado = self._ejecutar(
+        oe.consultar_sm1, "Mi notebook no prende, el taller dijo motor roto",
+        extraccion={"fallas": ["no prende"]}, salida=salida,
+        verificacion_tecnica={"fuente": "Taller", "diagnosticos": ["motor"]})
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_diagnostico_neo4j.py", line 143, in _ejecutar
+    return funcion(*args, **kwargs)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1848, in consultar_sm1
+    print(f"      Plan: {plan} | Costo: ${res.get('costo_total', 0):,} ARS")
+                         ^^^^
+UnboundLocalError: cannot access local variable 'plan' where it is not associated with a value
+
+======================================================================
+ERROR: test_pendiente_con_verbose_por_defecto (test_diagnostico_neo4j.ConsultaSM1VerboseTest.test_pendiente_con_verbose_por_defecto)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_diagnostico_neo4j.py", line 248, in test_pendiente_con_verbose_por_defecto
+    resultado = self._ejecutar(
+        oe.consultar_sm1, "Mi notebook no prende y no carga, ¿qué reviso?",
+        extraccion={"fallas": ["no prende", "no carga"]}, salida=salida)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_diagnostico_neo4j.py", line 143, in _ejecutar
+    return funcion(*args, **kwargs)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1848, in consultar_sm1
+    print(f"      Plan: {plan} | Costo: ${res.get('costo_total', 0):,} ARS")
+                         ^^^^
+UnboundLocalError: cannot access local variable 'plan' where it is not associated with a value
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.597s
+
+FAILED (errors=2)

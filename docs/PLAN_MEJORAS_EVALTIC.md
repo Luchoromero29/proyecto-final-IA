@@ -5,6 +5,12 @@
 incorrectas sin cambiar de modelo, debilitar las pruebas ni reemplazar el patrón neuro-simbólico.
 Preparado sobre `integracion/mejoras-con-pruebas`, referencia `67de236`.
 
+**B2: código implementado y verificado técnicamente en Neo4j aislado.** La verificación
+independiente final RIE→DEM dio PASS, con 184 pruebas aprobadas sin omisiones. La aplicación
+aditiva sobre la base original y la nueva tanda NVIDIA de 61 siguen pendientes (T2P); no se
+presenta como un cierre end-to-end. B3–B5 permanecen pendientes. Ver
+[evidencia y límites de B2](ejecuciones/mejoras_b2_cierre.md).
+
 ## Punto de partida
 
 - [Última tanda real](ejecuciones/publicaciones_criticas_integracion_resumen.md): 61 completados,
@@ -79,7 +85,9 @@ por separado y se representa en el grafo; no se improvisa un umbral para aprobar
 
 ### B2. Tratar síntomas relevantes y diagnósticos confirmados — prioridad alta
 
-**Casos principales: PC-19 y PC-47.** Propuesta de política a validar con el experto:
+**Casos principales: PC-19 y PC-47.** Política Provisional adoptada por el usuario para
+`no prende`, `no carga` y `se apaga sola`, sin atribuir validación a Matías. El LLM extrae hechos;
+la inferencia de Neo4j determina el tratamiento. No es una lista exhaustiva de síntomas:
 
 | Situación | Tratamiento propuesto |
 |---|---|
@@ -102,8 +110,9 @@ por separado y se representa en el grafo; no se improvisa un umbral para aprobar
 - Cierre: un síntoma relevante reconocido no queda sin tratamiento; PC-19/PC-47 no obtienen una
   compra favorable por omisión. Casos reparables, sanos y catastróficos conservan su tratamiento.
 
-**Decisión experta pendiente:** qué síntomas son relevantes, qué verificación resuelve cada uno
-y qué evidencia confirma irreparabilidad. Un texto ambiguo no equivale a diagnóstico confirmado.
+**Validación experta pendiente:** ampliar y validar el catálogo de síntomas, los protocolos de
+verificación y la evidencia de irreparabilidad. La política conservadora para los tres síntomas
+acordados está autorizada como Provisional; no se agregan otros diagnósticos por analogía. Un texto ambiguo no equivale a diagnóstico confirmado.
 Precisar cómo se consideran declaraciones del aviso frente a inspección técnica, sin cambiar
 silenciosamente los casos catastróficos existentes. Reglas nuevas versionadas y Provisionales
 hasta la validación; sus condiciones cuantitativas, si existen, referencian criterios del grafo.
@@ -183,9 +192,9 @@ del motor; registrar ambas cosas por separado.
 ## Orden recomendado y primer paso
 
 **B0 → B1 → B2 → B3 → B4 → B5.** B0 acompaña cada investigación, no es un proyecto de logging.
-El primer bloque implementable es aislar PC-29 y garantizar integridad del precio. B2 requiere
-acordar las condiciones expertas antes de aplicar reglas nuevas a la decisión de compra.
+El primer bloque B0/B1 aisló PC-29 y garantizó integridad del precio. B2 ya tiene aprobación
+Provisional para los tres síntomas acordados; toda decisión de negocio debe inferirse en Neo4j.
 
 El plan original no modificó código, corpus ni grafo. Después se autorizó su aplicación:
-B0 aisló las causas y B1 corrigió la integridad del precio. B2 espera el criterio de síntomas;
+B0 aisló las causas y B1 corrigió la integridad del precio. B2 tiene política Provisional aprobada;
 los resultados y comprobaciones vigentes están en el seguimiento, no se presume cierre total.
