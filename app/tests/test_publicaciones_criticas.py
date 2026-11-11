@@ -269,37 +269,121 @@ FACTORES_RAM = {2: 0.80, 4: 0.90, 6: 0.93, 8: 1.00, 12: 1.04, 16: 1.08, 20: 1.10
 TEXTO_EXPLICACION_FALSO = "Dictamen ejecutivo de prueba, sin cifras ni montos."
 
 
-def _mercado_falso(procesador, texto, ram_informada, ram_final, hdd_a_ssd):
-    """Devuelve la misma forma que la consulta Cypher de componentes, con fixtures."""
-    proc = CATALOGO_PROCESADORES.get(str(procesador or "").strip().lower())
+def _valuacion_falsa(procesador, modelo, texto, ram_informada, ram_ampliada, hdd_a_ssd,
+                     anio_informado, soporte_w11_informado, traza=None,
+                     ram_final_fijada=None, aplicar_politica_ram=True):
+    """Devuelve la misma forma que la consulta Cypher de valuación, con fixtures.
+
+    No simula R2.4: el catálogo de prueba ya trae el componente que corresponde a cada
+    aviso y los procesadores sin muestras quedan sin precio. La RAM tasada, el año, el
+    soporte de Windows 11 y el estado replican la política porque son el contrato que
+    consume el motor; la política real se comprueba contra Neo4j en test_sm2_neo4j.py.
+    """
+    aviso_proc = str(procesador or "").strip()
+    modelo_txt = str(modelo or "").strip()
+    origen_proc = "aviso" if aviso_proc else "modelo"
+    proc = CATALOGO_PROCESADORES.get((aviso_proc or modelo_txt).lower())
     linea = next((l for l in LINEAS_FALSAS if l[0] in str(texto or "").lower()), None)
+    ram_objetivo = CRITERIOS_PRUEBA["ram_objetivo"]
+    if not aplicar_politica_ram:
+        ram_final, ram_origen = ram_final_fijada, "fijada"
+    elif ram_informada is None:
+        ram_final, ram_origen = ram_objetivo, "referencia"
+    elif ram_ampliada:
+        ram_final, ram_origen = ram_objetivo, "ampliada"
+    else:
+        ram_final, ram_origen = ram_informada, "aviso"
     factor_ram = FACTORES_RAM.get(ram_final)
-    # Igual que el Cypher: coalesce(p.valor_ref_ars, generación anterior). Acá no se simula R2.4.
-    valor_proc = proc["valor_ref_ars"] if proc else None
+    ram_informada_existe = ram_informada in FACTORES_RAM
+    valor_proc = (proc or {}).get("valor_ref_ars")
+    # Igual que el Cypher: valor del procesador × factor de línea × factor de RAM.
     valor = None
     if valor_proc is not None and linea and factor_ram:
         valor = valor_proc * linea[2] * factor_ram
+    reval = CRITERIOS_PRUEBA["reval_ssd"] if hdd_a_ssd else 0
     vma = None
     if valor is not None:
-        vma = int(round((valor * 0.9 + (CRITERIOS_PRUEBA["reval_ssd"] if hdd_a_ssd else 0)) / 1000.0)) * 1000
+        vma = int(round((valor * (1 - CRITERIOS_PRUEBA["descuento_negociacion"] / 100.0)
+                         + reval) / 1000.0)) * 1000
+    anio = anio_informado if anio_informado is not None else (proc or {}).get("anio")
+    anio_origen = "aviso" if anio_informado is not None else "procesador"
+    if soporte_w11_informado is not None:
+        win11, w11_origen = bool(soporte_w11_informado), "aviso"
+    elif (proc or {}).get("soporte_w11") is not None:
+        win11, w11_origen = bool(proc["soporte_w11"]), "procesador"
+    else:
+        win11 = None if anio is None else anio >= CRITERIOS_PRUEBA["anio_min_w11"]
+        w11_origen = "anio"
+    antiguedad = None
+    if anio is not None:
+        antiguedad = max(0.0, float(CRITERIOS_PRUEBA["anio_referencia"] - anio))
+    if proc is None and origen_proc == "modelo":
+        estado, motivo = "Verificacion_pendiente", "procesador_no_informado"
+    elif proc is None:
+        estado, motivo = "ConocimientoFaltante", "procesador_desconocido"
+    elif linea is None:
+        estado, motivo = "ConocimientoFaltante", "linea_desconocida"
+    elif ram_informada is not None and not ram_informada_existe:
+        estado, motivo = "ConocimientoFaltante", "ram_informada_desconocida"
+    elif factor_ram is None:
+        estado, motivo = "ConocimientoFaltante", "ram_tasada_desconocida"
+    elif valor_proc is None:
+        estado, motivo = "Verificacion_pendiente", "procesador_sin_muestras"
+    elif anio is None:
+        estado, motivo = "Verificacion_pendiente", "anio_desconocido"
+    else:
+        estado, motivo = "Tasado", None
+    conocimiento_completo = (proc is not None and linea is not None and factor_ram is not None
+                             and not (ram_informada is not None and not ram_informada_existe))
+    usados = []
+    if aviso_proc or modelo_txt:
+        usados.append("ram_objetivo")
+    if (aviso_proc or modelo_txt) and conocimiento_completo:
+        usados.append("min_muestras_mercado")
+    if estado == "Tasado":
+        usados.append("anio_referencia")
+        usados.append("descuento_negociacion")
+        if hdd_a_ssd:
+            usados.append("reval_ssd")
+        if w11_origen == "anio":
+            usados.append("anio_min_w11")
     return {
+        "estado": estado,
+        "motivo_clave": motivo,
         "procesador": dict(proc) if proc else None,
+        "procesador_origen": origen_proc,
         "generacion_anterior": None,
+        "valor_origen": "propio" if proc else None,
         "valor_proc": valor_proc,
         "linea": {"nombre": linea[1], "marca": linea[0], "factor_precio": linea[2],
                   "origen_factor": "fixture", "estado_validacion": "Provisional"} if linea else None,
         "grupo": {"nombre": linea[3], "dias_promedio_venta": linea[4], "indice_repuestos": linea[5]}
         if linea else None,
-        "ram_informada_existe": ram_informada in FACTORES_RAM,
+        "ram_informada_existe": ram_informada_existe,
         "ram": {"gb": ram_final, "factor": factor_ram} if factor_ram else None,
+        "ram_final": ram_final,
+        "ram_origen": ram_origen,
+        "anio": anio,
+        "anio_origen": anio_origen,
+        "soporte_w11": win11,
+        "w11_origen": w11_origen,
+        "antiguedad": antiguedad,
         "valor_mercado": valor,
         "vma": vma,
+        "revalorizacion_ssd": reval,
+        "criterios_usados": usados,
+        "criterios": {nombre: float(CRITERIOS_PRUEBA[nombre]) for nombre in
+                      ("ram_objetivo", "anio_referencia", "anio_min_w11", "min_muestras_mercado",
+                       "descuento_negociacion", "reval_ssd")},
     }
 
 
 # Campos que devuelve la consulta Cypher de componentes (contrato público de SM2).
-CAMPOS_MERCADO = {"procesador", "generacion_anterior", "valor_proc", "linea", "grupo",
-                  "ram_informada_existe", "ram", "valor_mercado", "vma"}
+CAMPOS_VALUACION = {"estado", "motivo_clave", "procesador", "procesador_origen",
+                    "generacion_anterior", "valor_origen", "valor_proc", "linea", "grupo",
+                    "ram_informada_existe", "ram", "ram_final", "ram_origen", "anio",
+                    "anio_origen", "soporte_w11", "w11_origen", "antiguedad", "valor_mercado",
+                    "vma", "revalorizacion_ssd", "criterios_usados", "criterios"}
 
 
 # Las inferencias difusas devuelven (centroide, categoría), como el Cypher real.
@@ -510,7 +594,7 @@ def _ejecutar(caso):
             mock.patch.object(oe, "cargar_conocimiento", return_value=CONOCIMIENTO_FALSO), \
             mock.patch.object(oe, "consultar_senales_bloqueo_en_grafo", return_value=SENALES_BLOQUEO_FALSAS), \
             mock.patch.object(oe, "consultar_resolucion_sm1", side_effect=_resolucion_sm1_falsa), \
-            mock.patch.object(oe, "consultar_mercado_componentes", side_effect=_mercado_falso) as mercado, \
+            mock.patch.object(oe, "inferir_valuacion_sm2_cypher", side_effect=_valuacion_falsa) as mercado, \
             mock.patch.object(oe, "inferir_sm1_bat_cypher", side_effect=_sm1_bat_falso), \
             mock.patch.object(oe, "inferir_sm1_ter_cypher", side_effect=_sm1_ter_falso), \
             mock.patch.object(oe, "inferir_sm2_rie_cypher", side_effect=_sm2_rie_falso), \
@@ -609,26 +693,30 @@ class CorpusTest(unittest.TestCase):
 
 
 class ContratoMercadoTest(unittest.TestCase):
-    """El fixture de mercado expone la misma forma que la consulta Cypher del motor."""
+    """El fixture de valuación expone la misma forma que la consulta Cypher del motor."""
 
     def test_el_fixture_devuelve_los_campos_de_la_consulta_publica(self):
         for procesador, texto in (("i5 10ma gen", "ThinkPad T14"), ("ryzen 7 5700u", "hp 250 g8"),
                                   ("celeron n4020", "sin marca")):
             with self.subTest(procesador=procesador):
-                self.assertEqual(CAMPOS_MERCADO, set(_mercado_falso(procesador, texto, 8, 8, False)))
+                self.assertEqual(CAMPOS_VALUACION,
+                                 set(_valuacion_falsa(procesador, "", texto, 8, False, False,
+                                                      2021, None)))
 
     def test_valor_proc_calca_al_procesador_y_queda_vacio_cuando_no_hay_precio(self):
-        con_precio = _mercado_falso("i5 10ma gen", "ThinkPad T14", 16, 16, False)
+        con_precio = _valuacion_falsa("i5 10ma gen", "", "ThinkPad T14", 16, False, False, 2021, None)
         self.assertEqual(con_precio["procesador"]["valor_ref_ars"], con_precio["valor_proc"])
         self.assertIsNone(con_precio["generacion_anterior"])
         # Procesador relevado con menos avisos que CE min_muestras_mercado: sin precio propio.
-        sin_precio = _mercado_falso("ryzen 7 5700u", "hp 250 g8", 8, 8, False)
+        sin_precio = _valuacion_falsa("ryzen 7 5700u", "", "hp 250 g8", 8, False, False, 2021, None)
         self.assertIsNone(sin_precio["valor_proc"])
         self.assertIsNone(sin_precio["generacion_anterior"])
+        self.assertEqual("procesador_sin_muestras", sin_precio["motivo_clave"])
         # Procesador que no está en la base de conocimiento: nada que tasar.
-        desconocido = _mercado_falso("celeron n4020", "hp 250 g8", 8, 8, False)
+        desconocido = _valuacion_falsa("celeron xyz", "", "hp 250 g8", 8, False, False, 2021, None)
         self.assertIsNone(desconocido["procesador"])
         self.assertIsNone(desconocido["valor_proc"])
+        self.assertEqual("ConocimientoFaltante", desconocido["estado"])
 
 
 class AceptacionTest(unittest.TestCase):

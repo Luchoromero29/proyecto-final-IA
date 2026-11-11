@@ -615,71 +615,228 @@ def costo(tarea: str, traza: dict) -> int:
 #     de la tasación: nada de eso se decide acá ni en el LLM.
 # ------------------------------------------------------------------------------
 # Criterios de Neo4j que usa la valuación: se leen con CE() para conservar la procedencia.
+_CRITERIOS_VALUACION_SM2 = ("ram_objetivo", "anio_referencia", "anio_min_w11",
+                            "min_muestras_mercado", "descuento_negociacion", "reval_ssd")
 
 # Claves que devolvía la consulta pública de componentes antes de la valuación completa.
+_CAMPOS_MERCADO_LEGADO = ("procesador", "generacion_anterior", "valor_proc", "linea", "grupo",
+                          "ram_informada_existe", "ram", "valor_mercado", "vma")
+
+_CONSULTA_VALUACION_SM2 = """
+// Hechos del aviso: el procesador puede venir en el campo propio o dentro del modelo.
+WITH toLower(coalesce($procesador, '')) AS tp_aviso,
+     toLower(coalesce($modelo, '')) AS tp_modelo,
+     toLower(coalesce($texto, '')) AS tt
+WITH tt,
+     CASE WHEN trim(tp_aviso) IN ['', 'null', 'none'] THEN trim(tp_modelo) ELSE trim(tp_aviso) END AS tp,
+     CASE WHEN trim(tp_aviso) IN ['', 'null', 'none'] THEN 'modelo' ELSE 'aviso' END AS procesador_origen
+OPTIONAL MATCH (p:Procesador) WHERE tp =~ p.patron
+WITH tt, tp, procesador_origen, p ORDER BY p.prioridad DESC LIMIT 1
+// R2.4: sin muestras propias → generación anterior más cercana de la misma familia con datos
+OPTIONAL MATCH (v:Procesador)
+  WHERE p.valor_ref_ars IS NULL AND p.anio IS NOT NULL AND v.familia = p.familia AND v <> p
+    AND v.valor_ref_ars IS NOT NULL AND v.anio IS NOT NULL AND v.anio <= p.anio
+WITH tt, tp, procesador_origen, p, v ORDER BY v.anio DESC, v.n_muestras DESC LIMIT 1
+OPTIONAL MATCH (l:Linea) WHERE tt =~ l.patron
+WITH tp, procesador_origen, p, v, l ORDER BY l.prioridad DESC LIMIT 1
+OPTIONAL MATCH (l)-[:PERTENECE_A_GRUPO]->(g:GrupoLinea)
+// RAM tasada: la del aviso, la que deja el plan de SM1 o la configuración de referencia
+WITH procesador_origen, tp, p, v, l, g,
+     CASE WHEN NOT $aplicar_politica_ram THEN $ram_final_fijada
+          WHEN $ram IS NULL THEN toInteger($ram_objetivo)
+          WHEN $ram_ampliada THEN toInteger($ram_objetivo)
+          ELSE toInteger($ram) END AS ram_final,
+     CASE WHEN NOT $aplicar_politica_ram THEN 'fijada'
+          WHEN $ram IS NULL THEN 'referencia'
+          WHEN $ram_ampliada THEN 'ampliada'
+          ELSE 'aviso' END AS ram_origen
+OPTIONAL MATCH (ri:CapacidadRAM {gb: $ram})
+OPTIONAL MATCH (r:CapacidadRAM {gb: ram_final})
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen,
+     coalesce(p.valor_ref_ars, v.valor_ref_ars) AS valor_proc
+// Año: el del aviso o el de la generación del procesador (nunca inventado)
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     CASE WHEN $anio IS NOT NULL THEN toFloat($anio) ELSE p.anio END AS anio,
+     CASE WHEN $anio IS NOT NULL THEN 'aviso' ELSE 'procesador' END AS anio_origen
+// Soporte de Windows 11: aviso → procesador → año contra CE anio_min_w11
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc, anio, anio_origen,
+     CASE WHEN $w11 IS NOT NULL THEN $w11
+          WHEN p.soporte_w11 IS NOT NULL THEN p.soporte_w11
+          ELSE anio >= $anio_min_w11 END AS win11,
+     CASE WHEN $w11 IS NOT NULL THEN 'aviso'
+          WHEN p.soporte_w11 IS NOT NULL THEN 'procesador'
+          ELSE 'anio' END AS win11_origen
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     anio, anio_origen, win11, win11_origen,
+     CASE WHEN valor_proc IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
+          THEN valor_proc * l.factor_precio * r.factor END AS valor_mercado
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     anio, anio_origen, win11, win11_origen, valor_mercado,
+     // Estado de la valuación: qué falta (conocimiento o dato) o si hay tasación
+     CASE WHEN p IS NULL AND procesador_origen = 'modelo' THEN 'Verificacion_pendiente'
+          WHEN p IS NULL THEN 'ConocimientoFaltante'
+          WHEN l IS NULL THEN 'ConocimientoFaltante'
+          WHEN $ram IS NOT NULL AND ri IS NULL THEN 'ConocimientoFaltante'
+          WHEN r IS NULL THEN 'ConocimientoFaltante'
+          WHEN valor_proc IS NULL THEN 'Verificacion_pendiente'
+          WHEN anio IS NULL THEN 'Verificacion_pendiente'
+          ELSE 'Tasado' END AS estado,
+     CASE WHEN p IS NULL AND procesador_origen = 'modelo' THEN 'procesador_no_informado'
+          WHEN p IS NULL THEN 'procesador_desconocido'
+          WHEN l IS NULL THEN 'linea_desconocida'
+          WHEN $ram IS NOT NULL AND ri IS NULL THEN 'ram_informada_desconocida'
+          WHEN r IS NULL THEN 'ram_tasada_desconocida'
+          WHEN valor_proc IS NULL THEN 'procesador_sin_muestras'
+          WHEN anio IS NULL THEN 'anio_desconocido'
+          ELSE null END AS motivo_clave,
+     CASE WHEN anio IS NULL THEN null
+          ELSE CASE WHEN $anio_referencia - anio < 0 THEN 0.0
+                    ELSE toFloat($anio_referencia - anio) END END AS antiguedad,
+     CASE WHEN valor_mercado IS NULL THEN null
+          ELSE toInteger(round((valor_mercado * (1 - $descuento / 100.0)
+                                + CASE WHEN $hdd_a_ssd THEN $reval ELSE 0 END) / 1000.0)) * 1000
+     END AS vma,
+     CASE WHEN $hdd_a_ssd THEN $reval ELSE 0 END AS revalorizacion_ssd,
+     // Hay conocimiento completo cuando la consulta ya puede aplicar la política de valuación
+     (p IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
+      AND NOT ($ram IS NOT NULL AND ri IS NULL)) AS conocimiento_completo
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     anio, anio_origen, win11, win11_origen, valor_mercado,
+     estado, motivo_clave, antiguedad, vma, revalorizacion_ssd, conocimiento_completo,
+     // Criterios que la política aplicó de verdad: solo esos entran en la traza
+     [x IN [
+        {nombre: 'ram_objetivo', usado: tp <> ''},
+        {nombre: 'min_muestras_mercado', usado: tp <> '' AND conocimiento_completo},
+        {nombre: 'anio_referencia', usado: estado = 'Tasado'},
+        {nombre: 'descuento_negociacion', usado: estado = 'Tasado'},
+        {nombre: 'reval_ssd', usado: estado = 'Tasado' AND $hdd_a_ssd},
+        {nombre: 'anio_min_w11', usado: estado = 'Tasado' AND win11_origen = 'anio'}
+     ] WHERE x.usado | x.nombre] AS criterios_usados
+RETURN {
+  estado: estado,
+  motivo_clave: motivo_clave,
+  procesador: p {.nombre, .familia, .gama, .anio, .soporte_w11, .valor_ref_ars, .n_muestras,
+                 .fuente_valor, .estado_validacion},
+  procesador_origen: procesador_origen,
+  generacion_anterior: CASE WHEN p.valor_ref_ars IS NULL AND v IS NOT NULL
+                            THEN v {.nombre, .anio, .valor_ref_ars, .n_muestras} END,
+  valor_origen: CASE WHEN p.valor_ref_ars IS NOT NULL THEN 'propio'
+                     WHEN v IS NOT NULL THEN 'generacion_anterior' END,
+  valor_proc: valor_proc,
+  linea: l {.nombre, .marca, .factor_precio, .origen_factor, .estado_validacion},
+  grupo: g {.nombre, .dias_promedio_venta, .indice_repuestos},
+  ram_informada_existe: ri IS NOT NULL,
+  ram: r {.gb, .factor},
+  ram_final: ram_final,
+  ram_origen: ram_origen,
+  anio: anio,
+  anio_origen: anio_origen,
+  soporte_w11: win11,
+  w11_origen: win11_origen,
+  antiguedad: antiguedad,
+  valor_mercado: valor_mercado,
+  vma: vma,
+  revalorizacion_ssd: revalorizacion_ssd,
+  criterios_usados: criterios_usados
+} AS valuacion
+"""
 
 
+def _criterios_valuacion_sm2() -> tuple:
+    """Lee de Neo4j los criterios que puede aplicar la valuación.
+
+    Devuelve los valores y el registro de procedencia de cada uno (misma forma que `CE()`, que
+    además valida que existan). El registro se copia a la traza solo para los criterios que la
+    consulta informa como aplicados: anotar como aplicado un criterio que la política no evaluó
+    cambiaría el estado Firme/Provisional cuando el experto valide solo una parte del conocimiento.
+    """
+    leidos = nueva_traza()
+    valores = {nombre: CE(nombre, leidos) for nombre in _CRITERIOS_VALUACION_SM2}
+    return valores, dict(leidos["criterios_usados"])
 
 
+def _normalizar_texto_procesador(texto: str) -> str:
+    """'5500 U' → '5500u' y '13ª' → '13a': variantes de escritura del aviso, sin cambiar el hecho."""
+    normalizado = str(texto or "").lower().replace("ª", "a")
+    return re.sub(r"(\d)\s+(u|h|hs|hx|hk|p)\b", r"\1\2", normalizado)
 
 
+def inferir_valuacion_sm2_cypher(procesador: str, modelo: str, texto: str,
+                                 ram_informada: Optional[int], ram_ampliada: bool,
+                                 hdd_a_ssd: bool, anio_informado: Optional[int],
+                                 soporte_w11_informado: Optional[bool],
+                                 traza: Optional[dict] = None,
+                                 ram_final_fijada: Optional[int] = None,
+                                 aplicar_politica_ram: bool = True) -> dict:
+    """
+    Resuelve la valuación de SM2 en una consulta Cypher explícita sobre Neo4j:
+      - identifica el :Procesador (regex sobre el procesador del aviso o del modelo),
+      - identifica la :Linea y su :GrupoLinea (regex sobre marca + modelo + texto),
+      - fija la RAM tasada: la del aviso, la que deja el plan de SM1 (CE ram_objetivo) o la
+        configuración de referencia (CE ram_objetivo) cuando el aviso no la informa,
+      - aplica R2.4 (generación anterior de la misma familia) cuando el procesador no tiene
+        muestras propias, y toma el año del aviso o del procesador,
+      - resuelve el soporte de Windows 11 (aviso → procesador → año ≥ CE anio_min_w11) y la
+        antigüedad contra CE anio_referencia,
+      - calcula valor de mercado = valor del procesador × factor de línea × factor de RAM y
+        VMA = valor de mercado × (1 − CE descuento_negociacion) + CE reval_ssd si hay upgrade,
+      - clasifica el estado: 'Tasado', 'Verificacion_pendiente' (falta de dato) o
+        'ConocimientoFaltante' (lo informado no existe en el grafo),
+      - informa en `criterios_usados` solo los criterios que la política aplicó, para que la traza
+        registre la procedencia con verdad.
 
+    Devuelve el mapa resuelto con la procedencia de cada dato y los valores de los criterios.
+    `aplicar_politica_ram=False` fija el factor de RAM con `ram_final_fijada` (consulta pública).
+    """
+    criterios, procedencia = _criterios_valuacion_sm2()
+    driver = obtener_driver_neo4j()
+    with driver.session(database=NEO4J_DATABASE) as s:
+        rec = s.run(
+            _CONSULTA_VALUACION_SM2,
+            procesador=_normalizar_texto_procesador(procesador),
+            modelo=_normalizar_texto_procesador(modelo),
+            texto=texto or "",
+            ram=None if ram_informada is None else int(ram_informada),
+            ram_ampliada=bool(ram_ampliada),
+            ram_final_fijada=None if ram_final_fijada is None else int(ram_final_fijada),
+            aplicar_politica_ram=bool(aplicar_politica_ram),
+            hdd_a_ssd=bool(hdd_a_ssd),
+            anio=None if anio_informado is None else float(anio_informado),
+            w11=None if soporte_w11_informado is None else bool(soporte_w11_informado),
+            ram_objetivo=int(criterios["ram_objetivo"]),
+            anio_referencia=float(criterios["anio_referencia"]),
+            anio_min_w11=float(criterios["anio_min_w11"]),
+            descuento=float(criterios["descuento_negociacion"]),
+            reval=float(criterios["reval_ssd"])).single()
+    valuacion = dict(rec["valuacion"]) if rec and rec.get("valuacion") else {}
+    valuacion["criterios"] = criterios
+    if traza is not None:
+        for nombre in valuacion.get("criterios_usados") or []:
+            if nombre not in procedencia:
+                raise RuntimeError(
+                    "[ERROR INFERENCIA NEO4J] La valuación SM2 informó un criterio desconocido: "
+                    f"'{nombre}'.")
+            traza["criterios_usados"][nombre] = procedencia[nombre]
+    return valuacion
 
 
 def consultar_mercado_componentes(procesador: str, texto: str, ram_informada: Optional[int],
                                   ram_final: int, hdd_a_ssd: bool) -> dict:
     """
-    Valuación por componentes, resuelta en Cypher sobre Neo4j:
+    Valuación por componentes con el factor de RAM ya fijado por el llamador (consulta pública):
       - identifica el :Procesador (regex sobre el procesador que extrajo el LLM),
       - identifica la :Linea y su :GrupoLinea (regex sobre marca + modelo + texto),
       - toma el factor de la :CapacidadRAM final (después de los upgrades de SM1),
       - calcula valor de mercado = valor del procesador × factor de línea × factor de RAM
         y VMA = valor de mercado × (1 − CE descuento_negociacion) + CE reval_ssd si se cambia HDD por SSD.
-    Devuelve lo que encontró (None en lo que no existe en el grafo).
+    Devuelve lo que encontró (None en lo que no existe en el grafo). El motor SM2 usa
+    `inferir_valuacion_sm2_cypher`, que resuelve además la RAM tasada y el estado.
     """
-    driver = obtener_driver_neo4j()
-    q = """
-    WITH toLower($procesador) AS tp, toLower($texto) AS tt
-    OPTIONAL MATCH (p:Procesador) WHERE tp =~ p.patron
-    WITH tt, p ORDER BY p.prioridad DESC LIMIT 1
-    // R2.4: sin muestras propias → generación anterior más cercana de la misma familia con datos
-    OPTIONAL MATCH (v:Procesador)
-      WHERE p.valor_ref_ars IS NULL AND p.anio IS NOT NULL AND v.familia = p.familia AND v <> p
-        AND v.valor_ref_ars IS NOT NULL AND v.anio IS NOT NULL AND v.anio <= p.anio
-    WITH tt, p, v ORDER BY v.anio DESC, v.n_muestras DESC LIMIT 1
-    OPTIONAL MATCH (l:Linea) WHERE tt =~ l.patron
-    WITH p, v, l ORDER BY l.prioridad DESC LIMIT 1
-    OPTIONAL MATCH (l)-[:PERTENECE_A_GRUPO]->(g:GrupoLinea)
-    OPTIONAL MATCH (ri:CapacidadRAM {gb: $ram_informada})
-    OPTIONAL MATCH (r:CapacidadRAM {gb: $ram_final})
-    MATCH (cd:CriterioExperto {nombre: 'descuento_negociacion'}), (cs:CriterioExperto {nombre: 'reval_ssd'})
-    WITH p, v, l, g, ri, r, cd, cs, coalesce(p.valor_ref_ars, v.valor_ref_ars) AS valor_proc
-    WITH p, v, l, g, ri, r, cd, cs, valor_proc,
-         CASE WHEN valor_proc IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
-              THEN valor_proc * l.factor_precio * r.factor END AS valor_mercado
-    RETURN p {.nombre, .familia, .gama, .anio, .soporte_w11, .valor_ref_ars, .n_muestras,
-              .fuente_valor, .estado_validacion} AS procesador,
-           CASE WHEN p.valor_ref_ars IS NULL AND v IS NOT NULL
-                THEN v {.nombre, .anio, .valor_ref_ars, .n_muestras} END AS generacion_anterior,
-           valor_proc,
-           l {.nombre, .marca, .factor_precio, .origen_factor, .estado_validacion} AS linea,
-           g {.nombre, .dias_promedio_venta, .indice_repuestos} AS grupo,
-           ri IS NOT NULL AS ram_informada_existe,
-           r {.gb, .factor} AS ram,
-           valor_mercado,
-           CASE WHEN valor_mercado IS NULL THEN null
-                ELSE toInteger(round((valor_mercado * (1 - cd.valor / 100.0)
-                                      + CASE WHEN $hdd_a_ssd THEN cs.valor ELSE 0 END) / 1000.0)) * 1000
-           END AS vma
-    """
-    with driver.session(database=NEO4J_DATABASE) as s:
-        # "5500 U" → "5500u": el sufijo del modelo a veces viene separado del número
-        #  Solo sufijos reales de procesador (no "i5 de 13ª"); "13ª" → "13a"
-        procesador = (procesador or "").lower().replace("ª", "a")
-        procesador = re.sub(r"(\d)\s+(u|h|hs|hx|hk|p)\b", r"\1\2", procesador)
-        r = s.run(q, procesador=procesador, texto=texto or "", ram_informada=ram_informada,
-                  ram_final=ram_final, hdd_a_ssd=bool(hdd_a_ssd)).single()
-    return dict(r) if r else {}
+    ref = inferir_valuacion_sm2_cypher(
+        procesador=procesador, modelo="", texto=texto, ram_informada=ram_informada,
+        ram_ampliada=False, hdd_a_ssd=hdd_a_ssd, anio_informado=None,
+        soporte_w11_informado=None, ram_final_fijada=ram_final, aplicar_politica_ram=False)
+    return {campo: ref.get(campo) for campo in _CAMPOS_MERCADO_LEGADO}
 
 
 # ------------------------------------------------------------------------------
@@ -855,111 +1012,158 @@ def ejecutar_motor_sm1(datos: dict, traza: dict, texto: str = "",
 # ------------------------------------------------------------------------------
 # 5. Módulo SM2: Valuación Comercial y Demanda (Leonel Navarta)
 # ------------------------------------------------------------------------------
+def _ram_informada_para_grafo(valor) -> Optional[int]:
+    """Convierte la RAM informada con la misma validación de la versión anterior.
+
+    Un valor que `int()` no acepta ('16.0', 'ocho', una lista) se considera no informado —nunca se
+    redondea a una capacidad—, y un booleano o un decimal se convierten como antes.
+    """
+    if valor is None:
+        return None
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        return None
 
 
+def _anio_informado_para_grafo(valor) -> Optional[float]:
+    """Valida el año informado igual que la versión anterior (`float(anio)` en la aritmética).
+
+    Un año válido se transporta como número. Uno inválido corta la valuación con el mismo error de
+    antes: reemplazarlo por el año del procesador habilitaría una tasación favorable con un dato
+    que el aviso no dice.
+    """
+    if valor is None:
+        return None
+    return float(valor)
 
 
+def _hechos_procesador_sm2(datos: dict) -> tuple:
+    """Texto de procesador consultable y texto del modelo, tal como los extrajo el LLM.
+
+    El campo del procesador vale si trae algo distinto de 'null'/'none'; si viene vacío solo
+    queda el modelo, y la consulta decide si alcanza para identificar el componente.
+    """
+    procesador = str(datos.get("procesador") or "").strip()
+    modelo = str(datos.get("modelo") or "").strip()
+    if not procesador or procesador.lower() in ("null", "none"):
+        return "", modelo
+    return procesador, modelo
 
 
+def _mensaje_conocimiento_faltante_sm2(ref: dict, datos: dict, procesador: str, modelo: str,
+                                       ram_informada: Optional[int]) -> str:
+    """Redacta el error con la causa que resolvió el grafo (qué falta en la base de conocimiento)."""
+    clave = ref.get("motivo_clave")
+    if clave == "procesador_desconocido":
+        consultado = procesador or modelo
+        return (f"El procesador '{consultado}' no está en la base de conocimiento (Neo4j :Procesador).")
+    if clave == "linea_desconocida":
+        equipo = f"{datos.get('marca') or ''} {datos.get('modelo') or ''}".strip() or "sin marca"
+        return (f"La marca o línea del equipo ('{equipo}') no está en la base de conocimiento "
+                f"(Neo4j :Linea).")
+    if clave == "ram_informada_desconocida":
+        return (f"La capacidad de RAM informada ({ram_informada} GB) no está en la base de "
+                f"conocimiento (Neo4j :CapacidadRAM).")
+    if clave == "ram_tasada_desconocida":
+        return (f"La capacidad de RAM {ref.get('ram_final')} GB no está en la base de conocimiento "
+                f"(Neo4j :CapacidadRAM).")
+    raise RuntimeError(
+        "[ERROR INFERENCIA NEO4J] La consulta de valuación SM2 no informó qué conocimiento falta.")
 
 
+def _pendiente_valuacion_sm2(ref: dict, criterios: dict) -> tuple:
+    """Regla y dato faltante de una valuación pendiente, según la causa que resolvió el grafo."""
+    clave = ref.get("motivo_clave")
+    if clave == "procesador_no_informado":
+        return ("R3.3b: procesador no informado",
+                "Procesador del equipo (no figura en el aviso)")
+    if clave == "procesador_sin_muestras":
+        proc = ref.get("procesador") or {}
+        muestras = proc.get("n_muestras") or 0
+        minimo = int(criterios["min_muestras_mercado"])
+        return (f"R3.3b: {proc.get('nombre')} con {muestras} avisos relevados "
+                f"(< CE min_muestras_mercado) y sin generación anterior con datos",
+                f"Precio de mercado para {proc.get('nombre')} (hay {muestras} avisos relevados; "
+                f"se necesitan {minimo})")
+    if clave == "anio_desconocido":
+        return ("R3.3b: año de fabricación desconocido", "Año de fabricación del equipo")
+    raise RuntimeError(
+        "[ERROR INFERENCIA NEO4J] La valuación pendiente de SM2 no informó una causa conocida.")
 
 
 def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> dict:
     """
     Valuación por componentes (precios de mercado relevados) y riesgo/demanda difusos.
+    Los hechos del aviso se validan acá; la decisión de negocio (qué componente, qué RAM se
+    tasa, de dónde sale el año, el soporte de Windows 11, R2.4 y el estado) la resuelve la
+    consulta Cypher `inferir_valuacion_sm2_cypher`.
       - Procesador, línea o RAM informados que no existen en el grafo → ConocimientoFaltante (error).
       - Procesador no informado, año desconocido o procesador sin muestras de mercado suficientes
         → Verificacion_pendiente (falta de dato ≠ valor favorable).
     """
-    pendiente = lambda regla, dato: (traza["reglas"].append(f"{regla} → Verificacion_pendiente"),
-                                     {"estado": "Verificacion_pendiente", "dato_faltante": dato,
-                                      "vma_estimado_ars": 0})[1]
-
-    proc_txt = str(datos.get("procesador") or "").strip()
-    proc_desde_modelo = False
-    if not proc_txt or proc_txt.lower() in ("null", "none"):
-        # A veces el procesador viene dentro del modelo ("MacBook Air M1"): se prueba con el modelo
-        proc_txt = str(datos.get("modelo") or "").strip()
-        proc_desde_modelo = True
-        if not proc_txt:
-            return pendiente("R3.3b: procesador no informado", "Procesador del equipo (no figura en el aviso)")
-
-    # RAM final: la que queda después del plan de SM1 (si se amplía, la de CE ram_objetivo)
-    ram_objetivo = int(CE("ram_objetivo", traza))
-    ram = datos.get("ram_gb")
-    try:
-        ram = int(ram) if ram is not None else None
-    except (TypeError, ValueError):
-        ram = None
-    if ram is None:
-        ram_final = ram_objetivo
-        traza["datos_inferidos"].append(
-            f"RAM no informada: se tasa con la configuración de referencia ({ram_objetivo} GB, CE ram_objetivo)")
-    else:
-        ram_final = ram_objetivo if res_sm1.get("upgrades", {}).get("ram") else ram
-    hdd_a_ssd = bool(res_sm1.get("upgrades", {}).get("ssd"))
-
+    upgrades = res_sm1.get("upgrades") or {}
+    proc_txt, modelo_txt = _hechos_procesador_sm2(datos)
+    ram_informada = _ram_informada_para_grafo(datos.get("ram_gb"))
+    anio_avisado = datos.get("anio_fabricacion")
+    soporte_w11 = datos.get("soporte_windows_11")
+    soporte_w11 = None if soporte_w11 is None else bool(soporte_w11)
     texto_busqueda = " ".join(str(x) for x in (datos.get("marca"), datos.get("modelo"), texto) if x)
-    ref = consultar_mercado_componentes(proc_txt, texto_busqueda, ram, ram_final, hdd_a_ssd)
-    traza["referencia_mercado"] = {k: ref.get(k) for k in ("procesador", "generacion_anterior", "linea", "grupo", "ram")}
+
+    ref = inferir_valuacion_sm2_cypher(
+        procesador=proc_txt, modelo=modelo_txt, texto=texto_busqueda,
+        ram_informada=ram_informada, ram_ampliada=bool(upgrades.get("ram")),
+        hdd_a_ssd=bool(upgrades.get("ssd")),
+        anio_informado=_anio_informado_para_grafo(anio_avisado),
+        soporte_w11_informado=soporte_w11, traza=traza)
+    criterios = ref.get("criterios") or {}
     proc, linea, grupo = ref.get("procesador"), ref.get("linea"), ref.get("grupo")
 
-    # Lo que el aviso menciona y no está en la base de conocimiento → error explícito
-    if not proc and proc_desde_modelo:
-        return pendiente("R3.3b: procesador no informado", "Procesador del equipo (no figura en el aviso)")
-    if proc and proc_desde_modelo:
-        traza["datos_inferidos"].append(f"Procesador tomado del modelo '{proc_txt}': {proc['nombre']}")
-    if not proc:
-        raise ConocimientoFaltante(
-            f"El procesador '{proc_txt}' no está en la base de conocimiento (Neo4j :Procesador).")
-    if not linea:
-        equipo = f"{datos.get('marca') or ''} {datos.get('modelo') or ''}".strip() or "sin marca"
-        raise ConocimientoFaltante(
-            f"La marca o línea del equipo ('{equipo}') no está en la base de conocimiento (Neo4j :Linea).")
-    if ram is not None and not ref.get("ram_informada_existe"):
-        raise ConocimientoFaltante(
-            f"La capacidad de RAM informada ({ram} GB) no está en la base de conocimiento (Neo4j :CapacidadRAM).")
-    if not ref.get("ram"):
-        raise ConocimientoFaltante(
-            f"La capacidad de RAM {ram_final} GB no está en la base de conocimiento (Neo4j :CapacidadRAM).")
+    if proc_txt or modelo_txt:
+        traza["referencia_mercado"] = {k: ref.get(k) for k in ("procesador", "generacion_anterior",
+                                                             "linea", "grupo", "ram")}
+        if ref.get("ram_origen") == "referencia":
+            traza["datos_inferidos"].append(
+                f"RAM no informada: se tasa con la configuración de referencia "
+                f"({ref.get('ram_final')} GB, CE ram_objetivo)")
+    if proc and ref.get("procesador_origen") == "modelo":
+        traza["datos_inferidos"].append(f"Procesador tomado del modelo '{modelo_txt}': {proc['nombre']}")
 
-    # Procesador reconocido pero sin avisos suficientes para tener un precio de referencia
-    min_muestras = int(CE("min_muestras_mercado", traza))
+    # Lo que el aviso menciona y no está en la base de conocimiento → error explícito
+    if ref.get("estado") == "ConocimientoFaltante":
+        raise ConocimientoFaltante(
+            _mensaje_conocimiento_faltante_sm2(ref, datos, proc_txt, modelo_txt, ram_informada))
+    # Falta de dato: la consulta ya comprobó que no hay valor de mercado posible
+    if ref.get("estado") == "Verificacion_pendiente":
+        regla, dato = _pendiente_valuacion_sm2(ref, criterios)
+        traza["reglas"].append(f"{regla} → Verificacion_pendiente")
+        return {"estado": "Verificacion_pendiente", "dato_faltante": dato, "vma_estimado_ars": 0}
+    if ref.get("estado") != "Tasado":
+        raise RuntimeError(
+            "[ERROR INFERENCIA NEO4J] La consulta de valuación SM2 no devolvió un estado válido.")
+
     gen_ant = ref.get("generacion_anterior")
-    if proc.get("valor_ref_ars") is None and not gen_ant:
-        return pendiente(
-            f"R3.3b: {proc['nombre']} con {proc.get('n_muestras', 0)} avisos relevados (< CE min_muestras_mercado) "
-            f"y sin generación anterior con datos",
-            f"Precio de mercado para {proc['nombre']} (hay {proc.get('n_muestras', 0)} avisos relevados; "
-            f"se necesitan {min_muestras})")
     if gen_ant:
         traza["reglas"].append(
             f"R2.4: {proc['nombre']} sin muestras suficientes → valor de la generación anterior "
             f"{gen_ant['nombre']} (${gen_ant['valor_ref_ars']:,}, {gen_ant['n_muestras']} avisos)")
         traza["datos_inferidos"].append(
-            f"Valor de {proc['nombre']} tomado de {gen_ant['nombre']} (generación anterior, supuesto conservador R2.4)")
+            f"Valor de {proc['nombre']} tomado de {gen_ant['nombre']} (generación anterior, "
+            f"supuesto conservador R2.4)")
+    if ref.get("anio_origen") == "procesador" and ref.get("anio") is not None:
+        traza["datos_inferidos"].append(
+            f"Año estimado por el procesador {proc['nombre']} (Neo4j): {ref['anio']}")
+    if ref.get("w11_origen") == "procesador":
+        traza["datos_inferidos"].append(
+            f"Soporte de Windows 11 según el procesador {proc['nombre']}: {bool(ref['soporte_w11'])}")
+    elif ref.get("w11_origen") == "anio":
+        anio_nota = anio_avisado if ref.get("anio_origen") == "aviso" else ref.get("anio")
+        traza["datos_inferidos"].append(
+            f"Soporte de Windows 11 inferido por el año ({anio_nota}): {bool(ref['soporte_w11'])}")
+
     valor_proc = int(ref["valor_proc"])
-
-    # Año: aviso → generación del procesador (dato inferido)
-    anio = datos.get("anio_fabricacion")
-    if anio is None and proc.get("anio"):
-        anio = proc["anio"]
-        traza["datos_inferidos"].append(f"Año estimado por el procesador {proc['nombre']} (Neo4j): {anio}")
-    if anio is None:
-        return pendiente("R3.3b: año de fabricación desconocido", "Año de fabricación del equipo")
-    antiguedad = max(0.0, CE("anio_referencia", traza) - float(anio))
-
-    # Soporte de Windows 11: aviso → procesador → año ≥ CE anio_min_w11
-    win11 = datos.get("soporte_windows_11")
-    if win11 is None:
-        if proc.get("soporte_w11") is not None:
-            win11 = bool(proc["soporte_w11"])
-            traza["datos_inferidos"].append(f"Soporte de Windows 11 según el procesador {proc['nombre']}: {win11}")
-        else:
-            win11 = float(anio) >= CE("anio_min_w11", traza)
-            traza["datos_inferidos"].append(f"Soporte de Windows 11 inferido por el año ({anio}): {win11}")
-
+    antiguedad = float(ref["antiguedad"])
+    win11 = bool(ref["soporte_w11"])
     repuestos = float(grupo["indice_repuestos"])
     dias_rotacion = float(grupo["dias_promedio_venta"])
 
@@ -973,18 +1177,16 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
         raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM2-DEM.")
     demanda = res_dem[1]
 
-    # Criterios que usó la consulta de valuación (para la trazabilidad)
-    descuento = CE("descuento_negociacion", traza)
-    reval = 0
-    if hdd_a_ssd:
-        reval = int(CE("reval_ssd", traza))
+    descuento = float(criterios["descuento_negociacion"])
+    reval = int(ref.get("revalorizacion_ssd") or 0)
+    if upgrades.get("ssd"):
         traza["reglas"].append("R2.3: revalorización por upgrade a SSD (CE reval_ssd)")
     traza["reglas"].append(
         f"SM2 componentes: {proc['nombre']} (${valor_proc:,}) × {linea['nombre']} ({linea['factor_precio']}) "
-        f"× RAM {ram_final} GB ({ref['ram']['factor']}) − {descuento:.0f} % de negociación")
+        f"× RAM {ref['ram_final']} GB ({ref['ram']['factor']}) − {descuento:.0f} % de negociación")
 
     vma = int(ref["vma"])
-    print(f"      [Cypher Neo4j SM2] {proc['nombre']} · {linea['nombre']} · {ram_final} GB → VMA ${vma:,}", flush=True)
+    print(f"      [Cypher Neo4j SM2] {proc['nombre']} · {linea['nombre']} · {ref['ram_final']} GB → VMA ${vma:,}", flush=True)
     return {
         "estado": "Tasado",
         "procesador": proc["nombre"],
@@ -995,7 +1197,7 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
         "muestras_procesador": proc.get("n_muestras"),
         "factor_linea": linea["factor_precio"],
         "origen_factor_linea": linea.get("origen_factor"),
-        "ram_tasada_gb": ram_final,
+        "ram_tasada_gb": ref["ram_final"],
         "factor_ram": ref["ram"]["factor"],
         "valor_mercado_ars": int(round(ref["valor_mercado"], -3)),
         "descuento_negociacion_pct": descuento,
