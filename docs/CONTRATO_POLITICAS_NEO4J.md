@@ -75,6 +75,55 @@ Las anclas corresponden a la base indicada y pueden desplazarse al editar. Esta 
 - Ningún CASE selecciona por nombre de categoría. Un CASE que verifica tipo/cardinalidad o aplica la habilitación booleana leída es mecanismo.
 - Pruebas: paridad de las tres correspondencias y categoría desconocida; cambiar resultado y habilitación en una transacción de prueba cambia la salida pública sin editar código; configuración incompleta/ambigua no compra; idempotencia y protección del resto del grafo. Rollback explícito de las mutaciones de prueba, sin borrar nodos ajenos.
 
+## Segunda unidad P2a — condiciones de las acciones de SM1
+
+Superficie: `app/inferencia_sm1.py` (sólo la sección A de `CONSULTA_RESOLUCION` y el transporte
+de error del adaptador), `cypher/Grupo_20_PG3_politicas_sm1_acciones.cypher`,
+`scripts/aplicar_politicas_sm1_pruebas.py` y `app/tests/test_politicas_sm1_neo4j.py`.
+
+| Pieza | Forma exacta | Comprobación previa |
+| --- | --- | --- |
+| Manifiesto | `(:VersionPoliticas {id:'VP-SM1-ACCIONES', version:'politicas-SM1-acciones-v1', etapa:'SM1-acciones', activa:true, ids_requeridos:[8], obligaciones_requeridas:11})` | uno solo por etapa; ids únicos y completos; ningún otro manifiesto de la etapa |
+| Miembros | `(:VersionPoliticas)-[:INCLUYE {condiciones, criterios}]->(:Regla)` × 8 | cardinalidad declarada = condiciones/criterios reales; ningún miembro ajeno ni que no sea `Regla` |
+| Condiciones | `(:Condicion {id, campo, ambito, operador, valor?, representacion_version})` × 9 | ids estables y únicos; `ambito` ∈ {`hechos`,`campos`}; `operador` ∈ {`=`,`<`,`ausente`,`presente`}; operando único (`valor` xor `USA_CRITERIO`; `ausente`/`presente` sin operando) |
+| Grupos | `(:Regla)-[:REQUIERE {grupo}]->(:Condicion)` × 9 | una sola regla requiere cada condición y con el grupo declarado |
+| Criterios | `(:Condicion)-[:USA_CRITERIO]->(:CriterioExperto)` × 2 (`CE-01`, `CE-27`) | existe una vez, valor numérico; una condición declara como máximo un criterio |
+| Categorías difusas | `(:ReglaDifusa)-[:OBLIGA {etapa:'SM1-acciones', campo}]->(:CostoReparacion)` × 11 | conserva `categorias` y `orden` previos; `campo` no vacío; base de SM1 con su cardinalidad |
+
+Semántica conservada: un grupo se satisface con cualquiera de sus condiciones (OR) y la regla con
+todos sus grupos (AND); una regla sin condiciones (mano de obra) se agrega al final si el plan
+tiene intervenciones. `=`, `<`, `ausente` y `presente` son comparadores finitos; un hecho ausente
+no satisface una comparación (nunca se convierte en favorable) y `<` sólo compara operandos
+numéricos. `orden`, costos, tareas y la procedencia (`criterio_*`) se leen como antes: la cola de
+la sección A no cambió, así que el plan, el total y las claves de `reglas` son los mismos.
+
+Consecuencias preservadas: `ORDENA` y `OBLIGA` existentes; P2a no agrega costos ni cambia
+prioridades expertas. No se toca `campo`, `valor`, `tarea`, `orden`, `requiere_plan` ni
+`cuenta_como_intervencion` de las `Regla` (el seed diagnóstico las vuelve a `SET`) ni ningún
+criterio, costo, conjunto, diagnóstico o propiedad de validación experta. La versión de
+representación no es validación: todo sigue Provisional donde ya lo estaba.
+
+Configuración inválida: el grafo devuelve la lista `configuracion_invalida` (manifiesto ausente o
+repetido, regla sin costo único, condiciones que no coinciden con las declaradas, operador no
+admitido, operando ambiguo, criterio faltante/ambiguo/no numérico, obligación sin hecho o
+categorías, condición propia no requerida por la etapa). `consultar_resolucion_sm1` la traduce al error de
+conocimiento existente (`ConocimientoFaltante` con el motivo concreto) y `consultar_sm1` la
+publica como `ErrorConocimiento`; no hay `RuntimeError`, ni un `collect` más corto convertido en
+plan vacío o reparación gratuita. Una configuración sin manifiesto también falla explícitamente,
+aunque no haya condiciones cargadas.
+
+Alcance deliberadamente excluido: precedencias de evidencia textual (P2b) y selección de
+estado/plan/combinación (P2c) siguen en la consulta. P2a no reordena, no cambia estados y no
+corrige B3–B5.
+
+Pruebas (`test_politicas_sm1_neo4j.py`, cada mutación en una transacción que se revierte):
+cambiar el comparador, el campo, el ámbito, el grupo o el criterio enlazado cambia el plan público;
+reapuntar el `campo` de una `OBLIGA` cambia la acción difusa; la segunda aplicación no cambia la
+proyección; una configuración previa distinta se rechaza sin escribir; seis configuraciones
+inválidas/incompletas producen `ErrorConocimiento` con su motivo y sin plan. La paridad de
+comportamiento la cubren `test_sm1_neo4j.py`, la suite con grafo (200 pruebas) y la offline
+(90, 17 omisiones por falta de Neo4j), sin tocar el corpus ni el grafo de trabajo.
+
 ## Referencia observada y seguridad de ejecución
 
 - Nueva suite antes de la migración: **184 pruebas, sin omisiones, exit 0**, en `ejecuciones/politicas_p0_baseline_pruebas.log`.
