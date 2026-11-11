@@ -327,8 +327,63 @@ def _sm3_conv_falso(brecha, descuento):
     return 0.2, "Descartar"
 
 
+def _sm3_criterio(nombre):
+    """Un :CriterioExperto con la forma que devuelve el Cypher, con el valor del fixture."""
+    return dict(CONOCIMIENTO_FALSO["criterios"][nombre], nombre=nombre)
 
+def _sm3_crisp_falso(driver, base, precio, costo_rep, vma, n_interv, riesgo, demanda):
+    """Doble de CONSULTA_CRISP: misma aritmética, cuantización, política y procedencia."""
+    c = {nombre: datos["valor"] for nombre, datos in CONOCIMIENTO_FALSO["criterios"].items()}
+    ratio_max = c["ratio_reparacion_max"]
+    if vma == 0:
+        # La consulta real informa la división por cero; el adapter reproduce la excepción.
+        return {"division_por_cero": True, "regla": None, "decision": None, "margen_neto": None,
+                "ratio_reparacion": None, "margen_req": None, "brecha": None, "descuento": None,
+                "contraoferta": None, "ratio_max": ratio_max, "reglas_activadas": [], "criterios": []}
 
+    margen_neto = round(100.0 * (vma - precio - costo_rep) / vma, 1)
+    ratio_rep = round(costo_rep / vma, 2) if vma > 0 else 0.0
+    descartar = {"division_por_cero": False, "ratio_reparacion": ratio_rep, "margen_neto": margen_neto,
+                 "margen_req": None, "brecha": None, "descuento": None, "contraoferta": None,
+                 "ratio_max": ratio_max}
+    if ratio_rep > ratio_max:
+        return dict(descartar, decision="DescartarPorRiesgo", regla="R3.7",
+                    reglas_activadas=["R3.7: costo / VMA > CE ratio_reparacion_max → DescartarPorRiesgo"],
+                    criterios=[_sm3_criterio("ratio_reparacion_max")])
+    if riesgo == "Alto" and demanda == "Baja":
+        return dict(descartar, decision="DescartarPorRiesgo", regla="R3.8",
+                    reglas_activadas=["R3.8: riesgo Alto y demanda Baja → DescartarPorRiesgo"],
+                    criterios=[_sm3_criterio("ratio_reparacion_max")])
+
+    reglas, criterios = [], [_sm3_criterio("ratio_reparacion_max"), _sm3_criterio("margen_base")]
+    if demanda == "Alta" and riesgo == "Bajo":
+        margen_paso1 = c["margen_alta_liquidez"]
+        criterios.append(_sm3_criterio("margen_alta_liquidez"))
+        reglas.append("R3.4: demanda Alta y riesgo Bajo → margen requerido = CE margen_alta_liquidez")
+    elif riesgo == "Alto":
+        margen_paso1 = max(c["margen_base"], c["margen_riesgo_alto"])
+        criterios.append(_sm3_criterio("margen_riesgo_alto"))
+        reglas.append("R3.5: riesgo Alto → margen requerido = máx(margen, CE margen_riesgo_alto)")
+    else:
+        margen_paso1 = c["margen_base"]
+    criterios.append(_sm3_criterio("umbral_intervenciones"))
+    margen_req = margen_paso1
+    if n_interv >= c["umbral_intervenciones"]:
+        margen_req += c["prima_fallas"]
+        criterios.append(_sm3_criterio("prima_fallas"))
+        reglas.append("R3.6: intervenciones ≥ CE umbral_intervenciones → + CE prima_fallas")
+
+    contraoferta = max(0, round(vma - costo_rep - vma * margen_req / 100.0, -3))
+    descuento = round(100.0 * (precio - contraoferta) / precio, 1) if contraoferta < precio else 0.0
+    return dict(descartar, decision=None, regla=None, margen_req=float(margen_req),
+                brecha=round(margen_neto - margen_req, 1), descuento=descuento,
+                contraoferta=float(contraoferta), reglas_activadas=reglas, criterios=criterios)
+
+def _sm3_decision_falsa(driver, base, categoria, contraoferta):
+    """Doble de CONSULTA_DECISION: mapeo de la categoría difusa y contraoferta habilitada."""
+    return {"decision": {"Comprar": "Comprar", "Negociar": "ComprarConOfertaMenor",
+                          "Descartar": "DescartarPorRiesgo"}[categoria],
+            "contraoferta_sugerida_ars": contraoferta if categoria == "Negociar" else None}
 
 
 def _llm_falso(extraccion, intencion_router):
@@ -461,6 +516,8 @@ def _ejecutar(caso):
             mock.patch.object(oe, "inferir_sm2_rie_cypher", side_effect=_sm2_rie_falso), \
             mock.patch.object(oe, "inferir_sm2_dem_cypher", side_effect=_sm2_dem_falso), \
             mock.patch.object(oe, "inferir_sm3_conv_cypher", side_effect=_sm3_conv_falso), \
+            mock.patch.object(oe, "inferir_sm3_crisp_cypher", side_effect=_sm3_crisp_falso), \
+            mock.patch.object(oe, "resolver_decision_sm3_cypher", side_effect=_sm3_decision_falsa), \
             mock.patch.object(oe, "consultar_llm",
                               side_effect=_llm_falso(caso.get("extraccion_llm") or {},
                                                      caso.get("intencion_router", "evaluacion_integral"))) as llm:
@@ -615,6 +672,73 @@ class DefectosConocidosTest(unittest.TestCase):
                     self.assertEqual([], estricta, caso["titulo"])
 
 
+class Sm3AdapterTest(unittest.TestCase):
+    """SM3 delega la política en la inferencia del grafo y conserva su contrato público.
+
+    Los dobles de Cypher de este archivo no prueban las consultas: la cobertura real de la
+    inferencia está en test_sm3_neo4j.py. Acá se fija el cableado y la forma de la salida.
+    """
+
+    def _ejecutar(self, *caso):
+        traza = oe.nueva_traza()
+        with mock.patch.object(oe, "obtener_driver_neo4j", return_value=mock.Mock()), \
+                mock.patch.object(oe, "inferir_sm3_crisp_cypher", side_effect=_sm3_crisp_falso), \
+                mock.patch.object(oe, "resolver_decision_sm3_cypher", side_effect=_sm3_decision_falsa), \
+                mock.patch.object(oe, "inferir_sm3_conv_cypher", side_effect=_sm3_conv_falso):
+            return oe.ejecutar_motor_sm3(*caso, traza), traza
+
+    def test_el_descarte_por_r37_conserva_decision_motivo_e_indicadores(self):
+        resultado, traza = self._ejecutar(300000, 400000, 661000, 0, "Medio", "Media")
+        self.assertEqual("DescartarPorRiesgo", resultado["decision"])
+        self.assertEqual("R3.7", resultado["regla_aplicada"])
+        self.assertEqual("La reparación ($400,000) supera el 50% del VMA ($661,000).", resultado["motivo"])
+        self.assertEqual(["R3.7: costo / VMA > CE ratio_reparacion_max → DescartarPorRiesgo"], traza["reglas"])
+        self.assertEqual({"precio_publicado", "costo_reparacion", "vma_tasado", "margen_neto_pct",
+                          "ratio_reparacion"}, set(resultado["indicadores"]))
+
+    def test_el_margen_requerido_llega_del_grafo_con_su_procedencia(self):
+        # Criterios del fixture: margen_base 12 % y prima_fallas 5 pp con umbral 3 intervenciones.
+        resultado, traza = self._ejecutar(400000, 0, 661000, 4, "Medio", "Media")
+        self.assertEqual(17.0, resultado["indicadores"]["margen_requerido_pct"])
+        self.assertIn("R3.6: intervenciones ≥ CE umbral_intervenciones → + CE prima_fallas", traza["reglas"])
+        self.assertEqual(["ratio_reparacion_max", "margen_base", "umbral_intervenciones", "prima_fallas"],
+                         list(traza["criterios_usados"]))
+        self.assertEqual({"id", "valor", "unidad", "version", "estado"},
+                         set(traza["criterios_usados"]["margen_base"]))
+
+    def test_la_contraoferta_solo_se_informa_al_negociar(self):
+        negociar, _ = self._ejecutar(850000, 0, 1000000, 0, "Medio", "Media")
+        self.assertEqual("ComprarConOfertaMenor", negociar["decision"])
+        # 1.000.000 − 12 % de margen requerido = 880.000, con descuento 0 sobre el precio pedido.
+        self.assertEqual(880000, negociar["indicadores"]["contraoferta_sugerida_ars"])
+        self.assertEqual(0.0, negociar["indicadores"]["descuento_requerido_pct"])
+        comprar, _ = self._ejecutar(100000, 0, 1000000, 0, "Medio", "Media")
+        self.assertEqual("Comprar", comprar["decision"])
+        self.assertIsNone(comprar["indicadores"]["contraoferta_sugerida_ars"])
+
+    def test_un_vma_cero_conserva_la_excepcion_de_la_politica_anterior(self):
+        for vma in (0, 0.0, -0.0):
+            with self.subTest(vma=vma):
+                with self.assertRaises(ZeroDivisionError) as contexto:
+                    self._ejecutar(1000, 0, vma, 0, "Bajo", "Alta")
+                self.assertEqual("division by zero", str(contexto.exception))
+
+    def test_un_vma_negativo_se_evalua_como_antes(self):
+        resultado, _ = self._ejecutar(1000, 0, -661000, 0, "Medio", "Media")
+        self.assertEqual(0.0, resultado["indicadores"]["ratio_reparacion"])
+        self.assertIn(resultado["decision"], ("Comprar", "ComprarConOfertaMenor", "DescartarPorRiesgo"))
+
+    def test_las_entradas_no_numericas_se_rechazan(self):
+        for caso in ((("350000"), 0, 661000), (400000, "mucho", 661000), (400000, 0, None)):
+            with self.subTest(caso=caso):
+                with self.assertRaises(TypeError):
+                    self._ejecutar(*caso, 0, "Medio", "Media")
+
+    def test_los_booleanos_siguen_siendo_numeros_como_antes(self):
+        # La política anterior operaba `True` como 1 en la aritmética.
+        resultado, _ = self._ejecutar(True, False, 661000, 0, "Medio", "Media")
+        self.assertEqual(1, resultado["indicadores"]["precio_publicado"])
+        self.assertEqual(0, resultado["indicadores"]["costo_reparacion"])
 
 
 class FronterasExternasTest(unittest.TestCase):

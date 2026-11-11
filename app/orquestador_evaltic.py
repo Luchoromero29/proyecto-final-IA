@@ -41,6 +41,7 @@ from inferencia_sm1 import (
     normalizar_verificacion,
     preparar_evidencias,
 )
+from inferencia_sm3 import inferir_sm3_crisp_cypher, resolver_decision_sm3_cypher
 
 # ------------------------------------------------------------------------------
 # 1. Configuración de Entorno (.env)
@@ -1013,55 +1014,89 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
 # ------------------------------------------------------------------------------
 # 6. Módulo SM3: Evaluación de la Operación y Decisión Final (Luciano Romero)
 # ------------------------------------------------------------------------------
+def registrar_criterios(criterios: list, traza: dict) -> None:
+    """
+    Registra en la traza los criterios que devolvió una consulta de inferencia, con la
+    misma forma que CE(): valor del grafo, id, unidad, versión y estado de validación.
+    """
+    for c in criterios or []:
+        traza["criterios_usados"][c["nombre"]] = {
+            k: c[k] for k in ("id", "valor", "unidad", "version", "estado")}
 
+def _numero_sm3(nombre: str, valor) -> float:
+    """
+    Lleva una entrada de SM3 al mismo dominio numérico que usaba la política anterior:
+    `int`, `float` y `bool` (que operaba como 0/1). Cualquier otro tipo falla ruidosamente,
+    en lugar de dejar que la consulta lo convierta en silencio.
+    """
+    if isinstance(valor, float):
+        return valor
+    if isinstance(valor, int):  # incluye bool, igual que la aritmética anterior
+        return float(valor)
+    raise TypeError(
+        f"[ERROR ENTRADA SM3] '{nombre}' debe ser numérico (int, float); se recibió {type(valor).__name__}.")
 
 def ejecutar_motor_sm3(precio: float, costo_rep: float, vma: float, n_interv: int,
                        riesgo: str, demanda: str, traza: dict) -> dict:
-    """Filtros crisp (R3.7, R3.8), margen requerido y conveniencia difusa en Neo4j."""
-    margen_neto = round(100.0 * (vma - precio - costo_rep) / vma, 1)
-    ratio_rep = round(costo_rep / vma, 2) if vma > 0 else 0.0
+    """
+    Evaluación de la operación (Luciano Romero). La aritmética, la cuantización decimal,
+    la política crisp (R3.7, R3.8, margen requerido base → R3.4 o R3.5 → R3.6), la
+    contraoferta y el mapeo de la categoría difusa a la decisión se infieren en Cypher
+    (app/inferencia_sm3.py).
+
+    Este adapter valida el dominio de entrada, registra la procedencia que devuelve el
+    grafo y arma la salida pública. No lee criterios, no redondea ni evalúa umbrales: no
+    calcula ni decide nada.
+    """
+    precio_num = _numero_sm3("precio", precio)
+    costo_num = _numero_sm3("costo_rep", costo_rep)
+    vma_num = _numero_sm3("vma", vma)
+    interv_num = _numero_sm3("n_interv", n_interv)
+
+    driver = obtener_driver_neo4j()
+    crisp = inferir_sm3_crisp_cypher(driver, NEO4J_DATABASE, precio_num, costo_num, vma_num,
+                                     interv_num, riesgo, demanda)
+    if not crisp:
+        raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM3 crisp.")
+    if crisp["division_por_cero"]:
+        # Mismo error observable que la política anterior (misma clase y mensaje): el grafo
+        # informa la división por cero y el adapter la traduce, sin redefinir la entrada.
+        raise ZeroDivisionError("division by zero")
+
+    # Procedencia y reglas, tal como las resolvió el grafo (mismo orden de aplicación).
+    registrar_criterios(crisp["criterios"], traza)
+    for regla in crisp["reglas_activadas"]:
+        traza["reglas"].append(regla)
+
     base_ind = {"precio_publicado": int(precio), "costo_reparacion": int(costo_rep), "vma_tasado": int(vma),
-                "margen_neto_pct": margen_neto, "ratio_reparacion": ratio_rep}
+                "margen_neto_pct": crisp["margen_neto"], "ratio_reparacion": crisp["ratio_reparacion"]}
 
-    if ratio_rep > CE("ratio_reparacion_max", traza):
-        traza["reglas"].append("R3.7: costo / VMA > CE ratio_reparacion_max → DescartarPorRiesgo")
-        return {"decision": "DescartarPorRiesgo", "regla_aplicada": "R3.7",
-                "motivo": f"La reparación (${costo_rep:,.0f}) supera el {CE('ratio_reparacion_max', traza):.0%} del VMA (${vma:,.0f}).",
-                "indicadores": base_ind}
+    # Filtros crisp: la decisión de descarte ya viene resuelta por el grafo.
+    if crisp["regla"] in ("R3.7", "R3.8"):
+        motivo = (f"La reparación (${costo_rep:,.0f}) supera el {crisp['ratio_max']:.0%} del VMA (${vma:,.0f})."
+                  if crisp["regla"] == "R3.7"
+                  else "Riesgo de obsolescencia Alto con demanda comercial Baja (inmovilización de capital).")
+        return {"decision": crisp["decision"], "regla_aplicada": crisp["regla"],
+                "motivo": motivo, "indicadores": base_ind}
 
-    if riesgo == "Alto" and demanda == "Baja":
-        traza["reglas"].append("R3.8: riesgo Alto y demanda Baja → DescartarPorRiesgo")
-        return {"decision": "DescartarPorRiesgo", "regla_aplicada": "R3.8",
-                "motivo": "Riesgo de obsolescencia Alto con demanda comercial Baja (inmovilización de capital).",
-                "indicadores": base_ind}
-
-    # Margen requerido: paso 0 base, paso 1 R3.4 o R3.5 (excluyentes), paso 2 R3.6
-    margen_req = CE("margen_base", traza)
-    if demanda == "Alta" and riesgo == "Bajo":
-        margen_req = CE("margen_alta_liquidez", traza)
-        traza["reglas"].append("R3.4: demanda Alta y riesgo Bajo → margen requerido = CE margen_alta_liquidez")
-    elif riesgo == "Alto":
-        margen_req = max(margen_req, CE("margen_riesgo_alto", traza))
-        traza["reglas"].append("R3.5: riesgo Alto → margen requerido = máx(margen, CE margen_riesgo_alto)")
-    if n_interv >= CE("umbral_intervenciones", traza):
-        margen_req += CE("prima_fallas", traza)
-        traza["reglas"].append("R3.6: intervenciones ≥ CE umbral_intervenciones → + CE prima_fallas")
-
-    contraoferta = max(0, round(vma - costo_rep - vma * margen_req / 100.0, -3))
-    brecha = round(margen_neto - margen_req, 1)
-    descuento = round(100.0 * (precio - contraoferta) / precio, 1) if contraoferta < precio else 0.0
-
+    # Conveniencia difusa SM3-CONV: Mamdani en Cypher, con la brecha y el descuento del grafo.
+    brecha, descuento = crisp["brecha"], crisp["descuento"]
     res = inferir_sm3_conv_cypher(brecha, descuento)
     if not res:
         raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM3-CONV.")
     score, categoria = res
-    decision = {"Comprar": "Comprar", "Negociar": "ComprarConOfertaMenor", "Descartar": "DescartarPorRiesgo"}[categoria]
     traza["reglas"].append(f"SM3-CONV difusa (brecha {brecha} pp, descuento {descuento} %) → {categoria} ({score})")
 
-    return {"decision": decision, "conveniencia_score": score, "categoria_difusa": categoria,
-            "indicadores": {**base_ind, "margen_requerido_pct": margen_req, "brecha_margen_pp": brecha,
+    resolucion = resolver_decision_sm3_cypher(driver, NEO4J_DATABASE, categoria, crisp["contraoferta"])
+    if not resolucion or not resolucion.get("decision"):
+        raise RuntimeError(
+            f"[ERROR INFERENCIA NEO4J] SM3-CONV no tiene decisión asociada a la categoría '{categoria}'.")
+
+    contraoferta = resolucion.get("contraoferta_sugerida_ars")
+    return {"decision": resolucion["decision"], "conveniencia_score": score, "categoria_difusa": categoria,
+            "indicadores": {**base_ind, "margen_requerido_pct": crisp["margen_req"], "brecha_margen_pp": brecha,
                             "descuento_requerido_pct": descuento,
-                            "contraoferta_sugerida_ars": int(contraoferta) if decision == "ComprarConOfertaMenor" else None}}
+                            "contraoferta_sugerida_ars": int(contraoferta) if contraoferta is not None else None}}
 
 
 # ------------------------------------------------------------------------------
