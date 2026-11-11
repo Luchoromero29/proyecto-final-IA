@@ -34,6 +34,14 @@ from typing import Optional, Dict, Any, List, Tuple
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 
+# Inferencia de SM1 en Neo4j (B2): las decisiones, reparaciones y costos del
+# diagnóstico técnico se resuelven en consultas Cypher explícitas.
+from inferencia_sm1 import (
+    consultar_resolucion_sm1,
+    normalizar_verificacion,
+    preparar_evidencias,
+)
+
 # ------------------------------------------------------------------------------
 # 1. Configuración de Entorno (.env)
 # ------------------------------------------------------------------------------
@@ -122,22 +130,6 @@ def obtener_driver_neo4j():
 # ==============================================================================
 # Consultas en Cypher sobre Neo4j (Todo se consulta en el Grafo - Sin Hardcodear)
 # ==============================================================================
-
-def consultar_fallas_catastroficas_en_grafo() -> list:
-    """Consulta en Neo4j mediante Cypher las descripciones de fallas catastróficas registradas."""
-    driver = obtener_driver_neo4j()
-    if not driver:
-        return []
-    try:
-        with driver.session(database=NEO4J_DATABASE) as session:
-            q = "MATCH (f:FallaCatastrofica) RETURN collect(toLower(f.descripcion)) AS descripciones"
-            rec = session.run(q).single()
-            if rec and rec["descripciones"]:
-                return rec["descripciones"]
-    except Exception:
-        pass
-    return []
-
 
 def consultar_senales_bloqueo_en_grafo() -> list:
     """Consulta en Neo4j mediante Cypher tipos y descripciones de bloqueo cargados en el grafo."""
@@ -614,6 +606,25 @@ def costo(tarea: str, traza: dict) -> int:
     return int(c["costo"])
 
 
+# ------------------------------------------------------------------------------
+# 3b. Valuación comercial SM2 resuelta en Neo4j
+#     Python solo transporta los hechos del aviso (validando tipos y formatos) y
+#     formatea la salida. Una consulta Cypher explícita resuelve el componente, la
+#     RAM tasada, el año, el soporte de Windows 11, la antigüedad, R2.4 y el estado
+#     de la tasación: nada de eso se decide acá ni en el LLM.
+# ------------------------------------------------------------------------------
+# Criterios de Neo4j que usa la valuación: se leen con CE() para conservar la procedencia.
+
+# Claves que devolvía la consulta pública de componentes antes de la valuación completa.
+
+
+
+
+
+
+
+
+
 def consultar_mercado_componentes(procesador: str, texto: str, ram_informada: Optional[int],
                                   ram_final: int, hdd_a_ssd: bool) -> dict:
     """
@@ -674,127 +685,185 @@ def consultar_mercado_componentes(procesador: str, texto: str, ram_informada: Op
 # 4. Módulo SM1: Diagnóstico Técnico y Reacondicionamiento (Álvaro Tapia)
 #    No cataloga fallas críticas aisladas: preserva y evalúa TODAS las fallas.
 # ------------------------------------------------------------------------------
-def ejecutar_motor_sm1(datos: dict, traza: dict) -> dict:
+def _numero(valor) -> Optional[float]:
+    """Normaliza un hecho numérico del aviso; si no es numérico se trata como no informado."""
+    if valor is None or isinstance(valor, bool):
+        return None
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return None
+
+
+def _booleano(valor) -> Optional[bool]:
+    """Normaliza un campo booleano del aviso: True/False, o None si no vino informado."""
+    return valor if isinstance(valor, bool) else None
+
+
+def ejecutar_motor_sm1(datos: dict, traza: dict, texto: str = "",
+                       verificacion_tecnica: Optional[dict] = None) -> dict:
     """
-    Evalúa el estado físico del equipo, plan de reparaciones y costos.
-    No se catalogan fallas críticas aisladas: se procesan y ponen TODAS las fallas.
-    Las fallas catastróficas se consultan en Neo4j mediante Cypher.
+    Evalúa el estado físico del equipo. La política (qué síntoma exige verificación, qué
+    reparación corresponde y cuánto cuesta) se infiere en Neo4j: acá sólo se preparan los
+    hechos ya validados, se piden las inferencias difusas y se registra la procedencia.
+
+    `verificacion_tecnica` es la evidencia del operador (fuente y diagnósticos confirmados);
+    es la única que puede liberar una verificación pendiente.
     """
     fallas = datos.get("fallas") or []
     if not isinstance(fallas, list):
         fallas = [str(fallas)] if fallas else []
 
-    # Consultar en Neo4j las descripciones de fallas catastróficas registradas
-    catastroficas_grafo = consultar_fallas_catastroficas_en_grafo()
-    criterios_insalvables = ["quemad", "en corto", "cortocircuito", "no da video", "perforad", "pista rota", "sulfataci", "insalvable"]
+    hechos: Dict[str, Any] = {}
+    pendientes_hechos: List[str] = []
 
-    falla_insalvable_hallada = None
-    for f in fallas:
-        f_low = str(f).lower()
-        if any(cat in f_low for cat in catastroficas_grafo) or any(crit in f_low for crit in criterios_insalvables):
-            falla_insalvable_hallada = f
-            break
-
-    # R1.1: Falla catastrófica detectada en la ontología del grafo → inviabilidad física
-    if falla_insalvable_hallada:
-        traza["reglas"].append(f"R1.1: falla insalvable detectada ('{falla_insalvable_hallada}') → Inviabilidad_Fisica_Insalvable")
-        return {
-            "estado": "Inviable",
-            "es_viable": False,
-            "regla_aplicada": "R1.1",
-            "motivo": f"Falla física irreparable detectada en el grafo: {falla_insalvable_hallada}.",
-            "plan_reparacion": [],
-            "costo_total": 0,
-            "cantidad_intervenciones": 0,
-            "upgrades": {"ssd": False, "ram": False},
-            "fallas": fallas
-        }
-
-    plan = []
-    upgrades = {"ssd": False, "ram": False}
-
-    def agregar(tarea: str, regla: str):
-        c = costo(tarea, traza)
-        desc = cargar_conocimiento()["costos"].get(tarea, {}).get("descripcion", tarea)
-        plan.append({"tarea": desc, "costo": c, "regla": regla})
-        traza["reglas"].append(f"{regla} → {tarea} (${c:,})")
-
-    # Batería: difusa si están salud y ciclos; crisp (R1.2) si solo está la salud
-    salud, ciclos = datos.get("salud_bateria_pct"), datos.get("ciclos_bateria")
+    # Batería: difusa si están salud y ciclos; crisp (R1.2) si sólo está la salud.
+    salud, ciclos = _numero(datos.get("salud_bateria_pct")), _numero(datos.get("ciclos_bateria"))
     if salud is not None and ciclos is not None:
-        res = inferir_sm1_bat_cypher(float(salud), float(ciclos))
+        res = inferir_sm1_bat_cypher(salud, ciclos)
         if not res:
             raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM1-BAT.")
-        if res[1] == "Obligatoria":
-            agregar("bateria", f"SM1-BAT difusa ({res[0]} → {res[1]})")
-    elif salud is not None:
-        if float(salud) < CE("bateria_reemplazo", traza):
-            agregar("bateria", "R1.2: salud de batería < CE bateria_reemplazo")
-    else:
-        traza["datos_pendientes"].append("Salud de batería (verificar en la revisión)")
+        traza["reglas"].append(f"SM1-BAT difusa ({res[0]} → {res[1]})")
+        hechos["categoria_bat"] = res[1]
+    elif salud is None:
+        pendientes_hechos.append("Salud de batería (verificar en la revisión)")
 
-    # Temperatura: difusa si hay temperatura; crisp si solo se informa throttling
-    temp, throttling = datos.get("temperatura_cpu_c"), datos.get("thermal_throttling")
+    # Temperatura: difusa si hay temperatura; crisp si sólo se informa throttling.
+    # Las caídas sintéticas son criterios del grafo (CE-31 / CE-32), no constantes de Python.
+    temp, throttling = _numero(datos.get("temperatura_cpu_c")), _booleano(datos.get("thermal_throttling"))
     if temp is not None:
         if throttling is None:
-            traza["datos_inferidos"].append("Caída de frecuencia no informada: se toma como leve (5 %)")
-        res = inferir_sm1_ter_cypher(float(temp), 20.0 if throttling else 5.0)
+            traza["datos_inferidos"].append(
+                "Caída de frecuencia no informada: se toma la leve (CE caida_termica_sin_throttling)")
+        caida = CE("caida_termica_con_throttling" if throttling else "caida_termica_sin_throttling", traza)
+        res = inferir_sm1_ter_cypher(temp, caida)
         if not res:
             raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM1-TER.")
-        if res[1] in ("Obligatoria", "Recomendada"):
-            agregar("service_termico", f"SM1-TER difusa ({res[0]} → {res[1]})")
-    elif throttling is True:
-        agregar("service_termico", "Throttling informado → service térmico")
+        traza["reglas"].append(f"SM1-TER difusa ({res[0]} → {res[1]})")
+        hechos["categoria_ter"] = res[1]
     else:
-        traza["datos_pendientes"].append("Temperatura bajo carga (prueba de estrés)")
+        pendientes_hechos.append("Temperatura bajo carga (prueba de estrés)")
 
-    # Upgrades del plan (consultados en Neo4j)
-    ram = datos.get("ram_gb")
+    ram = _numero(datos.get("ram_gb"))
     if ram is None:
-        traza["datos_pendientes"].append("Memoria RAM")
-    elif ram < CE("ram_objetivo", traza):
-        agregar("ram_upgrade", "Plan: RAM < CE ram_objetivo")
-        upgrades["ram"] = True
+        pendientes_hechos.append("Memoria RAM")
+    disco = str(datos.get("tipo_disco") or "").upper() or None
+    if disco is None:
+        pendientes_hechos.append("Tipo de disco")
 
-    disco = str(datos.get("tipo_disco") or "").upper()
-    if disco == "HDD":
-        agregar("ssd_upgrade", "Plan: disco HDD → SSD")
-        upgrades["ssd"] = True
-    elif not disco:
-        traza["datos_pendientes"].append("Tipo de disco")
+    hechos.update({
+        "salud": salud, "ciclos": ciclos, "temp": temp, "throttling": throttling,
+        "ram": ram, "disco": disco,
+        "campos": {"pantalla_danada": _booleano(datos.get("pantalla_danada")),
+                   "teclado_danado": _booleano(datos.get("teclado_danado")),
+                   "cargador_incluido": _booleano(datos.get("cargador_incluido"))},
+    })
 
-    # Mapeo de fallas informadas a tareas en CostoReparacion de Neo4j
-    #  El LLM a veces lista como "falla" algo positivo ("pantalla perfecta"): esas se ignoran.
-    positivos = ("perfect", "impecable", "excelente", "funciona", "sin detalle", "sin rayas", "nuev", "ok", "bien")
-    fallas_negativas = [str(f).lower() for f in fallas if not any(p in str(f).lower() for p in positivos)]
-    txt_fallas = " ".join(fallas_negativas)
-    if datos.get("pantalla_danada") is True or any(k in txt_fallas for k in ("pantalla", "display", "raya")):
-        agregar("pantalla", "Plan: pantalla dañada")
-    if datos.get("teclado_danado") is True or any(k in txt_fallas for k in ("teclado", "tecla")):
-        agregar("teclado", "Plan: teclado dañado")
-    # El campo cargador_incluido manda; la lista de fallas solo se usa si el campo viene vacío
-    cargador = datos.get("cargador_incluido")
-    if cargador is False or (cargador is None and "sin cargador" in txt_fallas):
-        agregar("cargador", "Plan: reposición de cargador")
+    # Evidencia: las fallas informadas y el texto completo del aviso. El texto se incluye
+    # para que un síntoma no quede tapado porque el extractor lo omitió o lo clasificó mal.
+    evidencias, fallas_normalizadas = preparar_evidencias(fallas, texto)
+    verificacion = normalizar_verificacion(verificacion_tecnica)
 
-    n_intervenciones = len(plan)  # la mano de obra no cuenta como intervención (R3.6)
-    if plan:
-        agregar("mano_de_obra", "Plan: mano de obra")
+    # El grafo resuelve estado, plan, costos, cantidad de intervenciones y upgrades.
+    resolucion = consultar_resolucion_sm1(hechos, evidencias, fallas_normalizadas, verificacion_tecnica)
 
+    if resolucion["estado"] == "ConocimientoFaltante":
+        faltantes = []
+        if resolucion["desconocidos"]:
+            faltantes.append("el diagnóstico confirmado por el operador no está en la base de "
+                             f"conocimiento (Neo4j :Diagnostico): {', '.join(resolucion['desconocidos'])}")
+        if resolucion["incompletos"]:
+            faltantes.append("el diagnóstico confirmado no tiene reparación con costo en el grafo "
+                             "(:Diagnostico -[:SE_REPARA_CON]-> :CostoReparacion): "
+                             f"{', '.join(resolucion['incompletos'])}")
+        raise ConocimientoFaltante("; ".join(faltantes) + ".")
+
+    estado = resolucion["estado"]
+    plan = [{
+        "tarea": fila["descripcion_costo"], "costo": int(fila["costo_ars"]), "regla": fila["regla"],
+        "clave": fila["tarea"], "cuenta_como_intervencion": bool(fila.get("cuenta_como_intervencion", True)),
+        "costo_id": fila["costo_id"], "costo_version": fila["costo_version"],
+        "costo_estado": fila["costo_estado"],
+    } for fila in resolucion["plan"]]
+
+    # Procedencia: criterios y costos que el grafo usó quedan visibles en la traza.
+    for fila in resolucion["plan"]:
+        if fila.get("criterio_nombre"):
+            traza["criterios_usados"][fila["criterio_nombre"]] = {
+                "id": fila["criterio_id"], "valor": fila["criterio_valor"],
+                "unidad": fila["criterio_unidad"], "version": fila["criterio_version"],
+                "estado": fila["criterio_estado"]}
+        traza["costos_usados"][fila["tarea"]] = {
+            "id": fila["costo_id"], "costo": int(fila["costo_ars"]),
+            "version": fila["costo_version"], "estado": fila["costo_estado"]}
+
+    # Redacción del resultado ya decidido por el grafo.
+    motivo, verificacion_requerida = None, []
+    reglas_texto = []
+    if estado == "Inviable":
+        causa = resolucion.get("causa")
+        motivo = (f"Falla física irreparable detectada en el grafo: {causa}."
+                  if resolucion.get("causa_origen") == "aviso"
+                  else (causa or "Daño irreparable confirmado en la verificación técnica."))
+        reglas_texto.append(f"{resolucion.get('regla_aplicada') or 'R1.1'}: falla insalvable detectada "
+                            f"('{causa}') → Inviabilidad_Fisica_Insalvable")
+    elif estado == "VerificacionPendiente":
+        if verificacion is None:
+            for sintoma in resolucion["sintomas_detectados"]:
+                verificacion_requerida.append(f"Verificar el síntoma '{sintoma['descripcion']}' en persona")
+        for falla in resolucion["sin_tratamiento"]:
+            verificacion_requerida.append(
+                f"Falla sin tratamiento conocido en el grafo: '{falla}' (verificar y completar el conocimiento)")
+        motivo = ("El aviso afirma un síntoma o una falla que todavía no tiene diagnóstico técnico: "
+                  + "; ".join(verificacion_requerida)
+                  + ". No conviene comprar ni reparar a ciegas hasta esa verificación.")
+        reglas_texto.append(f"{resolucion.get('regla_aplicada') or 'R3.3c'}: síntoma o falla sin diagnóstico "
+                            "confirmado → Verificacion_pendiente (SolicitarVerificacion)")
+    if verificacion is not None and resolucion["confirmados"]:
+        reglas_texto.append(
+            f"Verificación técnica del operador ({verificacion['fuente']}): "
+            + ", ".join(sorted(set(resolucion["confirmados"])))
+            + " → la reparación y el costo se toman del grafo")
+    for fila in plan:
+        reglas_texto.append(f"{fila['regla']} → {fila['tarea'].lower()} (${fila['costo']:,})")
+    traza["reglas"].extend(reglas_texto)
+    if estado == "VerificacionPendiente":
+        traza["datos_pendientes"].extend(verificacion_requerida)
+    elif estado == "Viable":
+        traza["datos_pendientes"].extend(pendientes_hechos)
+
+    # `es_viable` es la única traducción de forma: un estado pendiente no es inviabilidad.
+    es_viable = {"Viable": True, "Inviable": False}.get(estado)
     return {
-        "estado": "Viable",
-        "es_viable": True,
+        "estado": estado,
+        "es_viable": es_viable,
+        "regla_aplicada": resolucion.get("regla_aplicada") if estado != "Viable" else None,
+        "motivo": motivo,
         "plan_reparacion": plan,
-        "costo_total": sum(t["costo"] for t in plan),
-        "cantidad_intervenciones": n_intervenciones,
-        "upgrades": upgrades,
-        "fallas": fallas
+        "costo_total": int(resolucion["costo_total"] or 0),
+        "cantidad_intervenciones": int(resolucion["cantidad_intervenciones"] or 0),
+        "upgrades": {"ssd": bool(resolucion["upgrades"].get("ssd")),
+                     "ram": bool(resolucion["upgrades"].get("ram"))},
+        "fallas": fallas,
+        "verificacion_requerida": verificacion_requerida,
+        "sintomas_detectados": [s["descripcion"] for s in resolucion["sintomas_detectados"]],
+        "fallas_sin_tratamiento": resolucion["sin_tratamiento"],
     }
 
 
 # ------------------------------------------------------------------------------
 # 5. Módulo SM2: Valuación Comercial y Demanda (Leonel Navarta)
 # ------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
 def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> dict:
     """
     Valuación por componentes (precios de mercado relevados) y riesgo/demanda difusos.
@@ -944,6 +1013,8 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
 # ------------------------------------------------------------------------------
 # 6. Módulo SM3: Evaluación de la Operación y Decisión Final (Luciano Romero)
 # ------------------------------------------------------------------------------
+
+
 def ejecutar_motor_sm3(precio: float, costo_rep: float, vma: float, n_interv: int,
                        riesgo: str, demanda: str, traza: dict) -> dict:
     """Filtros crisp (R3.7, R3.8), margen requerido y conveniencia difusa en Neo4j."""
@@ -1093,7 +1164,11 @@ def generar_sintesis_gerencial_llm(resumen: dict) -> str:
     Genera la Síntesis General / Dictamen Ejecutivo utilizando el LLM de forma no determinista,
     basándose en el resumen de resultados simbólicos y difusos (SM1, SM2, SM3, fallas).
     En caso de contingencia o indisponibilidad del LLM, recurre a generar_dictamen_sintesis como respaldo.
+    Una verificación pendiente no se redacta con LLM: no hay números firmes y la redacción no
+    puede convertirla en una recomendación de compra.
     """
+    if resumen.get("decision") == "VerificacionPendiente":
+        return generar_dictamen_sintesis(resumen)
     resumen_json = json.dumps(resumen, ensure_ascii=False, indent=2)
     prompt_usuario = f"Resumen de evaluación para redactar la síntesis general ejecutiva:\n{resumen_json}"
     try:
@@ -1193,7 +1268,8 @@ def _estado_decision(traza: dict) -> dict:
     return {"estado_decision": "Firme" if firme else "Provisional", "criterios_pendientes": provisionales}
 
 
-def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -> dict:
+def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True,
+                                verificacion_tecnica: Optional[dict] = None) -> dict:
     """
     Pipeline completo neuro-simbólico:
       1. El LLM se encarga de parsear el JSON y extraer todas las fallas sin catalogar fallas críticas aisladas.
@@ -1201,6 +1277,11 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
       3. Toda la base de conocimiento (costos, criterios, modelos, reglas, bloqueos) se consulta en Neo4j.
       4. El sistema preserva y pone TODAS las fallas detectadas en el informe.
       5. Síntesis general ejecutiva redactada de forma no determinista con el LLM (con fallback determinístico).
+
+    `verificacion_tecnica` es opcional y la aporta el operador, no el aviso:
+    {"fuente": "<dónde y cómo se verificó el equipo>", "diagnosticos": ["bateria", ...]}.
+    Sólo esa declaración puede liberar una verificación pendiente; ningún campo del aviso
+    ni del LLM se interpreta como diagnóstico confirmado.
     """
     obtener_driver_neo4j()
     cargar_conocimiento(forzar=True)
@@ -1294,10 +1375,15 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
             "indicadores": {"precio_publicado": int(precio)}
         }
     else:
-        # SM1 Técnico
-        res_sm1 = ejecutar_motor_sm1(datos, traza)
+        # SM1 Técnico: la inferencia del grafo decide; un estado pendiente no es inviabilidad.
+        try:
+            res_sm1 = ejecutar_motor_sm1(datos, traza, texto_publicacion, verificacion_tecnica)
+        except ConocimientoFaltante as e:
+            if verbose:
+                print(f"      [ERROR BASE DE CONOCIMIENTO] {e}")
+            return {"error": f"Base de conocimiento incompleta: {e}", "datos_extraidos": datos, "traza": traza}
 
-        if not res_sm1["es_viable"]:
+        if res_sm1["estado"] == "Inviable":
             res_sm2 = {"estado": "Omitido_Por_Inviabilidad", "vma_estimado_ars": 0}
             traza["reglas"].append("R3.2: dictamen técnico insalvable → DescartarPorInviabilidad")
             res_sm3 = {
@@ -1305,6 +1391,17 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
                 "regla_aplicada": "R3.2",
                 "motivo": res_sm1["motivo"],
                 "indicadores": {"precio_publicado": int(precio), "costo_reparacion": 0, "vma_tasado": 0}
+            }
+        elif res_sm1["estado"] == "VerificacionPendiente":
+            # Sin diagnóstico técnico no se tasa ni se decide: no es un descarte ni una compra.
+            res_sm2 = {"estado": "Sin_evaluar", "vma_estimado_ars": 0}
+            if verbose:
+                print(f"      SM1: verificación pendiente → {res_sm1['motivo']}")
+            res_sm3 = {
+                "decision": "VerificacionPendiente",
+                "regla_aplicada": res_sm1.get("regla_aplicada") or "R3.3c",
+                "motivo": res_sm1["motivo"],
+                "indicadores": {"precio_publicado": int(precio)}
             }
         else:
             if verbose:
@@ -1515,23 +1612,43 @@ def enrutar_consulta(texto: str) -> dict:
             "origen": "regla de respaldo", "motivo": "salida del enrutador no válida"}
 
 
-def consultar_sm1(texto: str, verbose: bool = True) -> dict:
-    """Flujo SM1 (diagnóstico técnico): extracción → reglas y difusa SM1 en Neo4j → explicación."""
+def consultar_sm1(texto: str, verbose: bool = True, verificacion_tecnica: Optional[dict] = None) -> dict:
+    """Flujo SM1 (diagnóstico técnico): extracción → reglas y difusa SM1 en Neo4j → explicación.
+
+    `verificacion_tecnica` es la evidencia del operador (fuente y diagnósticos confirmados).
+    """
     cargar_conocimiento(forzar=True)
     traza = nueva_traza()
     datos = _llm_json(PROMPT_EXTRACCION_SM1, texto)
-    res = ejecutar_motor_sm1(datos, traza)
-    resultado = {"submodulo": "SM1", "viable": res.get("es_viable"), "motivo": res.get("motivo"),
-                 "plan_reparacion": res.get("plan_reparacion"), "costo_total_ars": res.get("costo_total"),
+    try:
+        res = ejecutar_motor_sm1(datos, traza, texto, verificacion_tecnica)
+    except ConocimientoFaltante as e:
+        res = {"estado": "ErrorConocimiento", "error": str(e), "es_viable": None,
+               "plan_reparacion": [], "costo_total": 0}
+    resultado = {"submodulo": "SM1", "estado": res.get("estado"), "viable": res.get("es_viable"),
+                 "motivo": res.get("motivo"), "plan_reparacion": res.get("plan_reparacion"),
+                 "costo_total_ars": res.get("costo_total"),
+                 "verificacion_requerida": res.get("verificacion_requerida"),
                  "reglas": traza["reglas"], "datos_pendientes": traza["datos_pendientes"],
                  "datos_inferidos": traza["datos_inferidos"]}
-    plan = ", ".join(f"{t['tarea']} (${t['costo']:,})" for t in res.get("plan_reparacion", [])) or "ninguna reparación"
-    respaldo = (f"Diagnóstico: {res.get('motivo') or 'equipo reparable'}. Plan: {plan}. "
-                f"Costo total: ${res.get('costo_total', 0):,} ARS (costos provisionales).")
-    explicacion = _explicar(PROMPT_EXPLICACION_SM1, resultado, respaldo)
+    if res.get("estado") == "VerificacionPendiente":
+        plan, costo_mostrado = "pendiente de verificación", "sin determinar"
+        # Pendiente: no se redacta con el LLM para que no lo convierta en una recomendación de compra.
+        respaldo = ("Diagnóstico técnico pendiente de verificación: " + res.get("motivo", "") +
+                    " No conviene comprar ni reparar a ciegas hasta completar esa verificación.")
+        explicacion = respaldo
+    elif res.get("estado") == "ErrorConocimiento":
+        plan, costo_mostrado = "no disponible por conocimiento faltante", "sin determinar"
+        explicacion = f"No se pudo inferir el diagnóstico: {res.get('error')}."
+    else:
+        plan = ", ".join(f"{t['tarea']} (${t['costo']:,})" for t in res.get("plan_reparacion", [])) or "ninguna reparación"
+        costo_mostrado = f"${res.get('costo_total', 0):,} ARS"
+        respaldo = (f"Diagnóstico: {res.get('motivo') or 'equipo reparable'}. Plan: {plan}. "
+                    f"Costo total: ${res.get('costo_total', 0):,} ARS (costos provisionales).")
+        explicacion = _explicar(PROMPT_EXPLICACION_SM1, resultado, respaldo)
     if verbose:
         print("      Datos extraídos (SM1):", json.dumps(datos, ensure_ascii=False))
-        print(f"      Plan: {plan} | Costo: ${res.get('costo_total', 0):,} ARS")
+        print(f"      Plan: {plan} | Costo: {costo_mostrado}")
     return {"intencion": "diagnostico_tecnico", "datos_extraidos": datos, "sm1_tecnico": res,
             "traza": traza, "respuesta": explicacion}
 
@@ -1566,17 +1683,21 @@ def consultar_sm2(texto: str, verbose: bool = True) -> dict:
             "traza": traza, "respuesta": explicacion}
 
 
-def asistente_evaltic(texto: str, verbose: bool = True) -> dict:
-    """Punto de entrada único: enruta la consulta y ejecuta el o los submódulos que correspondan."""
+def asistente_evaltic(texto: str, verbose: bool = True,
+                      verificacion_tecnica: Optional[dict] = None) -> dict:
+    """Punto de entrada único: enruta la consulta y ejecuta el o los submódulos que correspondan.
+
+    `verificacion_tecnica` es la evidencia del operador sobre el diagnóstico técnico (opcional).
+    """
     ruta = enrutar_consulta(texto)
     if verbose:
         print(f"\n[Enrutador] Intención: {ruta['intencion']} ({ruta['origen']}) — {ruta.get('motivo') or ''}", flush=True)
     if ruta["intencion"] == "evaluacion_integral":
-        r = evaluar_publicacion_integral(texto, verbose=verbose)
+        r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
         r["intencion"] = "evaluacion_integral"
         r["respuesta"] = r.get("dictamen_gerencial") or r.get("error")
     elif ruta["intencion"] == "diagnostico_tecnico":
-        r = consultar_sm1(texto, verbose=verbose)
+        r = consultar_sm1(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
     elif ruta["intencion"] == "valuacion_comercial":
         r = consultar_sm2(texto, verbose=verbose)
     else:
@@ -1680,12 +1801,33 @@ def ejecutar_pruebas_enrutador():
         print(f"{'✔' if o_ == e_ else '✘'} {t:<48} → {o_:<20} (esperado {e_}) {d}")
     print(f"Enrutamiento correcto en {sum(1 for f in filas if f[1] == f[2])} de {len(filas)} consultas.\n")
 
+def _argumentos_cli(argumentos: List[str]) -> Tuple[str, Optional[dict]]:
+    """
+    Separa la evidencia técnica del operador del texto de la consulta.
+    Uso: python orquestador_evaltic.py --verificacion "<dónde y cómo se verificó>" \
+             --diagnostico bateria "<aviso o consulta>"
+    """
+    fuente, diagnosticos, texto, esperando = "", [], [], None
+    for argumento in argumentos:
+        if esperando == "fuente":
+            fuente, esperando = argumento, None
+        elif esperando == "diagnostico":
+            diagnosticos, esperando = diagnosticos + [argumento], None
+        elif argumento in ("--verificacion", "--diagnostico"):
+            esperando = "fuente" if argumento == "--verificacion" else "diagnostico"
+        else:
+            texto.append(argumento)
+    verificacion = {"fuente": fuente, "diagnosticos": diagnosticos} if fuente and diagnosticos else None
+    return " ".join(texto), verificacion
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--test":
         ejecutar_bateria_pruebas()
         ejecutar_pruebas_enrutador()
     elif len(sys.argv) > 1:
-        asistente_evaltic(" ".join(sys.argv[1:]), verbose=True)
+        texto_cli, verificacion_cli = _argumentos_cli(sys.argv[1:])
+        asistente_evaltic(texto_cli, verbose=True, verificacion_tecnica=verificacion_cli)
     else:
         print("EvalTIC — Asistente Inteligente (PG3)")
         print("Para ejecutar las pruebas: python orquestador_evaltic.py --test\n")

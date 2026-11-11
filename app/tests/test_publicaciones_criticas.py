@@ -13,8 +13,9 @@ contradictorias o adversariales, agrupadas por tipo. Cada caso declara:
   - `sonda`: caso exploratorio sin expectativa; no se ejecuta offline.
 
 Acá se ejecuta `asistente_evaltic` con las fronteras externas simuladas (respuestas
-del LLM y funciones de consulta al grafo). Las reglas crisp, el encadenamiento
-SM1 → SM2 → SM3, las validaciones defensivas y el enrutamiento se ejecutan de verdad.
+del LLM y funciones de consulta al grafo, incluida la resolución crisp). Los adaptadores,
+el encadenamiento SM1 → SM2 → SM3, las validaciones defensivas y el enrutamiento se ejecutan
+de verdad. Las consultas y reglas se prueban contra Neo4j en los módulos *_neo4j.py.
 La ejecución real está en `scripts/probar_publicaciones.py`.
 
 Ejecutar desde la raíz del repositorio:
@@ -23,6 +24,7 @@ Ejecutar desde la raíz del repositorio:
 
 import json
 import os
+import re
 import sys
 import unittest
 from contextlib import redirect_stdout
@@ -85,6 +87,8 @@ CRITERIOS_PRUEBA = {
     "reval_ssd": 15000, "descuento_negociacion": 10, "min_muestras_mercado": 5,
     "margen_base": 12, "margen_alta_liquidez": 10, "margen_riesgo_alto": 18,
     "umbral_intervenciones": 3, "prima_fallas": 5, "ratio_reparacion_max": 0.5,
+    # Caídas sintéticas de frecuencia: criterios del grafo (CE-31 / CE-32), no constantes de Python.
+    "caida_termica_sin_throttling": 5, "caida_termica_con_throttling": 20,
 }
 CONOCIMIENTO_FALSO = {
     "criterios": {nombre: {"id": f"CE-{i:02d}", "valor": valor, "unidad": "fixture",
@@ -94,8 +98,150 @@ CONOCIMIENTO_FALSO = {
                        "descripcion": DESCRIPCIONES[tarea], "version": "prueba", "estado": "Validado"}
                for tarea in COSTOS_PRUEBA},
 }
-FALLAS_CATASTROFICAS_FALSAS = ["no da video", "quemad", "perforad", "en corto"]
 SENALES_BLOQUEO_FALSAS = ["icloud", "bloqueada", "bloqueado", "cuenta", "clave de bios", "mdm"]
+
+# ------------------------------------------------------------------------------
+# Inferencia de SM1: el catálogo de patrones vive en el grafo
+# (cypher/Grupo_20_PG3_diagnostico.cypher). Acá se replica la forma del contrato de las
+# consultas para probar el cableado del pipeline sin Neo4j; la inferencia real se prueba
+# contra el grafo aislado en test_diagnostico_neo4j.py y test_sm1_neo4j.py.
+# (identificador, tratamiento, regex, descripción, tarea, orden, síntoma)
+PATRONES_SM1_PRUEBA = (
+    ("PT-CAT-NO-VIDEO", "inviable", r"no\s+da\s+video", "No da video", None, 1, None),
+    ("PT-CAT-QUEMADO", "inviable", r"quemad", "Componente quemado", None, 1, None),
+    ("PT-CAT-CORTO", "inviable", r"\ben\s+corto\b", "Componente en cortocircuito", None, 1, None),
+    ("PT-CAT-PERFORADO", "inviable", r"perforad", "Placa perforada", None, 1, None),
+    ("PT-CAT-PISTA-ROTA", "inviable", r"pista\s+rota", "Pista de placa rota", None, 1, None),
+    ("PT-CAT-SULFATACION", "inviable", r"sulfataci", "Sulfatación por derrame", None, 1, None),
+    ("PT-CAT-INSALVABLE", "inviable", r"insalvable", "Falla declarada insalvable", None, 1, None),
+    ("PT-SIN-NO-PRENDE", "verificar", r"\bno\s+prende\b", "No prende", None, 1, ("FS-NO-PRENDE", "No prende")),
+    ("PT-SIN-NO-CARGA", "verificar", r"\bno\s+carga\b", "No carga", None, 1, ("FS-NO-CARGA", "No carga")),
+    ("PT-SIN-SE-APAGA", "verificar", r"\bse\s+apaga(\s+sola|\s+solo)?\b", "Se apaga sola", None, 1,
+     ("FS-SE-APAGA-SOLA", "Se apaga sola")),
+    ("PT-INT-PANTALLA", "intervencion", r"\b(pantalla|display|rayas?)\b", "Pantalla dañada", "pantalla", 5, None),
+    ("PT-INT-TECLADO", "intervencion", r"\b(teclado|tecla|teclas)\b", "Teclado dañado", "teclado", 6, None),
+    ("PT-INT-CARGADOR", "intervencion", r"sin\s+cargador", "Sin cargador", "cargador", 7, None),
+    ("PT-INT-BATERIA", "intervencion",
+     r"bater[ií]a\s+(agotad|agotada|muert|dañad|dañada|hinchad|hinchada|inflad|baja|no\s+retiene)",
+     "Batería agotada o degradada", "bateria", 1, None),
+    ("PT-INT-DISCO", "intervencion", r"(\bhdd\b|disco\s+(r[ií]gido|mec[aá]nico))", "Disco mecánico",
+     "ssd_upgrade", 4, None),
+    ("PT-INT-TERMICO", "intervencion", r"\b(calienta|sobrecalienta|t[eé]rmicos?)\b", "Sobrecalentamiento",
+     "service_termico", 2, None),
+    ("PT-DESC-BATERIA-MEDIDA", "descartar", r"bater[ií]a\s+(al\s+)?\d{1,3}\s*%",
+     "Nivel de batería medido en el aviso (lo evalúa SM1-BAT)", None, 0, None),
+    ("PT-DESC-POSITIVO", "descartar", r"\b(perfect[oa]s?|impecables?|excelentes?|funciona|funcionando)\b",
+     "Descripción positiva", None, 0, None),
+    ("PT-DESC-SIN-DETALLES", "descartar", r"\bsin\s+(detalles?|rayas?)\b", "Sin detalles ni rayas", None, 0, None),
+    ("PT-DESC-NUEVO", "descartar", r"\bnuev[oa]s?\b", "Componente nuevo", None, 0, None),
+    ("PT-DESC-CONFORME", "descartar", r"\b(ok|bien)\b", "Estado conforme", None, 0, None),
+    ("PT-DESC-SIN-FALLAS", "descartar", r"(no\s+tiene\s+fallas|sin\s+fallas|ninguna\s+falla)", "Sin fallas",
+     None, 0, None),
+)
+
+# Diagnósticos que el operador puede confirmar (el costo sale de :CostoReparacion del grafo).
+DIAGNOSTICOS_SM1_PRUEBA = {
+    "bateria": ("DIA-BATERIA", True, "bateria", 1),
+    "cargador": ("DIA-CARGADOR", True, "cargador", 7),
+    "pantalla": ("DIA-PANTALLA", True, "pantalla", 5),
+    "teclado": ("DIA-TECLADO", True, "teclado", 6),
+    "termico": ("DIA-TERMICO", True, "service_termico", 2),
+    "almacenamiento": ("DIA-ALMACENAMIENTO", True, "ssd_upgrade", 4),
+    "placa": ("DIA-PLACA", False, None, 50),
+}
+
+
+def _evidencias_sm1_falsas(evidencias, campos):
+    """Misma forma que la consulta Cypher de evidencias de SM1."""
+    filas = []
+    for ev in evidencias:
+        texto = " ".join(str(ev["texto"]).lower().split())
+        for ident, tratamiento, patron, descripcion, tarea, orden, sintoma in PATRONES_SM1_PRUEBA:
+            if ev["origen"] != "falla" and tratamiento not in ("inviable", "verificar"):
+                continue
+            if not re.search(patron, texto):
+                continue
+            filas.append({
+                "texto": ev["texto"], "origen": ev["origen"], "patron": ident, "descripcion": descripcion,
+                "tratamiento": tratamiento,
+                # El campo estructurado manda sobre el texto del aviso.
+                "aplicable": not (ident == "PT-INT-CARGADOR" and campos.get("cargador_incluido") is True),
+                "sintoma": sintoma[0] if sintoma else None,
+                "sintoma_descripcion": sintoma[1] if sintoma else None,
+                "regla": {"inviable": "R1.1", "verificar": "R3.3c"}.get(tratamiento),
+                "intervencion": "INT-" + ident[3:] if tarea else None,
+                "tarea": tarea, "tarea_descripcion": DESCRIPCIONES.get(tarea),
+                "descripcion_costo": DESCRIPCIONES.get(tarea), "costo_ars": COSTOS_PRUEBA.get(tarea),
+                "costo_id": CONOCIMIENTO_FALSO["costos"][tarea]["id"] if tarea else None,
+                "costo_version": "prueba" if tarea else None,
+                "costo_estado": "Validado" if tarea else None,
+                "patron_estado": "Provisional", "patron_version": "v1", "orden": orden,
+            })
+    return filas
+
+
+def _reglas_sm1_falsas(hechos):
+    """Misma forma que la consulta Cypher de reglas estructuradas de SM1."""
+    filas = []
+
+    def agregar(tarea, regla, orden, criterio=None, requiere_plan=False, cuenta=True, campo=None):
+        filas.append({
+            "tarea": tarea, "descripcion": DESCRIPCIONES[tarea], "costo_ars": COSTOS_PRUEBA[tarea],
+            "costo_id": CONOCIMIENTO_FALSO["costos"][tarea]["id"], "costo_version": "prueba",
+            "costo_estado": "Validado", "regla": regla, "orden": orden,
+            "requiere_plan": requiere_plan, "cuenta_como_intervencion": cuenta,
+            "criterio_nombre": criterio, "criterio_id": CONOCIMIENTO_FALSO["criterios"][criterio]["id"]
+            if criterio else None,
+            "criterio_valor": CRITERIOS_PRUEBA.get(criterio), "criterio_unidad": "fixture" if criterio else None,
+            "criterio_version": "prueba" if criterio else None,
+            "criterio_estado": "Validado" if criterio else None,
+        })
+
+    salud, ciclos = hechos.get("salud"), hechos.get("ciclos")
+    if hechos.get("categoria_bat") == "Obligatoria":
+        agregar("bateria", "SM1-BAT", 1)
+    elif salud is not None and ciclos is None and float(salud) < CRITERIOS_PRUEBA["bateria_reemplazo"]:
+        agregar("bateria", "SM1-BAT-CRISP", 1, criterio="bateria_reemplazo")
+    if hechos.get("categoria_ter") in ("Obligatoria", "Recomendada"):
+        agregar("service_termico", "SM1-TER", 2)
+    elif hechos.get("temp") is None and hechos.get("throttling") is True:
+        agregar("service_termico", "SM1-TER-CRISP", 2)
+    ram = hechos.get("ram")
+    if ram is not None and float(ram) < CRITERIOS_PRUEBA["ram_objetivo"]:
+        agregar("ram_upgrade", "SM1-RAM-ACCION", 3, criterio="ram_objetivo")
+    if str(hechos.get("disco") or "").upper() == "HDD":
+        agregar("ssd_upgrade", "SM1-DISCO-ACCION", 4)
+    campos = hechos.get("campos") or {}
+    for campo, valor, tarea, orden in (("pantalla_danada", True, "pantalla", 5),
+                                       ("teclado_danado", True, "teclado", 6),
+                                       ("cargador_incluido", False, "cargador", 7)):
+        if campos.get(campo) is valor:
+            agregar(tarea, "SM1-" + tarea.upper() + "-ACCION", orden, campo=campo)
+    agregar("mano_de_obra", "SM1-MANO-OBRA-ACCION", 9, requiere_plan=True, cuenta=False)
+    return filas
+
+
+def _diagnosticos_sm1_falsos(diagnosticos):
+    """Misma forma que la consulta Cypher de diagnósticos confirmados por el operador."""
+    filas = []
+    for solicitado in diagnosticos:
+        base = DIAGNOSTICOS_SM1_PRUEBA.get(str(solicitado).strip().lower())
+        fila = {"solicitado": solicitado, "id": None, "nombre": None, "descripcion": None, "reparable": None,
+                "motivo": None, "orden": 50, "tarea": None, "descripcion_costo": None, "costo_ars": None,
+                "costo_id": None, "costo_version": None, "costo_estado": None, "regla": None}
+        if base:
+            identificador, reparable, tarea, orden = base
+            fila.update({"id": identificador, "nombre": str(solicitado).strip().lower(),
+                         "descripcion": DESCRIPCIONES.get(tarea), "reparable": reparable, "orden": orden,
+                         "regla": "R1.1" if not reparable else None,
+                         "motivo": "Daño irreparable confirmado en la verificación técnica" if not reparable else None})
+            if tarea:
+                fila.update({"tarea": tarea, "descripcion_costo": DESCRIPCIONES[tarea],
+                             "costo_ars": COSTOS_PRUEBA[tarea],
+                             "costo_id": CONOCIMIENTO_FALSO["costos"][tarea]["id"],
+                             "costo_version": "prueba", "costo_estado": "Validado"})
+        filas.append(fila)
+    return filas
 CATALOGO_PROCESADORES = {
     "i5 10ma gen": {"nombre": "Intel Core i5-1035G1", "anio": 2020, "soporte_w11": True,
                     "valor_ref_ars": 250000, "n_muestras": 12},
@@ -181,6 +327,10 @@ def _sm3_conv_falso(brecha, descuento):
     return 0.2, "Descartar"
 
 
+
+
+
+
 def _llm_falso(extraccion, intencion_router):
     """Responde por familia de prompt: extracción, enrutador o redacción."""
     def responder(system_prompt, user_content, json_mode=False, max_tokens=300):
@@ -191,6 +341,105 @@ def _llm_falso(extraccion, intencion_router):
             return json.dumps({"intencion": intencion_router, "motivo": "fixture"})
         return TEXTO_EXPLICACION_FALSO
     return responder
+
+
+def _resolucion_sm1_falsa(hechos, evidencias, fallas, verificacion):
+    """
+    Oráculo de esta suite: devuelve la MISMA forma que la consulta Cypher de resolución de
+    SM1 y aplica la misma política con el catálogo de prueba. La inferencia real (patrones,
+    precedencia, estado y costos) se prueba contra el grafo aislado en
+    test_diagnostico_neo4j.py y test_sm1_neo4j.py; acá sólo se ejercita el cableado del pipeline.
+    """
+    filas = _evidencias_sm1_falsas(evidencias, hechos.get("campos") or {})
+    por_texto = {}
+    for fila in filas:
+        por_texto.setdefault(fila["texto"], []).append(fila)
+    inviables, sintomas, intervenciones, sin_tratamiento = [], {}, [], []
+    for texto, grupo in por_texto.items():
+        aplicables = [f for f in grupo if f["aplicable"]]
+        inv = [f for f in aplicables if f["tratamiento"] == "inviable"]
+        ver = [f for f in aplicables if f["tratamiento"] == "verificar"]
+        inter = [f for f in aplicables if f["tratamiento"] == "intervencion"]
+        if inv:
+            inviables.extend(inv)
+        elif ver:
+            for fila in ver:
+                sintomas[fila["sintoma"]] = fila
+        elif not aplicables or any(f["tratamiento"] == "descartar" for f in grupo):
+            continue
+        else:
+            intervenciones.extend(inter)
+    sin_tratamiento = [f for f in fallas if f not in por_texto]
+
+    validada = bool(verificacion and verificacion.get("fuente") and verificacion.get("diagnosticos"))
+    diagnosticos = _diagnosticos_sm1_falsos(verificacion["diagnosticos"] if validada else [])
+    desconocidos = sorted({d["solicitado"] for d in diagnosticos if not d["id"]})
+    incompletos = sorted({d["solicitado"] for d in diagnosticos
+                          if d.get("reparable") is True and (not d.get("tarea") or d.get("costo_ars") is None)})
+    irreparables = [d for d in diagnosticos if d.get("reparable") is False]
+    reparaciones = [d for d in diagnosticos
+                    if d.get("reparable") is True and d.get("tarea") and d.get("costo_ars") is not None]
+    confirmados = sorted({d["nombre"] for d in diagnosticos if d.get("nombre")})
+
+    sintomas_detectados = [{"sintoma": s["sintoma"], "descripcion": s["sintoma_descripcion"],
+                            "regla": s["regla"]} for s in sintomas.values()]
+    pendientes = (0 if validada else len(sintomas_detectados)) + len(sin_tratamiento)
+    if inviables:
+        estado, causa_origen = "Inviable", "aviso"
+        regla, causa = inviables[0]["regla"], inviables[0]["descripcion"]
+    elif desconocidos or incompletos:
+        estado, causa_origen, regla, causa = "ConocimientoFaltante", None, None, None
+    elif irreparables:
+        estado, causa_origen = "Inviable", "verificacion"
+        regla, causa = irreparables[0]["regla"], irreparables[0]["motivo"]
+    elif pendientes:
+        estado, causa_origen = "VerificacionPendiente", None
+        regla = next((s["regla"] for s in sintomas_detectados if s["regla"]), "R3.3c")
+        causa = None
+    else:
+        estado, causa_origen, regla, causa = "Viable", None, None, None
+
+    def fila_plan(tarea, regla, orden, costo, criterio=None, cuenta=True):
+        return {"tarea": tarea, "descripcion_costo": DESCRIPCIONES[tarea], "costo_ars": costo,
+                "costo_id": CONOCIMIENTO_FALSO["costos"][tarea]["id"] if tarea in CONOCIMIENTO_FALSO["costos"] else None,
+                "costo_version": "prueba", "costo_estado": "Validado", "regla": regla, "orden": orden,
+                "cuenta_como_intervencion": cuenta,
+                "criterio_nombre": criterio, "criterio_id": CONOCIMIENTO_FALSO["criterios"][criterio]["id"]
+                if criterio else None, "criterio_valor": CRITERIOS_PRUEBA.get(criterio),
+                "criterio_unidad": "fixture" if criterio else None,
+                "criterio_version": "prueba" if criterio else None,
+                "criterio_estado": "Validado" if criterio else None}
+
+    candidatas = []
+    if estado == "Viable":
+        reglas = [r for r in _reglas_sm1_falsas(hechos) if not r["requiere_plan"]]
+        candidatas = [fila_plan(r["tarea"], r["regla"], r["orden"], r["costo_ars"], r["criterio_nombre"])
+                      for r in reglas]
+        candidatas += [fila_plan(f["tarea"], f["regla"] or f["patron"], f["orden"], f["costo_ars"])
+                       for f in intervenciones]
+        candidatas += [fila_plan(d["tarea"], d.get("regla") or "Verificación del operador", d["orden"],
+                                 d["costo_ars"]) for d in reparaciones]
+    candidatas.sort(key=lambda f: (f["orden"], f["tarea"]))
+    plan, vistas = [], set()
+    for fila in candidatas:
+        if fila["tarea"] in vistas:
+            continue
+        vistas.add(fila["tarea"])
+        plan.append(fila)
+    if plan:
+        mano = [r for r in _reglas_sm1_falsas(hechos) if r["requiere_plan"]][0]
+        plan.append(fila_plan(mano["tarea"], mano["regla"], mano["orden"], mano["costo_ars"], cuenta=False))
+
+    return {
+        "estado": estado, "regla_aplicada": regla, "causa": causa, "causa_origen": causa_origen,
+        "pendientes": pendientes, "plan": plan,
+        "costo_total": sum(f["costo_ars"] for f in plan),
+        "cantidad_intervenciones": len([f for f in plan if f["cuenta_como_intervencion"]]),
+        "upgrades": {"ssd": "ssd_upgrade" in vistas, "ram": "ram_upgrade" in vistas},
+        "sintomas_detectados": sintomas_detectados,
+        "sin_tratamiento": sin_tratamiento, "desconocidos": desconocidos,
+        "incompletos": incompletos, "confirmados": confirmados,
+    }
 
 
 class Ejecucion:
@@ -204,8 +453,8 @@ def _ejecutar(caso):
     """Ejecuta el pipeline público con las fronteras externas simuladas."""
     with mock.patch.object(oe, "obtener_driver_neo4j", return_value=mock.Mock()), \
             mock.patch.object(oe, "cargar_conocimiento", return_value=CONOCIMIENTO_FALSO), \
-            mock.patch.object(oe, "consultar_fallas_catastroficas_en_grafo", return_value=FALLAS_CATASTROFICAS_FALSAS), \
             mock.patch.object(oe, "consultar_senales_bloqueo_en_grafo", return_value=SENALES_BLOQUEO_FALSAS), \
+            mock.patch.object(oe, "consultar_resolucion_sm1", side_effect=_resolucion_sm1_falsa), \
             mock.patch.object(oe, "consultar_mercado_componentes", side_effect=_mercado_falso) as mercado, \
             mock.patch.object(oe, "inferir_sm1_bat_cypher", side_effect=_sm1_bat_falso), \
             mock.patch.object(oe, "inferir_sm1_ter_cypher", side_effect=_sm1_ter_falso), \
@@ -364,6 +613,8 @@ class DefectosConocidosTest(unittest.TestCase):
                     self.assertEqual([], _comprobar(resultado, caso["observado_hoy"]), caso["titulo"])
                 else:
                     self.assertEqual([], estricta, caso["titulo"])
+
+
 
 
 class FronterasExternasTest(unittest.TestCase):
