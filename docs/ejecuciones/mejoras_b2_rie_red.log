@@ -1,0 +1,16 @@
+test_conserva_el_riesgo_previo_y_la_categoria_del_grafo (test_sm2_neo4j.CuantizacionRiesgoTest.test_conserva_el_riesgo_previo_y_la_categoria_del_grafo) ... ok
+test_no_redondea_en_python_antes_de_inferir_demanda (test_sm2_neo4j.CuantizacionRiesgoTest.test_no_redondea_en_python_antes_de_inferir_demanda) ... FAIL
+
+======================================================================
+FAIL: test_no_redondea_en_python_antes_de_inferir_demanda (test_sm2_neo4j.CuantizacionRiesgoTest.test_no_redondea_en_python_antes_de_inferir_demanda)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_sm2_neo4j.py", line 109, in test_no_redondea_en_python_antes_de_inferir_demanda
+    self.assertEqual((0.25, "Bajo"), resultado)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (0.25, 'Bajo') != None
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.537s
+
+FAILED (failures=1)

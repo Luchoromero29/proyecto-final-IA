@@ -41,7 +41,10 @@ from inferencia_sm1 import (
     normalizar_verificacion,
     preparar_evidencias,
 )
-from inferencia_sm3 import inferir_sm3_crisp_cypher, resolver_decision_sm3_cypher
+from inferencia_sm3 import (
+    inferir_sm3_crisp_cypher, resolver_decision_sm3_cypher,
+    _cuantizar as cuantizar_cypher,
+)
 
 # ------------------------------------------------------------------------------
 # 1. Configuración de Entorno (.env)
@@ -252,13 +255,13 @@ def inferir_sm2_rie_cypher(antiguedad: float, repuestos: float, win11: bool) -> 
             WITH reglas, centroide, s, exp(-0.5 * ((centroide - s.c) / s.sigma)^2) AS mu
             ORDER BY mu DESC
             WITH reglas, centroide, collect(s.etiqueta)[0] AS categoria
-            RETURN round(centroide, 4) AS centroide, categoria
+            WITH round(centroide, 4) AS centroide, categoria
+            ''' + cuantizar_cypher("centroide", 2, "riesgo_cuantizado") + '''
+            RETURN riesgo_cuantizado AS centroide, categoria
             '''
             res = session.run(q, antiguedad=float(antiguedad), repuestos=float(repuestos), win11=bool(win11)).single()
             if res and res['centroide'] is not None:
-                c_val = round(float(res['centroide']), 2)
-                cat_val = res['categoria']
-                return c_val, cat_val
+                return float(res['centroide']), res['categoria']
     except Exception:
         pass
     return None

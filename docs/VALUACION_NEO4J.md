@@ -9,6 +9,11 @@ ninguna decisión de negocio, si no que todo lo debe hacer la inferencia de Neo4
 No cambia ninguna política de valuación ni la calibración: la misma consulta que antes valuaba
 con factores del grafo ahora también decide con esos factores.
 
+El riesgo de `SM2-RIE` que alimenta `SM2-DEM` también sale cuantizado desde Neo4j. Se conserva
+la secuencia previa —centroide a cuatro decimales en Cypher y cuantización IEEE-754 a dos—,
+pero ya no se ejecuta el segundo redondeo en Python. Se reutiliza la utilidad numérica Cypher
+de `inferencia_sm3.py`, sin incorporar criterios nuevos ni cambiar la categoría de riesgo.
+El redondeo del valor de mercado que sólo se muestra al usuario sigue siendo formato de salida.
 
 ## Camino rápido
 

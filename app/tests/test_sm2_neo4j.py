@@ -99,6 +99,21 @@ def tearDownModule():
         _DRIVER = None
 
 
+class CuantizacionRiesgoTest(_RequerirGrafo, unittest.TestCase):
+    """El riesgo que alimenta demanda ya debe venir cuantizado desde Neo4j."""
+
+    def test_no_redondea_en_python_antes_de_inferir_demanda(self):
+        with mock.patch.object(oe, "round", create=True,
+                               side_effect=AssertionError("cuantización fuera del grafo")):
+            resultado = oe.inferir_sm2_rie_cypher(5, 6, True)
+        self.assertEqual((0.25, "Bajo"), resultado)
+
+    def test_conserva_el_riesgo_previo_y_la_categoria_del_grafo(self):
+        casos = [((0, 9, True), (0.15, "Bajo")), ((5, 6, True), (0.25, "Bajo")),
+                 ((12, 4, False), (0.84, "Alto")), ((3, 12, True), (0.2, "Bajo"))]
+        for entrada, esperado in casos:
+            with self.subTest(entrada=entrada):
+                self.assertEqual(esperado, oe.inferir_sm2_rie_cypher(*entrada))
 
 
 class _Apoyo:
