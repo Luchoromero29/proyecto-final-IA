@@ -1,0 +1,164 @@
+test_el_ambito_de_la_condicion_manda (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_ambito_de_la_condicion_manda) ... FAIL
+test_el_artefacto_rechaza_una_configuracion_previa_distinta (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_artefacto_rechaza_una_configuracion_previa_distinta) ... FAIL
+test_el_campo_de_la_condicion_manda (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_campo_de_la_condicion_manda) ... FAIL
+test_el_comparador_almacenado_decide_la_intervencion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_comparador_almacenado_decide_la_intervencion) ... FAIL
+test_el_operando_por_criterio_sale_del_grafo (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_operando_por_criterio_sale_del_grafo) ... FAIL
+test_el_vinculo_de_la_categoria_difusa_es_dato (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_vinculo_de_la_categoria_difusa_es_dato) ... FAIL
+test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) ... 
+  test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='falta el manifiesto') ... FAIL
+  test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='más de un manifiesto') ... FAIL
+  test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='operador no admitido') ... FAIL
+  test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='no tiene criterio') ... FAIL
+  test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='más de un criterio') ... FAIL
+  test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='no coincide con las declaradas') ... FAIL
+test_la_segunda_aplicacion_no_cambia_la_proyeccion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_segunda_aplicacion_no_cambia_la_proyeccion) ... FAIL
+test_los_grupos_combinan_or_dentro_y_and_entre_grupos (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_los_grupos_combinan_or_dentro_y_and_entre_grupos) ... FAIL
+
+======================================================================
+FAIL: test_el_ambito_de_la_condicion_manda (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_ambito_de_la_condicion_manda)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 109, in test_el_ambito_de_la_condicion_manda
+    self.assertNotIn(CARGADOR, self._tareas(self._diagnostico("", datos)))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Cargador compatible' unexpectedly found in ['Cargador compatible', 'Mano de obra y control de calidad']
+
+======================================================================
+FAIL: test_el_artefacto_rechaza_una_configuracion_previa_distinta (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_artefacto_rechaza_una_configuracion_previa_distinta)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 152, in test_el_artefacto_rechaza_una_configuracion_previa_distinta
+    self.assertFalse(respuesta["compatible"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_el_campo_de_la_condicion_manda (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_campo_de_la_condicion_manda)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 102, in test_el_campo_de_la_condicion_manda
+    self.assertNotIn(CARGADOR, self._tareas(self._diagnostico("", datos)))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Cargador compatible' unexpectedly found in ['Cargador compatible', 'Mano de obra y control de calidad']
+
+======================================================================
+FAIL: test_el_comparador_almacenado_decide_la_intervencion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_comparador_almacenado_decide_la_intervencion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 82, in test_el_comparador_almacenado_decide_la_intervencion
+    self.assertNotIn(CARGADOR, self._tareas(self._diagnostico("", datos)))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Cargador compatible' unexpectedly found in ['Cargador compatible', 'Mano de obra y control de calidad']
+
+======================================================================
+FAIL: test_el_operando_por_criterio_sale_del_grafo (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_operando_por_criterio_sale_del_grafo)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 92, in test_el_operando_por_criterio_sale_del_grafo
+    self.assertIn(RAM, self._tareas(resultado))
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Ampliación de RAM a 8 GB' not found in []
+
+======================================================================
+FAIL: test_el_vinculo_de_la_categoria_difusa_es_dato (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_vinculo_de_la_categoria_difusa_es_dato)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 136, in test_el_vinculo_de_la_categoria_difusa_es_dato
+    self.assertNotIn(TERMICO, self._tareas(self._diagnostico("", datos)))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Service térmico (pasta térmica y limpieza)' unexpectedly found in ['Service térmico (pasta térmica y limpieza)', 'Mano de obra y control de calidad']
+
+======================================================================
+FAIL: test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='falta el manifiesto')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 167, in _error_con
+    self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ErrorConocimiento' != 'Viable'
+- ErrorConocimiento
++ Viable
+
+
+======================================================================
+FAIL: test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='más de un manifiesto')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 167, in _error_con
+    self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ErrorConocimiento' != 'Viable'
+- ErrorConocimiento
++ Viable
+
+
+======================================================================
+FAIL: test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='operador no admitido')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 167, in _error_con
+    self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ErrorConocimiento' != 'Viable'
+- ErrorConocimiento
++ Viable
+
+
+======================================================================
+FAIL: test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='no tiene criterio')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 167, in _error_con
+    self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ErrorConocimiento' != 'Viable'
+- ErrorConocimiento
++ Viable
+
+
+======================================================================
+FAIL: test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='más de un criterio')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 167, in _error_con
+    self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ErrorConocimiento' != 'Viable'
+- ErrorConocimiento
++ Viable
+
+
+======================================================================
+FAIL: test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) (fragmento='no coincide con las declaradas')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 167, in _error_con
+    self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ErrorConocimiento' != 'Viable'
+- ErrorConocimiento
++ Viable
+
+
+======================================================================
+FAIL: test_la_segunda_aplicacion_no_cambia_la_proyeccion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_segunda_aplicacion_no_cambia_la_proyeccion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 143, in test_la_segunda_aplicacion_no_cambia_la_proyeccion
+    self.assertEqual(0, respuesta["cambios"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 29
+
+======================================================================
+FAIL: test_los_grupos_combinan_or_dentro_y_and_entre_grupos (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_los_grupos_combinan_or_dentro_y_and_entre_grupos)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 123, in test_los_grupos_combinan_or_dentro_y_and_entre_grupos
+    self.assertNotIn(CARGADOR, self._tareas(self._diagnostico("", datos)))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Cargador compatible' unexpectedly found in ['Cargador compatible', 'Mano de obra y control de calidad']
+
+----------------------------------------------------------------------
+Ran 9 tests in 2.081s
+
+FAILED (failures=14)

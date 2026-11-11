@@ -3,67 +3,78 @@
 """
 Inferencia de diagnóstico de SM1 en Neo4j (B2).
 
-Toda la resolución del dictamen técnico —precedencia entre evidencia irreversible, síntomas,
-descripciones positivas e intervenciones; detección de fallas sin tratamiento; liberación por
-verificación del operador; irreparabilidad; selección del estado final; armado del plan con sus
-costos, total, cantidad de intervenciones y upgrades— ocurre en una consulta Cypher explícita
-sobre el conocimiento del grafo (`cypher/Grupo_20_PG3_diagnostico.cypher`).
+Toda la resolución del dictamen técnico —qué acciones de reacondicionamiento ordena el aviso,
+qué evidencia es irreversible, cómo se combinan el plan, el costo y el estado— ocurre en una
+consulta Cypher explícita sobre el conocimiento del grafo. Las condiciones de las acciones
+(campo, ámbito, comparador, operando literal o criterio enlazado, grupo y categoría difusa)
+son DATOS del grafo (`cypher/Grupo_20_PG3_politicas_sm1_acciones.cypher`), no ramas por
+identificador de regla: cambiar una condición cambia el plan sin editar este archivo. Los
+comparadores finitos y su aritmética son el mecanismo de evaluación; el conocimiento está en
+los datos.
 
-Python sólo valida y normaliza la entrada (tipos, evidencia del operador), transporta los hechos,
-traduce los errores de conocimiento faltante y arma el texto de salida con lo que devolvió el grafo.
-No elige entre alternativas ni vuelve a decidir el plan, el costo ni el estado.
+Una configuración incompleta, ambigua o inválida se informa como error de conocimiento
+(`ConocimientoFaltante`) con su motivo, nunca como un plan vacío que parezca favorable.
+
+Python sólo valida y normaliza la entrada (tipos, evidencia del operador), transporta los
+hechos, traduce los errores de conocimiento faltante y arma el texto de salida con lo que
+devolvió el grafo. No elige entre alternativas ni vuelve a decidir el plan, el costo ni el
+estado.
 """
 
 from typing import Any, Dict, List, Optional
 
 # ------------------------------------------------------------------------------
 # Resolución completa del dictamen técnico de SM1 (una sola consulta explícita).
-#   A. Intervenciones que ordenan los hechos estructurados y los campos del aviso.
+#   A. Acciones que ordena la etapa: condiciones y categorías difusas del grafo.
 #   B. Evidencia textual con precedencia y fallas sin tratamiento conocido.
 #   C. Diagnósticos confirmados por el operador y su reparación/costo del grafo.
 #   D. Estado final, plan único, total, cantidad de intervenciones y upgrades.
 # ------------------------------------------------------------------------------
 CONSULTA_RESOLUCION = """
 CALL () {
-  // A. Intervenciones que ordenan los hechos estructurados del aviso.
+  // A. Acciones de SM1: el grafo declara el manifiesto de la etapa, los hechos, los
+  //    comparadores y las consecuencias; acá sólo se evalúan de forma finita. Un grupo se
+  //    satisface con cualquiera de sus condiciones (OR) y la regla con todos sus grupos (AND);
+  //    una regla sin condiciones (mano de obra) se agrega al final del plan.
   CALL () {
-    CALL () {
-      MATCH (rd:ReglaDifusa {base:'SM1-BAT'})-[ob:OBLIGA]->(c:CostoReparacion)
-      WHERE $hechos.categoria_bat IN ob.categorias
-      RETURN c AS costo, rd.base AS origen, null AS criterio, coalesce(ob.orden, 50) AS orden
-    UNION
-      MATCH (ce:CriterioExperto {nombre:'bateria_reemplazo'}),
-            (r:Regla {id:'SM1-BAT-CRISP'})-[:ORDENA]->(c:CostoReparacion)
-      WHERE $hechos.salud IS NOT NULL AND $hechos.ciclos IS NULL AND $hechos.salud < ce.valor
-      RETURN c AS costo, r.id AS origen, ce AS criterio, r.orden AS orden
-    UNION
-      MATCH (rd:ReglaDifusa {base:'SM1-TER'})-[ob:OBLIGA]->(c:CostoReparacion)
-      WHERE $hechos.categoria_ter IN ob.categorias
-      RETURN c AS costo, rd.base AS origen, null AS criterio, coalesce(ob.orden, 50) AS orden
-    UNION
-      MATCH (r:Regla {id:'SM1-TER-CRISP'})-[:ORDENA]->(c:CostoReparacion)
-      WHERE $hechos.temp IS NULL AND $hechos.throttling = true
-      RETURN c AS costo, r.id AS origen, null AS criterio, r.orden AS orden
-    UNION
-      MATCH (ce:CriterioExperto {nombre:'ram_objetivo'}),
-            (r:Regla {id:'SM1-RAM-ACCION'})-[:ORDENA]->(c:CostoReparacion)
-      WHERE $hechos.ram IS NOT NULL AND $hechos.ram < ce.valor
-      RETURN c AS costo, r.id AS origen, ce AS criterio, r.orden AS orden
-    UNION
-      MATCH (r:Regla {id:'SM1-DISCO-ACCION'})-[:ORDENA]->(c:CostoReparacion)
-      WHERE $hechos.disco = 'HDD'
-      RETURN c AS costo, r.id AS origen, null AS criterio, r.orden AS orden
-    }
-    RETURN costo, origen, criterio, orden
+    MATCH (:VersionPoliticas {etapa:'SM1-acciones', activa:true})-[:INCLUYE]->
+          (r:Regla)-[:ORDENA]->(costo:CostoReparacion)
+    OPTIONAL MATCH (r)-[requiere:REQUIERE]->(cond:Condicion)
+    OPTIONAL MATCH (cond)-[:USA_CRITERIO]->(criterio:CriterioExperto)
+    WITH r, costo, requiere, cond, criterio,
+         CASE WHEN cond.ambito = 'campos' THEN $hechos.campos[cond.campo]
+              WHEN cond.ambito = 'hechos' THEN $hechos[cond.campo] END AS valor
+    WITH r, costo, requiere, cond, criterio, valor,
+         CASE WHEN cond.valor IS NOT NULL AND (cond.valor IS :: INTEGER OR cond.valor IS :: FLOAT)
+              THEN toFloat(cond.valor) END AS literal,
+         CASE WHEN criterio.valor IS NOT NULL AND
+                   (criterio.valor IS :: INTEGER OR criterio.valor IS :: FLOAT)
+              THEN toFloat(criterio.valor) END AS operando
+    WITH r, costo, requiere, cond, criterio, valor, literal, operando,
+         CASE WHEN valor IS NULL THEN null
+              WHEN valor IS :: INTEGER OR valor IS :: FLOAT THEN toFloat(valor) END AS numero
+    WITH r, costo, requiere, cond, criterio, valor,
+         CASE WHEN cond IS NULL THEN null
+              WHEN cond.operador = 'ausente' THEN valor IS NULL
+              WHEN cond.operador = 'presente' THEN valor IS NOT NULL
+              WHEN cond.operador = '=' THEN valor IS NOT NULL AND valor = cond.valor
+              WHEN cond.operador = '<' THEN coalesce(
+                     numero < CASE WHEN literal IS NOT NULL THEN literal ELSE operando END, false)
+              END AS cumple
+    WITH r, costo,
+         collect(CASE WHEN cond IS NULL THEN null ELSE
+                   {grupo: requiere.grupo, cumplida: cumple, criterio: criterio} END) AS condiciones
+    WITH r, costo, condiciones, [c IN condiciones | c.grupo] AS grupos
+    WHERE all(grupo IN grupos WHERE any(c IN condiciones WHERE c.grupo = grupo AND c.cumplida))
+    RETURN costo, r.id AS origen,
+           [c IN condiciones WHERE c.criterio IS NOT NULL AND c.cumplida][0].criterio AS criterio,
+           r.orden AS orden
   UNION
-    // Campos del aviso: la regla declara el campo y el valor que la disparan.
-    MATCH (r:Regla)-[:ORDENA]->(c:CostoReparacion)
-    WHERE r.campo IS NOT NULL AND $hechos.campos[r.campo] IS NOT NULL AND $hechos.campos[r.campo] = r.valor
-    RETURN c AS costo, r.id AS origen, null AS criterio, r.orden AS orden
-  UNION
-    // Mano de obra: se agrega al final y sólo si el plan tiene intervenciones.
-    MATCH (r:Regla {id:'SM1-MANO-OBRA-ACCION'})-[:ORDENA]->(c:CostoReparacion)
-    RETURN c AS costo, r.id AS origen, null AS criterio, r.orden AS orden
+    // Categorías difusas: la relación OBLIGA declara la etapa y el hecho que la vincula.
+    MATCH (rd:ReglaDifusa)-[obliga:OBLIGA {etapa:'SM1-acciones'}]->(costo:CostoReparacion)
+    WITH rd, obliga, costo, $hechos[obliga.campo] AS categoria
+    WHERE categoria IS NOT NULL AND categoria IN obliga.categorias
+    RETURN costo, rd.base AS origen, null AS criterio, coalesce(obliga.orden, 50) AS orden
   }
   WITH costo, origen, criterio, orden
   OPTIONAL MATCH (regla:Regla {id: origen})
@@ -226,7 +237,150 @@ WITH desconocidos, incompletos, sintomas_detectados, sin_tratamiento, confirmado
 WITH desconocidos, incompletos, sintomas_detectados, sin_tratamiento, confirmados,
      estado, regla_aplicada, causa, causa_origen, pendientes,
      CASE WHEN size(unicas) > 0 AND size(mano_de_obra) > 0 THEN unicas + [mano_de_obra[0]] ELSE unicas END AS plan
-RETURN estado, regla_aplicada, causa, causa_origen, pendientes,
+CALL () {
+  // A.0 Guarda de configuración de la etapa: manifiesto único y completo, condiciones
+  //     íntegras y obligaciones vinculadas. Se informa como error explícito; nunca se
+  //     convierte en un plan vacío que parezca favorable.
+  CALL () {
+    OPTIONAL MATCH (vp:VersionPoliticas {etapa:'SM1-acciones', activa:true})
+    WITH collect(DISTINCT vp) AS manifiestos
+    WITH size(manifiestos) AS n,
+         CASE WHEN size(manifiestos) = 1 THEN manifiestos[0] ELSE null END AS vp
+    OPTIONAL MATCH (vp)-[:INCLUYE]->(miembro)
+    WITH n, vp,
+         collect(CASE WHEN miembro IS NULL THEN null ELSE
+                   {id: miembro.id, es_regla: miembro:Regla} END) AS crudos
+    WITH n, [m IN crudos WHERE m IS NOT NULL] AS miembros, coalesce(vp.ids_requeridos, []) AS requeridos
+    WITH n, miembros, requeridos,
+         [m IN miembros WHERE NOT m.es_regla] AS no_reglas,
+         [m IN miembros WHERE NOT m.id IN requeridos] AS no_declarados,
+         size([i IN range(0, size(requeridos) - 1)
+               WHERE i = 0 OR none(j IN range(0, i - 1) WHERE requeridos[j] = requeridos[i])]) AS unicos
+    RETURN
+      CASE WHEN n = 0 THEN ['configuración de políticas de SM1: falta el manifiesto técnico ' +
+        'VersionPoliticas activo de la etapa SM1-acciones en Neo4j'] ELSE [] END +
+      CASE WHEN n > 1 THEN ['configuración de políticas de SM1: más de un manifiesto ' +
+        'VersionPoliticas activo para la etapa SM1-acciones'] ELSE [] END +
+      CASE WHEN n = 1 AND size(requeridos) = 0 THEN ['configuración de políticas de SM1: ' +
+        'el manifiesto de la etapa no declara ids_requeridos'] ELSE [] END +
+      CASE WHEN n = 1 AND unicos <> size(requeridos) THEN ['configuración de políticas de SM1: ' +
+        'ids_requeridos repetidos en el manifiesto'] ELSE [] END +
+      CASE WHEN n = 1 AND (size(miembros) <> size(requeridos) OR size(no_declarados) > 0) THEN
+        ['configuración de políticas de SM1: las reglas incluidas no coinciden con ids_requeridos'] ELSE [] END +
+      [m IN no_reglas | 'configuración de políticas de SM1: el manifiesto incluye un miembro que ' +
+        'no es una regla: ' + coalesce(m.id, 'sin id')] AS problemas_manifiesto
+  }
+  CALL () {
+    OPTIONAL MATCH (:VersionPoliticas {etapa:'SM1-acciones', activa:true})-[incluye:INCLUYE]->(r:Regla)
+    OPTIONAL MATCH (r)-[:ORDENA]->(costo:CostoReparacion)
+    WITH r, incluye, collect(DISTINCT costo) AS costos
+    OPTIONAL MATCH (r)-[requiere:REQUIERE]->(cond:Condicion)
+    WITH r, incluye, costos, requiere, cond
+    OPTIONAL MATCH (cond)-[:USA_CRITERIO]->(criterio:CriterioExperto)
+    WITH r, incluye, costos, cond, requiere, collect(DISTINCT criterio) AS criterios
+    WITH r, incluye, costos,
+         collect(CASE WHEN cond IS NULL THEN null ELSE
+                   {id: cond.id, campo: cond.campo, ambito: cond.ambito, operador: cond.operador,
+                    valor: cond.valor, grupo: requiere.grupo, criterios: criterios} END) AS condiciones
+    WITH collect(CASE WHEN r IS NULL THEN null ELSE
+                 {id: r.id, declaradas: incluye.condiciones, declarados: incluye.criterios,
+                  costos: size(costos),
+                  condiciones: [c IN condiciones WHERE c IS NOT NULL]} END) AS crudos
+    WITH [e IN crudos WHERE e IS NOT NULL] AS reglas
+    WITH reglas,
+         reduce(acc = [], e IN reglas |
+                acc + [c IN e.condiciones | c {.*, declarados: e.declarados}]) AS condiciones
+    RETURN
+      [e IN reglas WHERE e.costos <> 1 |
+        'configuración de políticas de SM1: la regla ' + e.id + ' no ordena exactamente un costo'] +
+      [e IN reglas WHERE e.declaradas IS NULL OR NOT e.declaradas IS :: INTEGER |
+        'configuración de políticas de SM1: el manifiesto no declara las condiciones de la regla ' + e.id] +
+      [e IN reglas WHERE e.declaradas IS :: INTEGER AND size(e.condiciones) <> e.declaradas |
+        'configuración de políticas de SM1: las condiciones de la regla ' + e.id + ' no coinciden con las declaradas'] +
+      [e IN reglas WHERE e.declarados IS NULL OR NOT e.declarados IS :: INTEGER |
+        'configuración de políticas de SM1: el manifiesto no declara los criterios de la regla ' + e.id] +
+      [e IN reglas WHERE e.declarados IS :: INTEGER AND
+        size([c IN e.condiciones WHERE size(c.criterios) > 0]) <> e.declarados |
+        'configuración de políticas de SM1: los criterios de la regla ' + e.id + ' no coinciden con los declarados'] +
+      [c IN condiciones WHERE c.campo IS NULL OR NOT c.campo IS :: STRING |
+        'configuración de políticas de SM1: la condición ' + coalesce(c.id, 'sin id') + ' no declara un campo'] +
+      [c IN condiciones WHERE NOT coalesce(c.ambito, '') IN ['hechos', 'campos'] |
+        'configuración de políticas de SM1: la condición ' + coalesce(c.id, 'sin id') + ' no declara un ámbito válido'] +
+      [c IN condiciones WHERE NOT coalesce(c.operador, '') IN ['=', '<', 'ausente', 'presente'] |
+        'configuración de políticas de SM1: operador no admitido en la condición ' + coalesce(c.id, 'sin id')] +
+      [c IN condiciones WHERE c.operador = '=' AND c.valor IS NULL |
+        'configuración de políticas de SM1: la condición ' + coalesce(c.id, 'sin id') +
+        ' no declara el valor de comparación'] +
+      [c IN condiciones WHERE c.operador = '<' AND c.valor IS NULL AND size(c.criterios) = 0 |
+        'configuración de políticas de SM1: la condición ' + coalesce(c.id, 'sin id') + ' no declara operando'] +
+      [c IN condiciones WHERE c.operador IN ['ausente', 'presente'] AND
+        (c.valor IS NOT NULL OR size(c.criterios) > 0) |
+        'configuración de políticas de SM1: la condición ' + coalesce(c.id, 'sin id') + ' no admite operando'] +
+      [c IN condiciones WHERE size(c.criterios) > 1 |
+        'configuración de políticas de SM1: la condición ' + coalesce(c.id, 'sin id') +
+        ' tiene más de un criterio vinculado'] +
+      [c IN condiciones WHERE c.declarados IS :: INTEGER AND c.declarados > 0 AND
+        c.operador = '<' AND size(c.criterios) = 0 |
+        'configuración de políticas de SM1: la condición ' + coalesce(c.id, 'sin id') + ' no tiene criterio vinculado'] +
+      [c IN condiciones WHERE any(ce IN c.criterios WHERE ce.valor IS NULL OR
+        NOT (ce.valor IS :: INTEGER OR ce.valor IS :: FLOAT)) |
+        'configuración de políticas de SM1: el criterio de la condición ' + coalesce(c.id, 'sin id') + ' no es numérico'] AS problemas_reglas
+  }
+  CALL () {
+    // Identidad de las condiciones de la ETAPA: las que requieren sus reglas y las que
+    // declara su versión de representación. Una condición de otra etapa no es asunto de
+    // SM1: no se informa como error ni se cuenta como duplicada.
+    OPTIONAL MATCH (vp:VersionPoliticas {etapa:'SM1-acciones', activa:true})
+    WITH coalesce(vp.version, '') AS version
+    OPTIONAL MATCH (:VersionPoliticas {etapa:'SM1-acciones', activa:true})-[:INCLUYE]->(:Regla)
+                  -[:REQUIERE]->(requerida:Condicion)
+    WITH version, collect(DISTINCT requerida) AS requeridas_nodos
+    OPTIONAL MATCH (cond:Condicion)
+    WHERE cond IN requeridas_nodos OR (version <> '' AND cond.representacion_version = version)
+    WITH collect(DISTINCT cond) AS nodos
+    WITH [n IN nodos WHERE n IS NOT NULL | n.id] AS ids
+    WITH ids, [i IN range(0, size(ids) - 1)
+               WHERE i > 0 AND any(j IN range(0, i - 1) WHERE ids[j] = ids[i]) | ids[i]] AS repetidos
+    OPTIONAL MATCH (:VersionPoliticas {etapa:'SM1-acciones', activa:true})-[:INCLUYE]->(:Regla)
+                  -[:REQUIERE]->(requerida:Condicion)
+    WITH ids, repetidos, [r IN collect(DISTINCT requerida.id) WHERE r IS NOT NULL] AS requeridas
+    RETURN
+      [i IN ids WHERE i IS NULL |
+        'configuración de políticas de SM1: una condición no declara identificador'] +
+      CASE WHEN size(repetidos) = 0 THEN [] ELSE
+        ['configuración de políticas de SM1: identificador de condición repetido:' +
+         reduce(txt = '', repetido IN repetidos | txt + ' ' + toString(repetido))] END +
+      [i IN ids WHERE i IS NOT NULL AND NOT i IN requeridas |
+        'configuración de políticas de SM1: la condición ' + i +
+        ' no está requerida por ninguna regla de la etapa'] AS problemas_duplicados
+  }
+  CALL () {
+    OPTIONAL MATCH (vp:VersionPoliticas {etapa:'SM1-acciones', activa:true})
+    WITH coalesce(vp.obligaciones_requeridas, -1) AS requeridas
+    OPTIONAL MATCH (:ReglaDifusa)-[obliga:OBLIGA {etapa:'SM1-acciones'}]->(costo:CostoReparacion)
+    WITH requeridas, collect(CASE WHEN obliga IS NULL THEN null ELSE
+             {campo: obliga.campo, categorias: obliga.categorias, orden: obliga.orden,
+              tarea: costo.tarea} END) AS crudos
+    WITH requeridas, [o IN crudos WHERE o IS NOT NULL] AS obligaciones
+    RETURN
+      CASE WHEN size(obligaciones) = requeridas THEN [] ELSE
+        ['configuración de políticas de SM1: las obligaciones de la etapa son ' +
+         toString(size(obligaciones)) + ' y el manifiesto declara ' + toString(requeridas)] END +
+      [o IN obligaciones WHERE o.campo IS NULL OR NOT o.campo IS :: STRING |
+        'configuración de políticas de SM1: la obligación de la tarea ' + coalesce(o.tarea, 'sin tarea') +
+        ' no declara el hecho de la categoría'] +
+      [o IN obligaciones WHERE o.categorias IS NULL OR size(o.categorias) = 0 OR
+        any(x IN coalesce(o.categorias, []) WHERE NOT x IS :: STRING) |
+        'configuración de políticas de SM1: la obligación de la tarea ' + coalesce(o.tarea, 'sin tarea') +
+        ' no declara categorías'] +
+      [o IN obligaciones WHERE o.orden IS NULL OR NOT o.orden IS :: INTEGER |
+        'configuración de políticas de SM1: la obligación de la tarea ' + coalesce(o.tarea, 'sin tarea') +
+        ' no declara orden'] AS problemas_obligaciones
+  }
+  RETURN problemas_manifiesto + problemas_reglas + problemas_duplicados +
+         problemas_obligaciones AS configuracion_invalida
+}
+RETURN estado, regla_aplicada, causa, causa_origen, pendientes, configuracion_invalida,
        [f IN plan | {tarea: f.tarea, descripcion_costo: f.descripcion_costo, costo_ars: f.costo_ars,
                      costo_id: f.costo_id, costo_version: f.costo_version, costo_estado: f.costo_estado,
                      regla: f.regla, cuenta_como_intervencion: f.cuenta_como_intervencion,
@@ -289,6 +443,12 @@ def consultar_resolucion_sm1(hechos: dict, evidencias: List[dict], fallas: List[
     """
     Ejecuta la resolución del dictamen técnico en Neo4j y devuelve, tal cual, lo que el
     grafo decidió: estado, plan, costo total, cantidad de intervenciones y upgrades.
+
+    La consulta transporta además `configuracion_invalida`, la lista de problemas que el
+    propio grafo detectó en la representación de sus políticas. Esa lista no se puede
+    colapsar en un plan vacío: se traduce al error de conocimiento existente, con el motivo
+    concreto, para que ni una configuración rota ni un conjunto `collect` más corto
+    terminen en un plan gratuito o en una viabilidad aparente.
     """
     evidencia_operador = normalizar_verificacion(verificacion)
     fila = _filas(
@@ -305,4 +465,11 @@ def consultar_resolucion_sm1(hechos: dict, evidencias: List[dict], fallas: List[
         raise ConocimientoFaltante(
             "falta el conocimiento de diagnóstico de SM1 en Neo4j: hay que aplicar "
             "cypher/Grupo_20_PG3_diagnostico.cypher con un procedimiento aditivo aprobado por el operador.")
+    if fila[0].get("configuracion_invalida"):
+        from orquestador_evaltic import ConocimientoFaltante
+        motivos = "; ".join(sorted(set(fila[0]["configuracion_invalida"])))
+        raise ConocimientoFaltante(
+            "la configuración de políticas de SM1 en Neo4j está incompleta o es inválida: "
+            f"{motivos}. Hay que aplicar cypher/Grupo_20_PG3_politicas_sm1_acciones.cypher "
+            "con un procedimiento aditivo aprobado por el operador.")
     return fila[0]

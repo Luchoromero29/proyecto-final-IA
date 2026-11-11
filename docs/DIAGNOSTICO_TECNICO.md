@@ -38,12 +38,16 @@ avisos y sus relaciones). Por eso no sirve como migración de sólo B2 sobre dat
 
 | Base | Procedimiento | Efecto |
 |---|---|---|
-| Nueva o reconstruible (pruebas, CI, contenedor desechable) | bootstrap completo del entorno aislado, en el orden PG2 → PG3 mercado → diagnóstico | Deja la base lista desde cero; es el camino usado en la preparación aislada de B2. |
+| Nueva o reconstruible (pruebas, CI, contenedor desechable) | bootstrap completo del entorno aislado, en el orden PG2 → PG3 mercado → diagnóstico → políticas SM1 | Deja la base lista desde cero; es el camino usado en la preparación aislada de B2 y de P2a. |
 | Datos de trabajo, refresco completo | `actualizar.bat` / `docker compose run --rm neo4j-init` | **No es aditivo**: rehace el catálogo de mercado. Es una carga sobre datos de trabajo y requiere autorización específica y respaldo verificado. |
-| Datos de trabajo, sólo B2 | **pendiente de un procedimiento operador-safe** | El archivo aditivo es `cypher/Grupo_20_PG3_diagnostico.cypher`; su aplicación a la base de trabajo la decide y ejecuta el operador con respaldo previo. Este documento no incluye credenciales ni comandos de conexión para agentes. |
+| Datos de trabajo, sólo B2 y condiciones de SM1 | **pendiente de un procedimiento operador-safe** | Los archivos aditivos son `cypher/Grupo_20_PG3_diagnostico.cypher` y `cypher/Grupo_20_PG3_politicas_sm1_acciones.cypher`; su aplicación a la base de trabajo la decide y ejecuta el operador con respaldo previo. Este documento no incluye credenciales ni comandos de conexión para agentes. |
+| Grafo aislado de pruebas | `scripts/aplicar_politicas_sm1_pruebas.py` | Cargador **sólo para el scratch** marcado `EntornoPruebas {id:'mejoras-evaltic'}`: compara la proyección protegida, valida el delta exacto y exige segunda aplicación sin cambios. No es el procedimiento de despliegue. |
 
 Si el conocimiento nuevo falta, el motor se detiene con un error de base de conocimiento al
-diagnosticar: no planifica reparaciones de menos ni convierte el silencio en costo cero.
+diagnosticar: no planifica reparaciones de menos ni convierte el silencio en costo cero. Esa
+misma guarda cubre la representación de las políticas: si el manifiesto de la etapa de acciones
+falta, se repite, o una condición quedó incompleta, el grafo devuelve el motivo concreto y el
+motor lo informa como `ErrorConocimiento`; nunca como un plan vacío.
 
 ## Qué hace el motor con cada situación
 
@@ -59,9 +63,14 @@ diagnosticar: no planifica reparaciones de menos ni convierte el silencio en cos
 
 Los hechos estructurados conservan sus políticas: salud y ciclos de batería (difusa `SM1-BAT` o
 crisp `R1.2`), temperatura y throttling (difusa `SM1-TER`), RAM bajo `CE ram_objetivo`, HDD → SSD,
-pantalla/teclado dañados, cargador ausente y mano de obra (no cuenta como intervención). Las caídas
-de frecuencia sintéticas pasaron de constantes de Python a criterios del grafo (`CE-31` 5 %,
-`CE-32` 20 %), ambos Provisionales y con fuente; la política térmica en sí la revisa B5.
+pantalla/teclado dañados, cargador ausente y mano de obra (no cuenta como intervención). Cada
+una de esas condiciones —campo, ámbito, comparador, operando literal o criterio enlazado, grupo
+y categoría difusa— es **dato del grafo**: `Regla-[:REQUIERE {grupo}]->Condicion`, con `=`, `<`,
+`ausente` y `presente` como comparadores finitos, OR dentro de un grupo y AND entre grupos. Las
+reglas de la etapa están declaradas en `(:VersionPoliticas {etapa:'SM1-acciones'})`, así que
+cambiar una condición (o su vínculo `OBLIGA`) cambia el plan sin editar Python. Las caídas
+de frecuencia sintéticas también son criterios del grafo (`CE-31` 5 %, `CE-32` 20 %), ambos
+Provisionales y con fuente; la política térmica en sí la revisa B5.
 
 La consulta SM1 con su salida detallada por defecto también distingue un costo desconocido de
 un costo conocido en cero: muestra `Plan: pendiente de verificación | Costo: sin determinar`
@@ -111,18 +120,38 @@ costos ni reglas existentes. Crea:
 | `(:ReglaDifusa)-[:OBLIGA]->(:CostoReparacion)` | Categoría difusa que obliga a intervenir (batería `Obligatoria`, térmico `Obligatoria`/`Recomendada`). |
 | `(:CriterioExperto)` `CE-31`, `CE-32` | Caídas de frecuencia sintéticas, Provisionales y con fuente. |
 
+`cypher/Grupo_20_PG3_politicas_sm1_acciones.cypher` (P2a) es otro artefacto aditivo e idempotente,
+separado del anterior. Agrega la representación de las condiciones de las acciones de SM1:
+
+| Nodos / enlaces | Para qué |
+|---|---|
+| `(:VersionPoliticas {id:'VP-SM1-ACCIONES', etapa:'SM1-acciones', activa:true})` | Manifiesto técnico de la etapa: `ids_requeridos`, `INCLUYE` a las ocho reglas de acción y cardinalidad declarada (`condiciones`, `criterios`, `obligaciones_requeridas`). No es validación experta. |
+| `(:Condicion {id, campo, ambito, operador, valor})` | 9 condiciones (`CND-SM1-*`); `ambito` es `hechos` o `campos`, y el comparador es `=`, `<`, `ausente` o `presente`. |
+| `(:Regla)-[:REQUIERE {grupo}]->(:Condicion)` | 9 enlaces; batería y temperatura usan dos grupos (AND), el resto uno. |
+| `(:Condicion)-[:USA_CRITERIO]->(:CriterioExperto)` | 2 vínculos: `CND-SM1-BAT-CRISP-SALUD`→`CE-01` y `CND-SM1-RAM-ACCION-RAM`→`CE-27`. |
+| `(:ReglaDifusa)-[:OBLIGA {etapa, campo}]->(:CostoReparacion)` | 11 relaciones existentes que reciben su etapa y el hecho de la categoría (`categoria_bat` / `categoria_ter`), sin tocar `categorias` ni `orden`. |
+
+Ni el seed diagnóstico ni P1 se modifican: el primero vuelve a `SET` sus propias propiedades de
+`Regla`, y las que P2a no usa (`campo`, `valor`, `tarea`, `orden`) siguen protegidas. La segunda
+aplicación del artefacto devuelve cero cambios.
+
 ## Límites conocidos
 
 - El catálogo de síntomas y los protocolos de verificación siguen pendientes de validación experta.
 - El reconocimiento de texto no interpreta negaciones generales (eso es B3): sólo descarta
   descripciones positivas explícitas.
 - La política térmica no se recalibró (B5) y las sondas del corpus no se convierten en aceptación.
+- P2a representa **sólo** las condiciones de las acciones y su vínculo con las categorías difusas.
+  Las precedencias de evidencia (P2b) y la selección de estado/plan (P2c) siguen en la consulta;
+  no se declara terminada la migración de SM1.
+- Una configuración de políticas inválida se informa como error de conocimiento con su motivo; no
+  hay caché ni plan de respaldo en Python.
 - El corpus y los logs históricos no se modificaron.
 
 ## Checklist
 
-- [ ] La base donde se evalúa tiene cargado `Grupo_20_PG3_diagnostico.cypher` con el procedimiento que corresponda a su tipo (aparecen `patrones_diagnostico` y `diagnosticos`).
-- [ ] `test_diagnostico_neo4j.py` y `test_sm1_neo4j.py` pasan contra el Neo4j aislado.
+- [ ] La base donde se evalúa tiene cargado `Grupo_20_PG3_diagnostico.cypher` y, con el procedimiento que corresponda a su tipo, `Grupo_20_PG3_politicas_sm1_acciones.cypher` (aparecen `patrones_diagnostico`, `diagnosticos` y el manifiesto `VP-SM1-ACCIONES`).
+- [ ] `test_diagnostico_neo4j.py`, `test_sm1_neo4j.py` y `test_politicas_sm1_neo4j.py` pasan contra el Neo4j aislado.
 - [ ] La suite offline completa pasa.
 - [ ] Una publicación con `no prende` queda en `VerificacionPendiente` y su dictamen dice VERIFICAR.
 
