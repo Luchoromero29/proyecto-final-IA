@@ -181,6 +181,35 @@ excepción, stdout o stderr. Se conserva el primer intento de carga fallido por 
 comparador Date/DateTime del arnés: rollback confirmado, corregida serialización, sin
 ampliar allowlist. Logs y JSON en `docs/ejecuciones/politicas_p1_*`.
 
+## Actualización TB: margen y cuantización como datos
+
+El margen requerido ya no se decide con un `CASE` de riesgos y demandas en la consulta. La etapa
+`SM3-margen` del artefacto
+[Grupo_20_PG3_politicas_bloque.cypher](../cypher/Grupo_20_PG3_politicas_bloque.cypher)
+declara, como datos, el paso 0 (`SM3-MARGEN-BASE` → CE `margen_base`), R3.4 (`asignar`
+CE `margen_alta_liquidez`), R3.5 (`maximo` CE `margen_riesgo_alto`) y R3.6 (`sumar`
+CE `prima_fallas`), con su `prioridad_inferencia`, su `grupo_exclusion` y sus condiciones
+(`riesgo = 'Bajo'`, `demanda = 'Alta'`, `riesgo = 'Alto'`, `n_interv >= CE umbral_intervenciones`).
+La consulta evalúa esos grupos (OR dentro del grupo, AND entre grupos) y combina los efectos
+según la operación declarada. Un empate dentro del mismo grupo de exclusión, un miembro del
+manifiesto que no coincide con `ids_requeridos`, una operación o un destino no admitidos, o un
+efecto sin exactamente un criterio cortan la evaluación sin fila: el motor informa el error
+existente, nunca un margen favorable por defecto.
+
+La etapa `SM3-calculo` declara además **qué resultado se cuantiza y con qué precisión**
+(`PasoCalculo.margen_neto=1`, `ratio_reparacion=2`, `contraoferta=-3` con
+`limite_inferior_ars=0.0`, `descuento=1`, `brecha=1`). Cambiar `decimales` o el límite en el
+grafo cambia la salida pública sin editar Python; el algoritmo IEEE del cuantizador y la
+expresión aritmética de cada paso siguen siendo mecanismo fijo. La traza (`reglas_activadas`)
+se arma con el `traza_texto` de cada regla aplicada, en el mismo orden de prioridad que antes,
+y la procedencia conserva exactamente el mismo conjunto y orden de criterios
+(`margen_base`, paso 1 aplicado, `umbral_intervenciones`, `prima_fallas` si corresponde).
+
+Se conserva R3.7 antes de R3.8 y el margen (base → R3.4 o R3.5 → R3.6) después: los filtros
+crisp siguen resolviéndose primero y, si descartan, el margen y la contraoferta quedan nulos.
+Detalle del delta, allowlist y activación en
+[ejecuciones/politicas_bloque_implementacion.md](ejecuciones/politicas_bloque_implementacion.md).
+
 ## Siguiente paso
 
 P2: representar condiciones/precedencias técnicas, sin cambiar diagnóstico ni costos.

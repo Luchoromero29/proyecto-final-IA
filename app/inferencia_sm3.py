@@ -9,6 +9,12 @@ decisión se resuelven en consultas Cypher explícitas. Este módulo NO decide n
 nada de negocio: no lee criterios para condicionar un resultado, no evalúa umbrales y no
 redondea. Devuelve lo que el grafo resolvió.
 
+La política del margen (pasos, condiciones, exclusión entre R3.4/R3.5 y operación
+asignar/máximo/sumar de cada efecto) y la precisión de cada cuantización son DATOS del
+grafo (`cypher/Grupo_20_PG3_politicas_bloque.cypher`). El mecanismo finito que los evalúa
+son `_EVALUAR_CONDICIONES` (comparadores `=`, `<`, `>=`, `ausente`, `presente`; OR dentro
+del grupo y AND entre grupos) y el cuantizador IEEE de `_cuantizar`.
+
 Consultas:
   - `inferir_sm3_crisp_cypher`: R3.7 y R3.8 (en ese orden), pasos 0/1/2 del margen
     requerido (base → R3.4 o R3.5 → R3.6), contraoferta, brecha y descuento. Devuelve los
@@ -113,15 +119,71 @@ WITH CASE WHEN valor IS NULL THEN null
 """
 
 
-def _cuantizar(valor: str, decimales: int, salida: str) -> str:
+def _cuantizar(valor: str, decimales, salida: str) -> str:
     """
     Fragmento Cypher que cuantiza `valor` con `decimales` (1, 2 o -3) y publica el
     resultado como `salida`. Es una utilidad numérica, no un motor de reglas: la expresión
     de entrada la escribe la consulta que la usa (texto fijo del módulo, nunca del aviso).
+
+    `decimales` puede ser el literal de la política que todavía es mecanismo (RIE) o el
+    nombre de una variable que la consulta leyó del grafo (`:PasoCalculo.decimales`).
     """
-    # El subquery declara qué variable externa importa (cláusula de alcance de Neo4j 5).
-    return (f"CALL ({valor}) {{\n  WITH {valor} AS valor, {decimales} AS decimales\n"
-            + _CUERPO_CUANTIZADOR + f"RETURN q AS {salida}\n}}\n")
+    # El subquery declara qué variables externas importa (cláusula de alcance de Neo4j 5).
+    if isinstance(decimales, int):
+        cabecera = f"CALL ({valor}) {{\n  WITH {valor} AS valor, {decimales} AS decimales\n"
+    else:
+        cabecera = (f"CALL ({valor}, {decimales}) {{\n"
+                    f"  WITH {valor} AS valor, {decimales} AS decimales\n")
+    return cabecera + _CUERPO_CUANTIZADOR + f"RETURN q AS {salida}\n}}\n"
+
+
+# ------------------------------------------------------------------------------
+# Mecanismo finito de evaluación de condiciones declaradas en el grafo
+# ------------------------------------------------------------------------------
+# Las etapas del bloque (margen de SM3, estado comercial de SM2 y clasificación final)
+# declaran sus condiciones como datos: `campo` de un mapa de hechos, `operador` finito,
+# operando literal o `CriterioExperto` enlazado, y el grupo de conjunción en `REQUIERE`.
+# Un grupo se cumple con cualquiera de sus condiciones (OR) y la regla con todos sus
+# grupos (AND), como en SM1; una regla sin condiciones se cumple siempre. El mapa de
+# hechos y el operador son el mecanismo; qué campo, qué valor y qué grupo son política.
+#
+# Entrada: la variable `entrada` con `{reglas: [{regla, ...}], hechos: {...}}`.
+# Salida: una fila por regla con `regla`, `datos`, `filas` y `cumplida`.
+_EVALUAR_CONDICIONES = """
+CALL (entrada) {
+  UNWIND entrada.reglas AS candidata
+  WITH candidata, candidata.regla AS regla
+  OPTIONAL MATCH (regla)-[requiere:REQUIERE]->(cond:Condicion)
+  OPTIONAL MATCH (cond)-[:USA_CRITERIO]->(criterio:CriterioExperto)
+  WITH candidata, regla, requiere, cond, criterio,
+       CASE WHEN cond IS NULL THEN null ELSE entrada.hechos[cond.campo] END AS valor
+  WITH candidata, regla, requiere, cond, criterio, valor,
+       CASE WHEN valor IS NULL THEN null
+            WHEN valor IS :: INTEGER OR valor IS :: FLOAT THEN toFloat(valor) END AS numero,
+       CASE WHEN cond.valor IS NOT NULL AND (cond.valor IS :: INTEGER OR cond.valor IS :: FLOAT)
+            THEN toFloat(cond.valor)
+            WHEN cond.valor IS NOT NULL THEN cond.valor END AS literal,
+       CASE WHEN criterio.valor IS NOT NULL AND
+                 (criterio.valor IS :: INTEGER OR criterio.valor IS :: FLOAT)
+            THEN toFloat(criterio.valor) END AS operando
+  WITH candidata, regla, requiere, cond, criterio, valor, numero,
+       CASE WHEN cond IS NULL THEN null
+            WHEN cond.operador = 'ausente' THEN valor IS NULL
+            WHEN cond.operador = 'presente' THEN valor IS NOT NULL
+            WHEN cond.operador = '=' THEN valor IS NOT NULL AND valor = cond.valor
+            WHEN cond.operador = '<' THEN coalesce(numero < coalesce(literal, operando), false)
+            WHEN cond.operador = '>=' THEN coalesce(numero >= coalesce(literal, operando), false)
+            END AS cumplida
+  WITH regla, head(collect(candidata)) AS datos,
+       collect(CASE WHEN cond IS NULL THEN null ELSE
+                 {grupo: requiere.grupo, cumplida: cumplida, campo: cond.campo,
+                  criterio: criterio} END) AS crudos
+  WITH regla, datos, [f IN crudos WHERE f IS NOT NULL] AS filas
+  WITH regla, datos, filas, [f IN filas | f.grupo] AS grupos
+  RETURN regla, datos, datos.orden AS orden, filas,
+         all(g IN grupos WHERE any(f IN filas WHERE f.grupo = g AND f.cumplida)) AS cumplida
+}
+"""
 
 
 # ------------------------------------------------------------------------------
@@ -129,22 +191,50 @@ def _cuantizar(valor: str, decimales: int, salida: str) -> str:
 # ------------------------------------------------------------------------------
 # Los umbrales, márgenes y primas se leen de :CriterioExperto dentro de la consulta: el
 # adapter Python nunca recibe un criterio para decidir, solo lo devuelve como procedencia.
+# La política del margen (pasos, condiciones, exclusión y operación de cada efecto) y la
+# precisión de cada cuantización se leen de la etapa (`VersionPoliticas`, `Regla`,
+# `Condicion` y `PasoCalculo`): cambiar esos datos cambia el resultado sin editar Python.
 # Un VMA igual a cero no se evalúa (la política anterior dividía por cero); se informa con
 # el código `division_por_cero` y el adapter reproduce la misma excepción observable.
 CONSULTA_CRISP = """
 // SM3 — política crisp, aritmética y cuantización decimal resueltas en el grafo.
 WITH toFloat($precio) AS precio, toFloat($costo_rep) AS costo, toFloat($vma) AS vma,
      toFloat($n_interv) AS n_interv, $riesgo AS riesgo, $demanda AS demanda
-MATCH (cmb:CriterioExperto {nombre: 'margen_base'})
-MATCH (cal:CriterioExperto {nombre: 'margen_alta_liquidez'})
-MATCH (cra:CriterioExperto {nombre: 'margen_riesgo_alto'})
-MATCH (cum:CriterioExperto {nombre: 'umbral_intervenciones'})
-MATCH (cpf:CriterioExperto {nombre: 'prima_fallas'})
-WITH cmb, cal, cra, cum, cpf, precio, costo, vma, n_interv, riesgo, demanda,
-     vma = 0.0 AS division_por_cero,
+// Política de cálculo (I7): qué resultado se cuantiza, con qué precisión y cuál es el
+// límite no negativo de la contraoferta son datos del grafo. La expresión aritmética de
+// cada paso y el algoritmo IEEE del cuantizador siguen siendo mecanismo fijo.
+CALL () {
+  OPTIONAL MATCH (vp:VersionPoliticas {etapa:'SM3-calculo', activa:true})
+  WITH collect(DISTINCT vp) AS hallados
+  WITH size(hallados) AS n, CASE WHEN size(hallados) = 1 THEN hallados[0] END AS vp
+  OPTIONAL MATCH (vp)-[:INCLUYE]->(paso:PasoCalculo)
+  WITH n, vp, collect(DISTINCT paso) AS crudos
+  WITH n, [p IN crudos WHERE p IS NOT NULL] AS pasos, coalesce(vp.ids_requeridos, []) AS requeridos
+  WITH n, pasos, requeridos,
+       [d IN ['margen_neto', 'ratio_reparacion', 'contraoferta', 'descuento', 'brecha']
+        WHERE size([p IN pasos WHERE p.destino = d]) <> 1] AS destinos,
+       [p IN pasos WHERE NOT p.decimales IN [1, 2, -3]] AS precisiones,
+       [i IN requeridos WHERE NOT any(p IN pasos WHERE p.id = i)] AS faltantes,
+       [p IN pasos WHERE p.destino = 'contraoferta' AND
+        NOT (p.limite_inferior_ars IS :: INTEGER OR p.limite_inferior_ars IS :: FLOAT)] AS limites
+  RETURN pasos,
+    CASE WHEN n = 1 AND size(destinos) = 0 AND size(precisiones) = 0 AND size(faltantes) = 0
+              AND size(limites) = 0 AND size(pasos) = size(requeridos)
+         THEN [] ELSE ['configuración de cálculo de SM3: manifiesto, pasos, destino o '
+                    + 'precisión de cuantización no válidos'] END AS problemas_calculo
+}
+WITH precio, costo, vma, n_interv, riesgo, demanda, problemas_calculo,
+     head([p IN pasos WHERE p.destino = 'margen_neto']).decimales AS d_margen_neto,
+     head([p IN pasos WHERE p.destino = 'ratio_reparacion']).decimales AS d_ratio,
+     head([p IN pasos WHERE p.destino = 'contraoferta']).decimales AS d_contraoferta,
+     head([p IN pasos WHERE p.destino = 'contraoferta']).limite_inferior_ars AS contraoferta_minima,
+     head([p IN pasos WHERE p.destino = 'descuento']).decimales AS d_descuento,
+     head([p IN pasos WHERE p.destino = 'brecha']).decimales AS d_brecha
+WHERE size(problemas_calculo) = 0
+WITH *, vma = 0.0 AS division_por_cero,
      CASE WHEN vma = 0.0 THEN null ELSE 100.0 * (vma - precio - costo) / vma END AS margen_bruto,
      CASE WHEN vma > 0 THEN costo / vma ELSE 0.0 END AS ratio_bruto
-""" + _cuantizar("margen_bruto", 1, "margen_neto") + _cuantizar("ratio_bruto", 2, "ratio_reparacion") + """
+""" + _cuantizar("margen_bruto", "d_margen_neto", "margen_neto") + _cuantizar("ratio_bruto", "d_ratio", "ratio_reparacion") + """
 // R3.7: el campo, el comparador y el criterio salen de la Regla existente y de su vínculo
 // USA_CRITERIO. Configuración ausente/ambigua/inválida no produce fila (error explícito).
 MATCH (r37:Regla {id:'R3.7'})
@@ -166,51 +256,124 @@ WHERE r38.filtro_riesgo IS NOT NULL AND r38.filtro_demanda IS NOT NULL
 WITH *, CASE WHEN r37.filtro_comparador = '>' AND ratio_reparacion > toFloat(ce37.valor) THEN 'R3.7'
              WHEN r37.filtro_comparador = '<' AND ratio_reparacion < toFloat(ce37.valor) THEN 'R3.7'
              WHEN riesgo = r38.filtro_riesgo AND demanda = r38.filtro_demanda THEN 'R3.8' END AS regla_descarte
-// Margen requerido: paso 0 (base), paso 1 (R3.4 o R3.5, excluyentes), paso 2 (R3.6).
-WITH *, CASE WHEN regla_descarte IS NOT NULL THEN null
-             WHEN demanda = 'Alta' AND riesgo = 'Bajo' THEN toFloat(cal.valor)
-             WHEN riesgo = 'Alto' THEN CASE WHEN toFloat(cra.valor) > toFloat(cmb.valor) THEN toFloat(cra.valor) ELSE toFloat(cmb.valor) END
-             ELSE toFloat(cmb.valor) END AS margen_paso1
-WITH *, CASE WHEN margen_paso1 IS NULL THEN null
-             WHEN n_interv >= toFloat(cum.valor) THEN margen_paso1 + toFloat(cpf.valor)
-             ELSE margen_paso1 END AS margen_req
+// Margen requerido: el manifiesto de la etapa, las reglas, sus condiciones (con su grupo),
+// la exclusión, el destino y la operación de cada efecto son datos del grafo. La
+// combinación asignar / máximo / sumar y el comparador son mecanismo finito.
+CALL () {
+  OPTIONAL MATCH (vp:VersionPoliticas {etapa:'SM3-margen', activa:true})
+  WITH collect(DISTINCT vp) AS hallados
+  WITH size(hallados) AS n, CASE WHEN size(hallados) = 1 THEN hallados[0] END AS vp
+  OPTIONAL MATCH (vp)-[:INCLUYE]->(miembro)
+  WITH n, vp, collect(DISTINCT miembro) AS crudos
+  WITH n, vp, [m IN crudos WHERE m IS NOT NULL] AS miembros, coalesce(vp.ids_requeridos, []) AS requeridos
+  OPTIONAL MATCH (vp)-[:INCLUYE]->(rm:Regla)
+  OPTIONAL MATCH (rm)-[:USA_CRITERIO]->(ce:CriterioExperto)
+  WITH n, miembros, requeridos, rm, collect(DISTINCT ce) AS criterios
+  ORDER BY rm.prioridad_inferencia
+  WITH n, miembros, requeridos,
+       collect(CASE WHEN rm IS NULL THEN null ELSE
+                 {regla: rm, orden: rm.prioridad_inferencia, destino: rm.efecto_destino,
+                  operacion: rm.efecto_operacion, rol: rm.rol, exclusion: rm.grupo_exclusion,
+                  traza: rm.traza_texto, criterios: criterios} END) AS crudos
+  WITH n, miembros, requeridos, [c IN crudos WHERE c IS NOT NULL] AS reglas
+  WITH n, miembros, requeridos, reglas,
+       [i IN requeridos WHERE NOT any(m IN miembros WHERE m.id = i)] AS faltantes,
+       [m IN miembros WHERE NOT m.id IN requeridos] AS ajenos,
+       [r IN reglas WHERE r.orden IS NULL OR NOT r.orden IS :: INTEGER] AS sin_orden,
+       [r IN reglas WHERE NOT coalesce(r.operacion, '') IN ['asignar', 'maximo', 'sumar']] AS operaciones,
+       [r IN reglas WHERE NOT coalesce(r.destino, '') IN ['margen_paso1', 'margen_req']] AS destinos,
+       [i IN range(0, size(requeridos) - 1)
+        WHERE i > 0 AND any(j IN range(0, i - 1) WHERE requeridos[j] = requeridos[i])] AS repetidos
+  WITH n, reglas, size(faltantes) + size(ajenos) + size(sin_orden) + size(operaciones)
+       + size(destinos) + size(repetidos) AS errores,
+       size(reglas) AS incluidas, size(requeridos) AS declaradas
+  RETURN reglas,
+    CASE WHEN n = 1 AND errores = 0 AND incluidas > 0 AND incluidas = declaradas
+         THEN [] ELSE ['configuración del margen de SM3: manifiesto de etapa, reglas incluidas, '
+                    + 'orden, destino u operación no válidos'] END AS problemas_margen
+}
+WITH *, {reglas: reglas, hechos: {riesgo: riesgo, demanda: demanda, n_interv: n_interv}} AS entrada
+""" + _EVALUAR_CONDICIONES + """
+WITH * ORDER BY orden
+// Se agrega una fila por regla evaluada, en el orden de prioridad declarado; la lista
+// explícita evita arrastrar los candidatos.
+WITH precio, costo, vma, n_interv, riesgo, demanda, problemas_calculo,
+     d_margen_neto, d_ratio, d_contraoferta, contraoferta_minima, d_descuento, d_brecha,
+     division_por_cero, margen_bruto, ratio_bruto, margen_neto, ratio_reparacion,
+     ce37, r38, regla_descarte, problemas_margen,
+     collect({regla: regla, datos: datos, filas: filas, cumplida: cumplida,
+              efectos: [c IN datos.criterios
+                         WHERE NOT any(f IN filas
+                                       WHERE f.criterio IS NOT NULL AND f.criterio = c)]})
+        AS evaluadas_margen
+WITH *, [e IN evaluadas_margen WHERE e.cumplida] AS aplicables_margen,
+     [e IN evaluadas_margen WHERE size(e.efectos) <> 1] AS efecto_ambiguo,
+     [e IN evaluadas_margen
+      WHERE any(f IN e.filas WHERE NOT f.campo IN ['riesgo', 'demanda', 'n_interv'])] AS campos_ajenos
+WITH *, [e IN aplicables_margen WHERE e.datos.exclusion IS NOT NULL] AS excluyentes
+WITH *, [e IN excluyentes WHERE any(o IN excluyentes WHERE o.regla.id <> e.regla.id
+                                     AND o.datos.exclusion = e.datos.exclusion)] AS conflictos_margen,
+     [e IN aplicables_margen
+      WHERE NOT (e.efectos[0].valor IS :: INTEGER OR e.efectos[0].valor IS :: FLOAT)] AS valores_invalidos
+WITH *, [e IN aplicables_margen WHERE e.datos.destino = 'margen_paso1'] AS pasos1,
+     [e IN aplicables_margen WHERE e.datos.destino = 'margen_req'] AS pasos_req,
+     CASE WHEN size(problemas_margen) = 0 AND size(efecto_ambiguo) = 0 AND size(campos_ajenos) = 0
+              AND size(conflictos_margen) = 0 AND size(valores_invalidos) = 0
+          THEN [] ELSE ['configuración del margen de SM3: efectos, criterios, hechos, valores '
+                     + 'o exclusión no válidos'] END AS problemas_margen_total
+WHERE size(problemas_margen_total) = 0
+// Paso 0 y paso 1 (R3.4 o R3.5, excluyentes entre sí), en orden de prioridad declarado.
+WITH *, reduce(acc = null, e IN pasos1 |
+       CASE e.datos.operacion
+         WHEN 'asignar' THEN e.efectos[0].valor * 1.0
+         WHEN 'maximo' THEN CASE WHEN acc IS NULL THEN e.efectos[0].valor * 1.0
+                                 WHEN e.efectos[0].valor * 1.0 > acc THEN e.efectos[0].valor * 1.0
+                                 ELSE acc END
+         WHEN 'sumar' THEN acc + e.efectos[0].valor * 1.0 END) AS margen_paso1_datos
+WITH *, CASE WHEN regla_descarte IS NOT NULL THEN null ELSE margen_paso1_datos END AS margen_paso1
+// Paso 2 (R3.6): se combina sobre el margen del paso anterior según la operación declarada.
+WITH *, CASE WHEN margen_paso1 IS NULL THEN null ELSE
+       reduce(acc = margen_paso1, e IN pasos_req |
+         CASE e.datos.operacion
+           WHEN 'asignar' THEN e.efectos[0].valor * 1.0
+           WHEN 'maximo' THEN CASE WHEN e.efectos[0].valor * 1.0 > acc THEN e.efectos[0].valor * 1.0
+                                   ELSE acc END
+           WHEN 'sumar' THEN acc + e.efectos[0].valor * 1.0 END) END AS margen_req
 // Contraoferta: VMA − costo − margen requerido, redondeada a miles.
 WITH *, CASE WHEN margen_req IS NULL THEN null
              ELSE vma - costo - vma * margen_req / 100.0 END AS contraoferta_bruta
-""" + _cuantizar("contraoferta_bruta", -3, "contraoferta_redondeada") + """
-// Nunca negativa: un redondeo por debajo de cero se informa como cero.
+""" + _cuantizar("contraoferta_bruta", "d_contraoferta", "contraoferta_redondeada") + """
+// Nunca por debajo del límite que declara el paso de cálculo (hoy cero): el redondeo no
+// convierte la oferta en negativa.
 WITH *, CASE WHEN contraoferta_bruta IS NULL THEN null
-             WHEN contraoferta_redondeada > 0 THEN contraoferta_redondeada
-             ELSE 0.0 END AS contraoferta
+             WHEN contraoferta_redondeada > contraoferta_minima THEN contraoferta_redondeada
+             ELSE contraoferta_minima END AS contraoferta
 // Descuento a pedir sobre el precio publicado: solo tiene sentido si la contraoferta es menor.
 WITH *, CASE WHEN contraoferta IS NULL THEN null
              WHEN contraoferta < precio THEN 100.0 * (precio - contraoferta) / precio
              ELSE null END AS descuento_bruto,
        CASE WHEN margen_req IS NULL THEN null ELSE margen_neto - margen_req END AS brecha_bruta
-""" + _cuantizar("descuento_bruto", 1, "descuento_cuantizado") + _cuantizar("brecha_bruta", 1, "brecha") + """
+""" + _cuantizar("descuento_bruto", "d_descuento", "descuento_cuantizado") + _cuantizar("brecha_bruta", "d_brecha", "brecha") + """
 WITH *, CASE WHEN contraoferta IS NULL THEN null
              WHEN descuento_cuantizado IS NULL THEN 0.0
              ELSE descuento_cuantizado END AS descuento
-// Procedencia: los criterios que usó efectivamente la rama aplicada, en su orden de lectura.
+// Procedencia: los criterios que usó efectivamente la rama aplicada, en su orden de lectura
+// (base del margen, paso 1 aplicado, umbrales de la etapa y prima del paso 2 si se aplicó).
+WITH *, [e IN aplicables_margen WHERE e.datos.destino = 'margen_paso1' AND e.datos.rol = 'base'
+         | e.efectos[0]] AS criterios_base,
+     [e IN aplicables_margen WHERE e.datos.destino = 'margen_paso1'
+                               AND coalesce(e.datos.rol, '') <> 'base' | e.efectos[0]] AS criterios_paso1,
+     reduce(acc = [], grupo IN [e IN evaluadas_margen WHERE e.datos.destino = 'margen_req' | e.filas] |
+            acc + [f IN grupo WHERE f.criterio IS NOT NULL | f.criterio]) AS criterios_umbral,
+     [e IN aplicables_margen WHERE e.datos.destino = 'margen_req' | e.efectos[0]] AS criterios_requerido
 WITH *, CASE WHEN regla_descarte IS NOT NULL THEN [ce37]
-             ELSE [ce37, cmb]
-                  + CASE WHEN demanda = 'Alta' AND riesgo = 'Bajo' THEN [cal]
-                         WHEN riesgo = 'Alto' THEN [cra] ELSE [] END
-                  + [cum]
-                  + CASE WHEN n_interv >= toFloat(cum.valor) THEN [cpf] ELSE [] END
+             ELSE [ce37] + criterios_base + criterios_paso1 + criterios_umbral + criterios_requerido
         END AS criterios
-// Traza: el texto de cada regla aplicada, tal como se informa en el dictamen.
+// Traza: el texto de cada regla aplicada viene de la Regla, en orden de prioridad.
 WITH *, CASE WHEN regla_descarte = 'R3.7' THEN ['R3.7: costo / VMA > CE ratio_reparacion_max → DescartarPorRiesgo']
              WHEN regla_descarte = 'R3.8'
              THEN ['R3.8: riesgo ' + r38.filtro_riesgo + ' y demanda ' + r38.filtro_demanda + ' → DescartarPorRiesgo']
-             ELSE [] + CASE WHEN demanda = 'Alta' AND riesgo = 'Bajo'
-                            THEN ['R3.4: demanda Alta y riesgo Bajo → margen requerido = CE margen_alta_liquidez']
-                            WHEN riesgo = 'Alto'
-                            THEN ['R3.5: riesgo Alto → margen requerido = máx(margen, CE margen_riesgo_alto)']
-                            ELSE [] END
-                  + CASE WHEN n_interv >= toFloat(cum.valor)
-                         THEN ['R3.6: intervenciones ≥ CE umbral_intervenciones → + CE prima_fallas']
-                         ELSE [] END
+             ELSE [e IN aplicables_margen WHERE e.datos.traza IS NOT NULL | e.datos.traza]
         END AS reglas_activadas
 RETURN CASE WHEN regla_descarte IS NULL THEN null ELSE 'DescartarPorRiesgo' END AS decision,
        regla_descarte AS regla,
