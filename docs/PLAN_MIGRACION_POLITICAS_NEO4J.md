@@ -1,6 +1,6 @@
 # Actualizar el grafo de EvalTIC para representar sus políticas
 
-**Plan aprobado; implementación iniciada por P0.** Seguimiento: [migracion-politicas-neo4j.md](../odd/tasks/migracion-politicas-neo4j.md). Completar el modelo existente con las condiciones,
+**Bloque práctico implementado y verificado una vez en la base aislada; P6/original pendiente.** Seguimiento: [migracion-politicas-neo4j.md](../odd/tasks/migracion-politicas-neo4j.md). Completar el modelo existente con las condiciones,
 consecuencias y políticas que hoy están incrustadas en consultas del código. No reemplazar el
 modelo, recalibrar el conocimiento ni cambiar las decisiones que ya produce correctamente.
 

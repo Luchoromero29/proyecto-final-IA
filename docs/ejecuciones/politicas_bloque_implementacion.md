@@ -150,6 +150,8 @@ agregan comprobaciones funcionales por cada commit local.
 - La **cuantización de RIE** (centroide crudo → `round` a 4 → IEEE a 2 → DEM) conserva su
   precisión literal en la consulta difusa: representarla exigiría otra etapa de cálculo y no se
   agregó. La ruta y el orden binario se preservan tal cual.
+- Las prioridades de origen de año/W11/RAM se conservan en la consulta; no se declaran
+  representadas por la nueva configuración de R2.4 (que sólo aporta activación y familia).
 - **Procedencia de la valuación** (`criterios_usados`): la lista de criterios aplicados se deriva
   de hechos que ya resuelve la consulta (estado tasado, origen del año, upgrade). Representar la
   correspondencia hecho→criterio como datos sería un agregado decorativo, así que no se hizo; el
