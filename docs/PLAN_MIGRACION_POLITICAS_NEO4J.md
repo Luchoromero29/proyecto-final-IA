@@ -8,6 +8,23 @@ Base de código examinada: `80654c9`, rama `mejoras/b2-diagnostico-neo4j`. El in
 archivos versionados, no de una inspección nueva de la base original. B2 se reabre por representación
 del conocimiento; sus pruebas funcionales y commits anteriores se conservan como referencia.
 
+## Ejecución vigente: un bloque, una comprobación final
+
+El último pedido sustituye la secuencia de cierre y comprobación por cada regla/corte:
+
+> Perfecto, quiero un enfoque simple. Quiero que hagamos todo un bloque primero, sin exdernos y solo al final 1 verificacion, no mas.
+> Sin sobreingenieria ni sobredimensionar las cosas. Ajusta el plan, dejalo actualizado y continua con la migracion
+
+- Primero implementar conjuntamente lo pendiente de SM1, SM3, SM2 y clasificación, reutilizando el modelo actual.
+- Preparar las pruebas durante la implementación, **sin ejecutarlas ni lanzar verificadores intermedios**.
+- Al terminar, **una única verificación funcional consolidada e independiente**, proporcional al cambio; no suite200, matrices ni una segunda corrida del escritor.
+- Si esa ejecución falla, registrar y detener; no repetir automáticamente.
+- La integridad transaccional al aplicar datos se conserva, sin convertirla en más rondas funcionales.
+- No ampliar a B3–B5, modificar el fallback de caída de Neo4j, crear motores/infraestructura ni aplicar sobre la original de sólo lectura. Esas fronteras se declaran, no se resuelven por sorpresa.
+- Los61casos originales permanecen pendientes; no son otra corrida automática ni una prueba ya acreditada.
+
+Las tablas siguientes conservan el inventario técnico y sus criterios; no son gates de verificación intermedia. Rige S9 del seguimiento para el calendario actual.
+
 ## 1. Decisión y límites
 
 El pedido es una **actualización incremental**, no otro sistema experto:
@@ -108,10 +125,11 @@ estructurada. Su explicación debe mantenerse consistente con los datos realment
 
 ## 5. Secuencia de implementación propuesta
 
-Cada corte incluye sus datos, consumidor, pruebas y documentación. Se completa y verifica antes
-del siguiente; no se cargan todas las políticas para luego reescribir la aplicación de una vez.
+El bloque reúne datos, consumidores, pruebas preparadas y documentación mínima. Se implementa
+completo antes de una única comprobación final; no se verifica cada fila ni cada regla al avanzar.
+Las filas P0–P6 identifican áreas y criterios, no rondas adicionales de verificación.
 
-| Paso | Entrega acotada | Condición para avanzar |
+| Paso | Área de implementación | Criterio para la comprobación final |
 | --- | --- | --- |
 | P0 — contrato e inventario final | Confirmar el esquema del entorno aislado por vía permitida; matriz I1–I14 con IDs, campos, comparadores, orden, consecuencias, fórmulas, procedencia y errores. Resolver representación mínima y alcance de cada archivo. Contrastar el original antes de P6, sin bloquear la planificación por su acceso pendiente. | Modelo incremental documentado; ninguna condición sin destino ni agregado sin justificación. Captura de referencia pública con configuración fijada. |
 | P1 — correspondencia comercial | Agregar a los tres conjuntos `Conveniencia.*` el resultado y la habilitación de contraoferta; adaptar sólo su lectura. | Cambiar esa correspondencia en el grafo aislado cambia la salida pública sin editar Python; paridad con los valores originales. |
