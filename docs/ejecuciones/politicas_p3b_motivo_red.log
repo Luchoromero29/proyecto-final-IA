@@ -1,0 +1,91 @@
+setUpModule (test_politicas_sm3_filtro_neo4j) ... ERROR
+
+======================================================================
+ERROR: setUpModule (test_politicas_sm3_filtro_neo4j)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_async_compat/network/_bolt_socket.py", line 580, in _connect_secure
+    s.connect(resolved_address)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/io/_bolt/_bolt_socket.py", line 329, in connect
+    s = cls._connect_secure(
+        resolved_address,
+    ...<3 lines>...
+        ssl_context,
+    )
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_async_compat/network/_bolt_socket.py", line 590, in _connect_secure
+    raise ServiceUnavailable(
+    ...<2 lines>...
+    ) from error
+neo4j.exceptions.ServiceUnavailable: Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 17687)) (reason [Errno 111] Connection refused)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_sm3_neo4j.py", line 82, in setUpModule
+    marcador = sesion.run("MATCH (e:EntornoPruebas {id: $id}) RETURN e.id AS id",
+               ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                          id=MARCADOR).single()
+                          ^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/work/session.py", line 320, in run
+    self._connect(self._config.default_access_mode)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/work/session.py", line 125, in _connect
+    super()._connect(
+    ~~~~~~~~~~~~~~~~^
+        access_mode, auth=self._config.auth, **acquire_kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/work/workspace.py", line 181, in _connect
+    self._connection = self._pool.acquire(**acquire_kwargs_)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/io/_pool.py", line 771, in acquire
+    return self._acquire(
+           ~~~~~~~~~~~~~^
+        self.address, auth, deadline, liveness_check_timeout, unprepared
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/io/_pool.py", line 552, in _acquire
+    return connection_creator()
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/io/_pool.py", line 361, in connection_creator
+    connection = self.opener(
+        address, auth or self.pool_config.auth, deadline
+    )
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/io/_pool.py", line 735, in opener
+    return Bolt.open(
+           ~~~~~~~~~^
+        addr,
+        ^^^^^
+    ...<3 lines>...
+        pool_config=pool_config,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/io/_bolt/_base.py", line 340, in open
+    s, protocol_version = BoltSocket.connect(
+                          ~~~~~~~~~~~~~~~~~~^
+        address,
+        ^^^^^^^^
+    ...<4 lines>...
+        keep_alive=pool_config.keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/alvaro/Universidad/IA/Proyecto/.venv/lib/python3.14/site-packages/neo4j/_sync/io/_bolt/_bolt_socket.py", line 380, in connect
+    raise ServiceUnavailable(
+    ...<2 lines>...
+    ) from errors[0]
+neo4j.exceptions.ServiceUnavailable: Couldn't connect to 127.0.0.1:17687 (resolved to ('127.0.0.1:17687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 17687)) (reason [Errno 111] Connection refused)
+
+----------------------------------------------------------------------
+Ran 0 tests in 1.688s
+
+FAILED (errors=1)

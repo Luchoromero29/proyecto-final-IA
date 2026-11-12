@@ -153,10 +153,19 @@ WITH *, CASE WHEN size(criterios37) = 1 AND r37.filtro_campo = 'ratio_reparacion
               AND r37.filtro_comparador IN ['>', '<']
              THEN criterios37[0] END AS ce37
 WHERE ce37 IS NOT NULL AND ce37.valor IS NOT NULL
+// R3.8: las categorías de riesgo y de demanda que disparan el descarte salen de la Regla
+// existente y se validan contra los conjuntos que el grafo declara para cada variable difusa.
+// Configuración ausente, ambigua o inválida no produce fila (mismo error explícito que R3.7).
+MATCH (r38:Regla {id:'R3.8'})
+WHERE r38.filtro_riesgo IS NOT NULL AND r38.filtro_demanda IS NOT NULL
+  AND EXISTS { MATCH (:VariableDifusa {nombre:'Riesgo_Obsolescencia'})-[:TIENE_CONJUNTO]->
+                     (:ConjuntoDifuso {etiqueta: r38.filtro_riesgo}) }
+  AND EXISTS { MATCH (:VariableDifusa {nombre:'Demanda_Comercial'})-[:TIENE_CONJUNTO]->
+                     (:ConjuntoDifuso {etiqueta: r38.filtro_demanda}) }
 // R3.7 y luego R3.8: gana el primer filtro crisp que se cumple.
 WITH *, CASE WHEN r37.filtro_comparador = '>' AND ratio_reparacion > toFloat(ce37.valor) THEN 'R3.7'
              WHEN r37.filtro_comparador = '<' AND ratio_reparacion < toFloat(ce37.valor) THEN 'R3.7'
-             WHEN riesgo = 'Alto' AND demanda = 'Baja' THEN 'R3.8' END AS regla_descarte
+             WHEN riesgo = r38.filtro_riesgo AND demanda = r38.filtro_demanda THEN 'R3.8' END AS regla_descarte
 // Margen requerido: paso 0 (base), paso 1 (R3.4 o R3.5, excluyentes), paso 2 (R3.6).
 WITH *, CASE WHEN regla_descarte IS NOT NULL THEN null
              WHEN demanda = 'Alta' AND riesgo = 'Bajo' THEN toFloat(cal.valor)
@@ -192,7 +201,8 @@ WITH *, CASE WHEN regla_descarte IS NOT NULL THEN [ce37]
         END AS criterios
 // Traza: el texto de cada regla aplicada, tal como se informa en el dictamen.
 WITH *, CASE WHEN regla_descarte = 'R3.7' THEN ['R3.7: costo / VMA > CE ratio_reparacion_max → DescartarPorRiesgo']
-             WHEN regla_descarte = 'R3.8' THEN ['R3.8: riesgo Alto y demanda Baja → DescartarPorRiesgo']
+             WHEN regla_descarte = 'R3.8'
+             THEN ['R3.8: riesgo ' + r38.filtro_riesgo + ' y demanda ' + r38.filtro_demanda + ' → DescartarPorRiesgo']
              ELSE [] + CASE WHEN demanda = 'Alta' AND riesgo = 'Bajo'
                             THEN ['R3.4: demanda Alta y riesgo Bajo → margen requerido = CE margen_alta_liquidez']
                             WHEN riesgo = 'Alto'

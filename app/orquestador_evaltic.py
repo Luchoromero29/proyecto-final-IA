@@ -1280,7 +1280,7 @@ def ejecutar_motor_sm3(precio: float, costo_rep: float, vma: float, n_interv: in
     if crisp["regla"] in ("R3.7", "R3.8"):
         motivo = (f"La reparación (${costo_rep:,.0f}) supera el {crisp['ratio_max']:.0%} del VMA (${vma:,.0f})."
                   if crisp["regla"] == "R3.7"
-                  else "Riesgo de obsolescencia Alto con demanda comercial Baja (inmovilización de capital).")
+                  else f"Riesgo de obsolescencia {riesgo} con demanda comercial {demanda} (inmovilización de capital).")
         return {"decision": crisp["decision"], "regla_aplicada": crisp["regla"],
                 "motivo": motivo, "indicadores": base_ind}
 

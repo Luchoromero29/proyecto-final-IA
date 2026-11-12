@@ -1,0 +1,44 @@
+test_configuracion_invalida_de_r38_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_de_r38_falla_con_el_error_existente) ... 
+  test_configuracion_invalida_de_r38_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_de_r38_falla_con_el_error_existente) (propiedades={'filtro_demanda': 'MuyBaja'}) ... FAIL
+  test_configuracion_invalida_de_r38_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_de_r38_falla_con_el_error_existente) (propiedades={'filtro_riesgo': None}) ... FAIL
+test_configuracion_invalida_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_falla_con_el_error_existente) ... ok
+test_el_comparador_guardado_en_el_grafo_cambia_el_filtro_publico (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_el_comparador_guardado_en_el_grafo_cambia_el_filtro_publico) ... ok
+test_el_criterio_enlazado_es_la_autoridad_del_umbral (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_el_criterio_enlazado_es_la_autoridad_del_umbral) ... ok
+test_las_categorias_guardadas_cambian_el_filtro_publico (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_las_categorias_guardadas_cambian_el_filtro_publico) ... FAIL
+test_politica_por_defecto_conserva_el_umbral_y_la_traza (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_politica_por_defecto_conserva_el_umbral_y_la_traza) ... ok
+test_r37_conserva_la_precedencia_sobre_r38 (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_r37_conserva_la_precedencia_sobre_r38) ... ok
+test_r38_descarta_con_las_categorias_guardadas_en_la_regla (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_r38_descarta_con_las_categorias_guardadas_en_la_regla) ... ok
+test_seed_es_idempotente_y_un_conflicto_no_escribe (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_seed_es_idempotente_y_un_conflicto_no_escribe) ... ok
+test_seed_riesgo_demanda_es_idempotente_y_un_conflicto_no_escribe (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_seed_riesgo_demanda_es_idempotente_y_un_conflicto_no_escribe) ... ok
+
+======================================================================
+FAIL: test_configuracion_invalida_de_r38_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_de_r38_falla_con_el_error_existente) (propiedades={'filtro_demanda': 'MuyBaja'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm3_filtro_neo4j.py", line 133, in test_configuracion_invalida_de_r38_falla_con_el_error_existente
+    self.assertIsNone(self._inferir(0, riesgo="Alto", demanda="Baja"))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'decision': 'DescartarPorRiesgo', 'regla': 'R3.8', 'margen_neto': 60.0, 'ratio_reparacion': 0.0, 'margen_req': None, 'brecha': None, 'descuento': None, 'contraoferta': None, 'ratio_max': 0.5, 'division_por_cero': False, 'reglas_activadas': ['R3.8: riesgo Alto y demanda Baja → DescartarPorRiesgo'], 'criterios': [{'unidad': 'adimensional', 'estado': 'Provisional', 'valor': 0.5, 'id': 'CE-19', 'nombre': 'ratio_reparacion_max', 'version': 'v1'}]} is not None
+
+======================================================================
+FAIL: test_configuracion_invalida_de_r38_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_de_r38_falla_con_el_error_existente) (propiedades={'filtro_riesgo': None})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm3_filtro_neo4j.py", line 133, in test_configuracion_invalida_de_r38_falla_con_el_error_existente
+    self.assertIsNone(self._inferir(0, riesgo="Alto", demanda="Baja"))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'decision': 'DescartarPorRiesgo', 'regla': 'R3.8', 'margen_neto': 60.0, 'ratio_reparacion': 0.0, 'margen_req': None, 'brecha': None, 'descuento': None, 'contraoferta': None, 'ratio_max': 0.5, 'division_por_cero': False, 'reglas_activadas': ['R3.8: riesgo Alto y demanda Baja → DescartarPorRiesgo'], 'criterios': [{'unidad': 'adimensional', 'estado': 'Provisional', 'valor': 0.5, 'id': 'CE-19', 'nombre': 'ratio_reparacion_max', 'version': 'v1'}]} is not None
+
+======================================================================
+FAIL: test_las_categorias_guardadas_cambian_el_filtro_publico (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_las_categorias_guardadas_cambian_el_filtro_publico)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm3_filtro_neo4j.py", line 115, in test_las_categorias_guardadas_cambian_el_filtro_publico
+    self.assertIsNone(self._inferir(0, riesgo="Alto", demanda="Baja")["regla"])
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'R3.8' is not None
+
+----------------------------------------------------------------------
+Ran 10 tests in 1.841s
+
+FAILED (failures=3)

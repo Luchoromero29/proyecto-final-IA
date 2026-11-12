@@ -18,6 +18,20 @@ conserva el error existente); no decide nada en Python. El artefacto
 y activado **sólo en el scratch marcado**: dos propiedades nuevas, primera aplicación 1 y segunda 0; grafo protegido validado antes del commit (`ejecuciones/politicas_p3a_activacion.log`). La base original sigue pendiente de P6. No se
 migraron las consecuencias de R3.7 ni el resto de la política financiera.
 
+**Alcance P3b (categorías de R3.8).** Las dos categorías que disparan R3.8 ya se leen como
+datos: la `Regla` `R3.8` guarda `filtro_riesgo` y `filtro_demanda` y `CONSULTA_CRISP` compara
+la entrada con ellas (igualdad de ambas y conjunción finita, en ese orden después de R3.7).
+La categoría no se inventa: se valida contra los conjuntos que el grafo ya declara en
+`(:VariableDifusa)-[:TIENE_CONJUNTO]->(:ConjuntoDifuso)`, y una configuración ausente o
+inválida no devuelve fila (mismo error existente). La traza y el motivo del dictamen
+interpolan las categorías leídas (una sola frase fija), con ambos textos por defecto
+idénticos a los anteriores. El artefacto
+`cypher/Grupo_20_PG3_politicas_sm3_riesgo_demanda.cypher` se probó en transacciones
+revertidas y se activó **sólo en el scratch marcado**: primera aplicación 1, segunda 0,
+únicamente dos propiedades nuevas y resto del grafo/restricciones idénticos antes del commit
+(`ejecuciones/politicas_p3b_activacion.log`). La base original sigue pendiente de P6. No se migraron los márgenes R3.4/R3.5/R3.6, las
+fórmulas, la contraoferta ni la precedencia: R3.8 no se declara completa por sus categorías.
+
 ## Camino rápido
 
 1. Ver qué resuelve el grafo: `app/inferencia_sm3.py` (la cuantización decimal
@@ -42,7 +56,7 @@ migraron las consecuencias de R3.7 ni el resto de la política financiera.
 
 | Consulta | Resuelve | Devuelve además |
 |---|---|---|
-| `CONSULTA_CRISP` | margen neto y ratio de reparación (aritmética + cuantización decimal en el grafo), R3.7 → R3.8 → margen requerido (base → R3.4 o R3.5 → R3.6) → contraoferta → brecha y descuento | decisión y regla de descarte, criterios usados con su procedencia, textos de las reglas activadas en orden, aviso `division_por_cero` |
+| `CONSULTA_CRISP` | margen neto y ratio de reparación (aritmética + cuantización decimal en el grafo), R3.7 → R3.8 → margen requerido (base → R3.4 o R3.5 → R3.6) → contraoferta → brecha y descuento; el campo/comparador de R3.7 y las categorías de R3.8 salen de la `Regla` | decisión y regla de descarte, criterios usados con su procedencia, textos de las reglas activadas en orden, aviso `division_por_cero` |
 | `CONSULTA_DECISION` | lee `resultado_decision` y `contraoferta_habilitada` del ConjuntoDifuso correspondiente; valida cardinalidad y contrato, sin elegir por categoría | decisión y contraoferta sugerida |
 
 Los umbrales, márgenes y primas se leen de `:CriterioExperto` **dentro** de la consulta. La
@@ -54,7 +68,7 @@ la base Mamdani del grafo no se duplica.
 | Regla | Comportamiento que se mantiene |
 |---|---|
 | R3.7 | `round(costo / VMA, 2) > CE ratio_reparacion_max` → `DescartarPorRiesgo`; se evalúa primero |
-| R3.8 | riesgo `Alto` **y** demanda `Baja` → `DescartarPorRiesgo`; sólo se evalúa si R3.7 no disparó |
+| R3.8 | riesgo `Alto` **y** demanda `Baja` → `DescartarPorRiesgo`, con ambas categorías leídas de `Regla('R3.8')` (`filtro_riesgo`/`filtro_demanda`) y validadas contra los conjuntos del grafo; sólo se evalúa si R3.7 no disparó |
 | R3.4 | demanda `Alta` y riesgo `Bajo` → margen requerido = `CE margen_alta_liquidez` |
 | R3.5 | riesgo `Alto` → margen requerido = máximo entre `CE margen_base` y `CE margen_riesgo_alto` (excluyente con R3.4) |
 | R3.6 | intervenciones ≥ `CE umbral_intervenciones` → margen requerido += `CE prima_fallas` |
