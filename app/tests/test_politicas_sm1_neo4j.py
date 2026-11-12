@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-P2a — Las condiciones de las acciones de SM1 y el vínculo de las categorías difusas
-viven en el grafo (Neo4j), no en el código.
+P2a/P2c — Las condiciones de las acciones de SM1, el vínculo de las categorías difusas y el
+estado resultante de las consecuencias de bloqueo viven en el grafo (Neo4j), no en el código.
 
 Cada prueba cambia SÓLO datos de representación (comparador, operando, campo, ámbito,
 grupo o categoría difusa) dentro de una transacción que se revierte siempre, y observa la
@@ -26,6 +26,9 @@ from pathlib import Path
 import test_sm1_neo4j as base
 
 SEMILLA = Path(__file__).resolve().parents[2] / "cypher/Grupo_20_PG3_politicas_sm1_acciones.cypher"
+SEMILLA_ESTADO = Path(__file__).resolve().parents[2] / "cypher/Grupo_20_PG3_politicas_sm1_estado.cypher"
+PERFORADA = "Placa perforada."
+NO_PRENDE = "La notebook no prende."
 BASE_PRUEBAS = "neo4j"
 CARGADOR = "Cargador compatible"
 RAM = "Ampliación de RAM a 8 GB"
@@ -70,6 +73,9 @@ class AccionesRepresentadasTest(base.BaseSm1Test):
         self.addCleanup(self.sesion.close)
         self.tx = self.sesion.begin_transaction()
         self.addCleanup(self.tx.rollback)
+        # Los datos de la etapa se cargan antes del consumidor, dentro de la transacción
+        # que se revierte: la segunda aplicación de este artefacto no cambia nada.
+        self.tx.run(SEMILLA_ESTADO.read_text(encoding="utf-8")).consume()
         self.driver = DriverTransaccion(self.tx)
 
     def _diagnostico(self, texto="", datos=None):
@@ -182,6 +188,44 @@ class AccionesRepresentadasTest(base.BaseSm1Test):
         self.assertFalse(respuesta["compatible"])
         self.assertEqual(0, respuesta["cambios"])
         self.assertTrue(respuesta["errores"])
+        self.assertEqual(antes, self._proyeccion())
+
+    # -- P2c: el estado resultante de las consecuencias de bloqueo es dato ---------
+    def test_el_estado_resultante_del_inviable_lo_declara_la_regla(self):
+        self.assertEqual("Inviable", self._diagnostico(PERFORADA, {})["sm1_tecnico"]["estado"])
+        self.tx.run("MATCH (r:Regla {id:'R1.1'}) SET r.estado_resultante = 'VerificacionPendiente'").consume()
+        self.assertEqual("VerificacionPendiente",
+                         self._diagnostico(PERFORADA, {})["sm1_tecnico"]["estado"])
+
+    def test_el_estado_resultante_del_pendiente_lo_declara_la_regla(self):
+        self.assertEqual("VerificacionPendiente", self._diagnostico(NO_PRENDE, {})["sm1_tecnico"]["estado"])
+        self.tx.run("MATCH (r:Regla {id:'R3.3c'}) SET r.estado_resultante = 'Inviable'").consume()
+        self.assertEqual("Inviable", self._diagnostico(NO_PRENDE, {})["sm1_tecnico"]["estado"])
+
+    def test_el_estado_resultante_ausente_falla_cerrado(self):
+        self.tx.run("MATCH (r:Regla {id:'R1.1'}) REMOVE r.estado_resultante").consume()
+        detalle = self._diagnostico(PERFORADA, {})["sm1_tecnico"]
+        self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+        self.assertIn("no declara un estado resultante válido", detalle.get("error") or "")
+        self.assertEqual([], detalle.get("plan_reparacion") or [])
+
+    def test_el_estado_resultante_invalido_falla_cerrado(self):
+        self.tx.run("MATCH (r:Regla {id:'R3.3c'}) SET r.estado_resultante = 'Aprobado'").consume()
+        detalle = self._diagnostico(NO_PRENDE, {})["sm1_tecnico"]
+        self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+        self.assertIn("no declara un estado resultante válido", detalle.get("error") or "")
+
+    def test_el_estado_resultante_no_se_reescribe_en_la_segunda_aplicacion(self):
+        def aplicar():
+            return dict(self.tx.run(SEMILLA_ESTADO.read_text(encoding="utf-8")).single(strict=True))
+        antes = self._proyeccion()
+        respuesta = aplicar()
+        self.assertEqual((0, []), (respuesta["actualizadas"], respuesta["errores"]))
+        self.assertEqual(antes, self._proyeccion())
+        self.tx.run("MATCH (r:Regla {id:'R1.1'}) SET r.estado_resultante = 'Viable'").consume()
+        antes = self._proyeccion()
+        respuesta = aplicar()
+        self.assertEqual((0, True), (respuesta["actualizadas"], bool(respuesta["errores"])))
         self.assertEqual(antes, self._proyeccion())
 
     # -- Configuración inválida o incompleta: error explícito, nunca plan barato

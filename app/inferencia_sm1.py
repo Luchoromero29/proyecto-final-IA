@@ -190,19 +190,34 @@ WITH reglas, inviables, intervenciones, sin_tratamiento, irreparables, reparacio
      CASE WHEN size(inviables) > 0 THEN 'aviso'
           WHEN size(irreparables) > 0 THEN 'verificacion'
           ELSE null END AS causa_origen
+// Consecuencias de bloqueo: inviable, irreparable o verificación pendiente. El estado
+// resultante lo declara en el grafo la regla que lo aplica (`estado_resultante`), no un
+// literal acá: cambiar ese dato cambia el estado público sin editar este archivo.
+WITH reglas, inviables, intervenciones, sin_tratamiento, irreparables, reparaciones, confirmados,
+     desconocidos, incompletos, sintomas_detectados, pendientes, regla_aplicada, causa, causa_origen,
+     size(inviables) > 0 OR size(irreparables) > 0 OR pendientes > 0 AS decide_grafo
+OPTIONAL MATCH (rp:Regla {id: regla_aplicada})
+WITH reglas, inviables, intervenciones, sin_tratamiento, irreparables, reparaciones, confirmados,
+     desconocidos, incompletos, sintomas_detectados, pendientes, regla_aplicada, causa, causa_origen,
+     rp.estado_resultante AS estado_resultante,
+     CASE WHEN decide_grafo AND NOT coalesce(rp.estado_resultante, '') IN
+                   ['Inviable', 'ConocimientoFaltante', 'VerificacionPendiente', 'Viable']
+          THEN ['configuración de políticas de SM1: la regla ' + coalesce(regla_aplicada, 'sin id') +
+                ' no declara un estado resultante válido'] ELSE [] END AS problemas_estado
 // Estado final: evidencia irreversible, conocimiento faltante, irreparabilidad confirmada,
 // verificación pendiente o viabilidad. La decisión queda en el grafo.
 WITH reglas, inviables, intervenciones, sin_tratamiento, irreparables, reparaciones, confirmados,
      desconocidos, incompletos, sintomas_detectados, pendientes, regla_aplicada, causa, causa_origen,
-     CASE WHEN size(inviables) > 0 THEN 'Inviable'
+     problemas_estado,
+     CASE WHEN size(inviables) > 0 THEN estado_resultante
           WHEN size(desconocidos) > 0 OR size(incompletos) > 0 THEN 'ConocimientoFaltante'
-          WHEN size(irreparables) > 0 THEN 'Inviable'
-          WHEN pendientes > 0 THEN 'VerificacionPendiente'
+          WHEN size(irreparables) > 0 THEN estado_resultante
+          WHEN pendientes > 0 THEN estado_resultante
           ELSE 'Viable' END AS estado
 // Plan único y ordenado, sólo si el estado es viable: reglas estructuradas, intervenciones
 // del aviso y reparaciones confirmadas, sin repetir tarea.
 WITH reglas, desconocidos, incompletos, sintomas_detectados, sin_tratamiento, confirmados,
-     estado, regla_aplicada, causa, causa_origen, pendientes,
+     estado, regla_aplicada, causa, causa_origen, pendientes, problemas_estado,
      CASE WHEN estado = 'Viable' THEN
        // La mano de obra se agrega al final y una sola vez, si hubo intervenciones.
        [r IN reglas WHERE NOT r.requiere_plan]
@@ -225,17 +240,17 @@ CALL (candidatas) {
   RETURN collect(fila) AS ordenadas
 }
 WITH reglas, desconocidos, incompletos, sintomas_detectados, sin_tratamiento, confirmados,
-     estado, regla_aplicada, causa, causa_origen, pendientes, ordenadas,
+     estado, regla_aplicada, causa, causa_origen, pendientes, problemas_estado, ordenadas,
      [m IN reglas WHERE m.requiere_plan] AS mano_de_obra
 WITH desconocidos, incompletos, sintomas_detectados, sin_tratamiento, confirmados,
-     estado, regla_aplicada, causa, causa_origen, pendientes,
+     estado, regla_aplicada, causa, causa_origen, pendientes, problemas_estado,
      CASE WHEN size(ordenadas) = 0 THEN [] ELSE
        [i IN range(0, size(ordenadas) - 1)
         WHERE i = 0 OR none(j IN range(0, i - 1) WHERE ordenadas[j].tarea = ordenadas[i].tarea)
         | ordenadas[i]] END AS unicas,
      mano_de_obra
 WITH desconocidos, incompletos, sintomas_detectados, sin_tratamiento, confirmados,
-     estado, regla_aplicada, causa, causa_origen, pendientes,
+     estado, regla_aplicada, causa, causa_origen, pendientes, problemas_estado,
      CASE WHEN size(unicas) > 0 AND size(mano_de_obra) > 0 THEN unicas + [mano_de_obra[0]] ELSE unicas END AS plan
 CALL () {
   // A.0 Guarda de configuración de la etapa: manifiesto único y completo, condiciones
@@ -380,7 +395,8 @@ CALL () {
   RETURN problemas_manifiesto + problemas_reglas + problemas_duplicados +
          problemas_obligaciones AS configuracion_invalida
 }
-RETURN estado, regla_aplicada, causa, causa_origen, pendientes, configuracion_invalida,
+RETURN estado, regla_aplicada, causa, causa_origen, pendientes,
+       configuracion_invalida + problemas_estado AS configuracion_invalida,
        [f IN plan | {tarea: f.tarea, descripcion_costo: f.descripcion_costo, costo_ars: f.costo_ars,
                      costo_id: f.costo_id, costo_version: f.costo_version, costo_estado: f.costo_estado,
                      regla: f.regla, cuenta_como_intervencion: f.cuenta_como_intervencion,

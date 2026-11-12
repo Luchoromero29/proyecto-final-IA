@@ -131,6 +131,23 @@ separado del anterior. Agrega la representación de las condiciones de las accio
 | `(:Condicion)-[:USA_CRITERIO]->(:CriterioExperto)` | 2 vínculos: `CND-SM1-BAT-CRISP-SALUD`→`CE-01` y `CND-SM1-RAM-ACCION-RAM`→`CE-27`. |
 | `(:ReglaDifusa)-[:OBLIGA {etapa, campo}]->(:CostoReparacion)` | 11 relaciones existentes que reciben su etapa y el hecho de la categoría (`categoria_bat` / `categoria_ter`), sin tocar `categorias` ni `orden`. |
 
+`cypher/Grupo_20_PG3_politicas_sm1_estado.cypher` (P2c) es otro artefacto aditivo e idempotente,
+separado de los anteriores. Agrega la consecuencia de estado de las tres situaciones de bloqueo de
+SM1 sobre las reglas que ya las aplican, sin tocar `estado`, `estado_validacion` ni `version`:
+
+| Propiedad | Para qué |
+|---|---|
+| `(:Regla {id:'R1.1'}).estado_resultante = 'Inviable'` | Estado de la falla física insalvable (aviso o diagnóstico irreparable confirmado). |
+| `(:Regla {id:'R3.3c'}).estado_resultante = 'VerificacionPendiente'` | Estado de la evidencia que exige verificación del operador. |
+
+El vocabulario es el que ya publica el motor (`Viable`, `Inviable`, `VerificacionPendiente`,
+`ConocimientoFaltante`): es contrato de salida, no política experta nueva. La consulta lee esas dos
+propiedades sólo para la regla que aplica y conserva la precedencia del `CASE` (inviable →
+conocimiento faltante → irreparable → pendiente → viable); si la propiedad falta o no es uno de los
+cuatro estados publicados, la configuración se informa como conocimiento faltante, nunca como
+viabilidad. Ni el seed diagnóstico ni P1 ni P2a se modifican, y la segunda aplicación devuelve cero
+cambios.
+
 Ni el seed diagnóstico ni P1 se modifican: el primero vuelve a `SET` sus propias propiedades de
 `Regla`, y las que P2a no usa (`campo`, `valor`, `tarea`, `orden`) siguen protegidas. La segunda
 aplicación del artefacto devuelve cero cambios.
@@ -142,15 +159,17 @@ aplicación del artefacto devuelve cero cambios.
   descripciones positivas explícitas.
 - La política térmica no se recalibró (B5) y las sondas del corpus no se convierten en aceptación.
 - P2a representa **sólo** las condiciones de las acciones y su vínculo con las categorías difusas.
-  Las precedencias de evidencia (P2b) y la selección de estado/plan (P2c) siguen en la consulta;
-  no se declara terminada la migración de SM1.
+  P2c representa **sólo** el estado resultante de R1.1 y R3.3c. Las precedencias de evidencia (P2b),
+  la construcción del plan, la selección de costos, el canal del operador y el resto de la selección
+  de estado siguen en la consulta; los importes se leen del grafo. No se declara terminada SM1.
 - Una configuración de políticas inválida se informa como error de conocimiento con su motivo; no
   hay caché ni plan de respaldo en Python.
 - El corpus y los logs históricos no se modificaron.
 
 ## Checklist
 
-- [ ] La base donde se evalúa tiene cargado `Grupo_20_PG3_diagnostico.cypher` y, con el procedimiento que corresponda a su tipo, `Grupo_20_PG3_politicas_sm1_acciones.cypher` (aparecen `patrones_diagnostico`, `diagnosticos` y el manifiesto `VP-SM1-ACCIONES`).
+- [ ] La base donde se evalúa tiene cargado `Grupo_20_PG3_diagnostico.cypher` y, con el procedimiento que corresponda a su tipo, `Grupo_20_PG3_politicas_sm1_acciones.cypher` (aparecen `patrones_diagnostico`, `diagnosticos` y el manifiesto `VP-SM1-ACCIONES`) y `Grupo_20_PG3_politicas_sm1_estado.cypher` (`estado_resultante` en `R1.1` y `R3.3c`).
+- [ ] La misma base tiene aplicado `Grupo_20_PG3_politicas_bloque.cypher` (manifiestos `VP-SM3-MARGEN`, `VP-SM3-CALCULO`, `VP-SM2-VALUACION`, `VP-SM2-ESTADO`, `VP-SM0-CLASIFICACION`). Sin esa etapa, SM3, la valuación SM2 y la clasificación Firme/Provisional fallan con error explícito en lugar de usar valores del código.
 - [ ] `test_diagnostico_neo4j.py`, `test_sm1_neo4j.py` y `test_politicas_sm1_neo4j.py` pasan contra el Neo4j aislado.
 - [ ] La suite offline completa pasa.
 - [ ] Una publicación con `no prende` queda en `VerificacionPendiente` y su dictamen dice VERIFICAR.
