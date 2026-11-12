@@ -178,3 +178,136 @@ class MargenRequeridoTest(BloqueEnGrafoTest):
                          fila["reglas_activadas"])
 
 
+class ValuacionYEstadoTest(BloqueEnGrafoTest):
+    """La fórmula, R2.4 y la clasificación del estado comercial son datos de la etapa SM2."""
+
+    def test_valuacion_por_defecto_conserva_el_contrato(self):
+        ref = self._valuacion()
+        self.assertEqual("Tasado", ref["estado"])
+        self.assertEqual(0, ref["vma"] % 1000)
+        self.assertGreater(ref["vma"], 0)
+        self.assertEqual("Core i5 10ma gen", ref["procesador"]["nombre"])
+
+    def test_la_escala_de_redondeo_del_vma_es_un_dato(self):
+        antes = self._valuacion()["vma"]
+        self.tx.run("MATCH (r:Regla {id:'SM2-VALUACION'}) "
+                    "SET r.escala_redondeo_ars = 100").consume()
+        despues = self._valuacion()["vma"]
+        self.assertNotEqual(antes, despues)
+        self.assertEqual(0, despues % 100)
+
+    def test_el_descuento_de_negociacion_se_aplica_segun_la_regla(self):
+        antes = self._valuacion()["vma"]
+        self.tx.run("MATCH (r:Regla {id:'SM2-VALUACION'}) "
+                    "SET r.aplica_descuento_negociacion = false").consume()
+        sin_descuento = self._valuacion()["vma"]
+        self.assertGreater(sin_descuento, antes)
+
+    def test_r24_se_activa_desde_la_regla_y_su_falta_deja_pendiente(self):
+        ref = self._valuacion(procesador="i5 13va gen")
+        self.assertEqual("Core i5 12va gen", ref["generacion_anterior"]["nombre"])
+        self.tx.run("MATCH (r:Regla {id:'R2.4'}) SET r.r24_activo = false").consume()
+        sin_r24 = self._valuacion(procesador="i5 13va gen")
+        self.assertIsNone(sin_r24["generacion_anterior"])
+        self.assertEqual(("Verificacion_pendiente", "procesador_sin_muestras"),
+                         (sin_r24["estado"], sin_r24["motivo_clave"]))
+
+    def test_el_estado_resultante_de_cada_regla_es_un_dato(self):
+        self.tx.run("MATCH (r:Regla {id:'R2.4'}) SET r.r24_activo = false").consume()
+        self.tx.run("MATCH (r:Regla {id:'SM2-EST-06'}) "
+                    "SET r.estado_resultante = 'ConocimientoFaltante'").consume()
+        ref = self._valuacion(procesador="i5 13va gen")
+        self.assertEqual(("ConocimientoFaltante", "procesador_sin_muestras"),
+                         (ref["estado"], ref["motivo_clave"]))
+
+    def test_la_prioridad_de_las_reglas_de_estado_es_un_dato(self):
+        self.tx.run("MATCH (r:Regla {id:'R2.4'}) SET r.r24_activo = false").consume()
+        # Sin procesador identificado, EST-01 (prioridad 10) gana a EST-06 (prioridad 60).
+        ref = self._valuacion(procesador=None, modelo="ThinkPad T14")
+        self.assertEqual(("Verificacion_pendiente", "procesador_no_informado"),
+                         (ref["estado"], ref["motivo_clave"]))
+        self.tx.run("MATCH (a:Regla {id:'SM2-EST-01'}), (b:Regla {id:'SM2-EST-06'}) "
+                    "SET a.prioridad_inferencia = 99").consume()
+        ref = self._valuacion(procesador=None, modelo="ThinkPad T14")
+        self.assertEqual("procesador_desconocido", ref["motivo_clave"])
+
+    def test_una_condicion_con_un_hecho_no_declarado_invalida_la_etapa(self):
+        self.tx.run("MATCH (c:Condicion {id:'CND-SM2-EST-02-PROCESADOR'}) "
+                    "SET c.campo = 'procesador_inexistente'").consume()
+        self.assertIsNone(self._valuacion(procesador="xyz 9999").get("estado"))
+        with self._en_la_transaccion():
+            with self.assertRaises(RuntimeError):
+                base.oe.ejecutar_motor_sm2(
+                    {"marca": "Zzz", "modelo": "Zzz"}, {},
+                    "Notebook Zzz i5, 8GB RAM.", base.oe.nueva_traza())
+
+
+class ClasificacionFinalTest(BloqueEnGrafoTest):
+    """Firme/Provisional se clasifica con las reglas y condiciones del grafo."""
+
+    def test_firme_exige_criterios_validados_y_ningun_dato_pendiente(self):
+        self.assertEqual("Firme", self._clasificar(self._traza())["estado_decision"])
+
+    def test_provisional_con_datos_inferidos_o_pendientes(self):
+        estado = self._clasificar(self._traza(datos_pendientes=["memoria del equipo"]))
+        self.assertEqual("Provisional", estado["estado_decision"])
+        self.assertEqual("Provisional",
+                         self._clasificar(self._traza(datos_inferidos=["año estimado"]))[
+                             "estado_decision"])
+
+    def test_un_criterio_sin_validar_vuelve_provisional_la_decision(self):
+        traza = self._traza()
+        traza["criterios_usados"]["margen_base"]["estado"] = "Provisional"
+        estado = self._clasificar(traza)
+        self.assertEqual("Provisional", estado["estado_decision"])
+        self.assertEqual(["margen_base (CE-05 v1)"], estado["criterios_pendientes"])
+
+    def test_el_estado_resultante_de_la_clasificacion_es_un_dato(self):
+        self.tx.run("MATCH (r:Regla {id:'SM0-CLAS-01'}) "
+                    "SET r.estado_resultante = 'Provisional'").consume()
+        self.assertEqual("Provisional", self._clasificar(self._traza())["estado_decision"])
+
+    def test_una_condicion_con_un_hecho_no_declarado_falla_explicitamente(self):
+        self.tx.run("MATCH (c:Condicion {id:'CND-SM0-COSTOS'}) "
+                    "SET c.campo = 'costos_inexistentes'").consume()
+        with self.assertRaises(RuntimeError):
+            self._clasificar(self._traza())
+
+
+class SemillaDelBloqueTest(BloqueEnGrafoTest):
+    """Idempotencia, protección y conflicto atómico del artefacto del bloque."""
+
+    def _proyeccion(self):
+        return [dict(r) for r in self.tx.run(
+            "MATCH (n) WHERE n.id IN ['R3.4', 'R3.5', 'R3.6', 'R2.4', 'SM2-VALUACION', "
+            "'VP-SM3-MARGEN', 'PC-SM3-CONTRATOFERTA', 'CND-SM0-COSTOS'] "
+            "RETURN n.id AS id, properties(n) AS propiedades ORDER BY id")]
+
+    def test_la_segunda_aplicacion_no_cambia_nada(self):
+        antes = self._proyeccion()
+        segunda = self._cargar()
+        self.assertEqual((0, 0, []), (segunda["conflictos"], segunda["actualizadas"],
+                                      segunda["errores"]))
+        self.assertEqual(antes, self._proyeccion())
+
+    def test_un_conflicto_no_escribe_ninguna_propiedad(self):
+        self.tx.run("MATCH (r:Regla {id:'R3.4'}) SET r.efecto_operacion = 'sumar'").consume()
+        antes = self._proyeccion()
+        conflicto = self._cargar()
+        self.assertGreater(conflicto["conflictos"], 0)
+        self.assertEqual(0, conflicto["actualizadas"])
+        self.assertTrue(conflicto["errores"])
+        self.assertEqual(antes, self._proyeccion())
+
+    def test_el_bloque_no_toca_criterios_costos_ni_validaciones(self):
+        antes = [dict(r) for r in self.tx.run(
+            "MATCH (ce:CriterioExperto) RETURN ce.id AS id, properties(ce) AS propiedades "
+            "ORDER BY id")]
+        self._cargar()
+        self.assertEqual(antes, [dict(r) for r in self.tx.run(
+            "MATCH (ce:CriterioExperto) RETURN ce.id AS id, properties(ce) AS propiedades "
+            "ORDER BY id")])
+
+
+if __name__ == "__main__":
+    unittest.main()

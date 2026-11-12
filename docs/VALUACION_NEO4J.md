@@ -124,3 +124,33 @@ siguen siendo provisionales hasta la validación experta.
 
 La ejecución real del corpus de 61 publicaciones y la actualización del grafo de trabajo quedan a
 cargo de la integración; esta unidad no las ejecuta ni las reemplaza.
+
+## Actualización TB: fórmula, R2.4 y estado comercial como datos
+
+La etapa `SM2-valuacion` del artefacto
+[Grupo_20_PG3_politicas_bloque.cypher](../cypher/Grupo_20_PG3_politicas_bloque.cypher) declara
+dos reglas que la valuación consume:
+
+- `SM2-VALUACION` (`rol='formula'`): `escala_redondeo_ars=1000` — la escala a la que se redondea
+  el VMA — y qué criterios aplica (`aplica_descuento_negociacion`, `aplica_revalorizacion_upgrade`).
+  La consulta los recibe como parámetros; cambiar la escala o desactivar una aplicación cambia el
+  VMA sin editar Python.
+- `R2.4` (`rol='r24'`): `r24_activo` y `r24_misma_familia`. Con la activación apagada, un
+  procesador sin muestras propias ya no toma el valor de la generación anterior y la valuación
+  queda `Verificacion_pendiente` por `procesador_sin_muestras`, como corresponde a falta de dato.
+
+La **clasificación del estado** también es una etapa (`SM2-estado`): ocho reglas ordenadas por
+`prioridad_inferencia` con su `estado_resultante` y `motivo_resultante`, y nueve condiciones
+sobre los hechos que la consulta ya resolvía (procesador, su origen, línea, las tres lecturas de
+RAM, valor del procesador y año). La consulta evalúa esos grupos con los mismos comparadores
+finitos del resto del bloque y elige la primera regla que se cumple. Cambiar el `campo`, el
+operador, la prioridad o el estado resultante en el grafo cambia el estado público; una condición
+con un hecho no declarado, dos reglas con la misma prioridad o un manifiesto incompleto cortan la
+consulta sin fila y el motor falla con error explícito, nunca con una tasación favorable.
+
+Los valores por defecto reproducen exactamente los siete estados/motivos anteriores y el contrato
+de nueve campos del wrapper. La procedencia (`criterios_usados`) sigue derivándose de los hechos
+resueltos: registrar la correspondencia hecho→criterio como datos habría sido un agregado
+decorativo, así que el conjunto aplicado no cambia. La cuantización de RIE (centroide crudo →
+cuatro decimales → IEEE a dos → DEM) conserva su ruta y precisión literales. Detalle, allowlist y
+activación en [ejecuciones/politicas_bloque_implementacion.md](ejecuciones/politicas_bloque_implementacion.md).

@@ -44,6 +44,7 @@ from inferencia_sm1 import (
 from inferencia_sm3 import (
     inferir_sm3_crisp_cypher, resolver_decision_sm3_cypher,
     _cuantizar as cuantizar_cypher,
+    _EVALUAR_CONDICIONES as EVALUAR_CONDICIONES,
 )
 
 # ------------------------------------------------------------------------------
@@ -621,6 +622,16 @@ def costo(tarea: str, traza: dict) -> int:
 _CRITERIOS_VALUACION_SM2 = ("ram_objetivo", "anio_referencia", "anio_min_w11",
                             "min_muestras_mercado", "descuento_negociacion", "reval_ssd")
 
+# Política de la etapa de valuación: qué regla es la fórmula, cuál es R2.4 y qué declaran.
+# El manifiesto y sus dos reglas son datos; Python sólo los transporta y valida que estén
+# completos (una configuración inválida corta la evaluación, nunca usa valores del código).
+CONSULTA_POLITICA_VALUACION_SM2 = """
+MATCH (:VersionPoliticas {etapa:'SM2-valuacion', activa:true})-[:INCLUYE]->(r:Regla)
+RETURN r.rol AS rol, r.escala_redondeo_ars AS escala,
+       r.aplica_descuento_negociacion AS descuento, r.aplica_revalorizacion_upgrade AS reval,
+       r.r24_activo AS r24, r.r24_misma_familia AS familia
+"""
+
 # Claves que devolvía la consulta pública de componentes antes de la valuación completa.
 _CAMPOS_MERCADO_LEGADO = ("procesador", "generacion_anterior", "valor_proc", "linea", "grupo",
                           "ram_informada_existe", "ram", "valor_mercado", "vma")
@@ -635,9 +646,11 @@ WITH tt,
      CASE WHEN trim(tp_aviso) IN ['', 'null', 'none'] THEN 'modelo' ELSE 'aviso' END AS procesador_origen
 OPTIONAL MATCH (p:Procesador) WHERE tp =~ p.patron
 WITH tt, tp, procesador_origen, p ORDER BY p.prioridad DESC LIMIT 1
-// R2.4: sin muestras propias → generación anterior más cercana de la misma familia con datos
+// R2.4: sin muestras propias → generación anterior más cercana de la misma familia con datos.
+// Su activación y el requisito de misma familia son datos de la Regla R2.4 de la etapa.
 OPTIONAL MATCH (v:Procesador)
-  WHERE p.valor_ref_ars IS NULL AND p.anio IS NOT NULL AND v.familia = p.familia AND v <> p
+  WHERE $r24_activo AND p.valor_ref_ars IS NULL AND p.anio IS NOT NULL
+    AND (NOT $r24_misma_familia OR v.familia = p.familia) AND v <> p
     AND v.valor_ref_ars IS NOT NULL AND v.anio IS NOT NULL AND v.anio <= p.anio
 WITH tt, tp, procesador_origen, p, v ORDER BY v.anio DESC, v.n_muestras DESC LIMIT 1
 OPTIONAL MATCH (l:Linea) WHERE tt =~ l.patron
@@ -675,34 +688,71 @@ WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc
           THEN valor_proc * l.factor_precio * r.factor END AS valor_mercado
 WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
      anio, anio_origen, win11, win11_origen, valor_mercado,
-     // Estado de la valuación: qué falta (conocimiento o dato) o si hay tasación
-     CASE WHEN p IS NULL AND procesador_origen = 'modelo' THEN 'Verificacion_pendiente'
-          WHEN p IS NULL THEN 'ConocimientoFaltante'
-          WHEN l IS NULL THEN 'ConocimientoFaltante'
-          WHEN $ram IS NOT NULL AND ri IS NULL THEN 'ConocimientoFaltante'
-          WHEN r IS NULL THEN 'ConocimientoFaltante'
-          WHEN valor_proc IS NULL THEN 'Verificacion_pendiente'
-          WHEN anio IS NULL THEN 'Verificacion_pendiente'
-          ELSE 'Tasado' END AS estado,
-     CASE WHEN p IS NULL AND procesador_origen = 'modelo' THEN 'procesador_no_informado'
-          WHEN p IS NULL THEN 'procesador_desconocido'
-          WHEN l IS NULL THEN 'linea_desconocida'
-          WHEN $ram IS NOT NULL AND ri IS NULL THEN 'ram_informada_desconocida'
-          WHEN r IS NULL THEN 'ram_tasada_desconocida'
-          WHEN valor_proc IS NULL THEN 'procesador_sin_muestras'
-          WHEN anio IS NULL THEN 'anio_desconocido'
-          ELSE null END AS motivo_clave,
      CASE WHEN anio IS NULL THEN null
           ELSE CASE WHEN $anio_referencia - anio < 0 THEN 0.0
                     ELSE toFloat($anio_referencia - anio) END END AS antiguedad,
+     // VMA: la escala del redondeo y qué criterios aplica son datos de la regla de valuación
      CASE WHEN valor_mercado IS NULL THEN null
-          ELSE toInteger(round((valor_mercado * (1 - $descuento / 100.0)
-                                + CASE WHEN $hdd_a_ssd THEN $reval ELSE 0 END) / 1000.0)) * 1000
+          ELSE toInteger(round((valor_mercado * (1 - CASE WHEN $aplica_descuento_negociacion
+                                                         THEN $descuento / 100.0 ELSE 0.0 END)
+                                + CASE WHEN $hdd_a_ssd AND $aplica_revalorizacion_upgrade
+                                       THEN $reval ELSE 0 END) / $escala_redondeo_ars))
+               * $escala_redondeo_ars
      END AS vma,
-     CASE WHEN $hdd_a_ssd THEN $reval ELSE 0 END AS revalorizacion_ssd,
+     CASE WHEN $hdd_a_ssd AND $aplica_revalorizacion_upgrade THEN $reval ELSE 0 END
+     AS revalorizacion_ssd,
      // Hay conocimiento completo cuando la consulta ya puede aplicar la política de valuación
      (p IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
-      AND NOT ($ram IS NOT NULL AND ri IS NULL)) AS conocimiento_completo
+      AND NOT ($ram IS NOT NULL AND ri IS NULL)) AS conocimiento_completo,
+     // Hechos que evalúa la etapa de clasificación del estado, tal como los resolvió la
+     // consulta: el procesador, su origen, la línea y las tres lecturas de la RAM.
+     {procesador: p, procesador_origen: procesador_origen, linea: l, ram_declarada: $ram,
+      ram_informada: ri, ram_tasada: r, valor_proc: valor_proc, anio: anio} AS hechos_estado
+// Clasificación del estado comercial (I11): manifiesto, reglas, prioridad y condiciones del
+// grafo; la consulta sólo evalúa los comparadores finitos sobre los hechos.
+CALL () {
+  OPTIONAL MATCH (vp:VersionPoliticas {etapa:'SM2-estado', activa:true})
+  WITH collect(DISTINCT vp) AS hallados
+  WITH size(hallados) AS n, CASE WHEN size(hallados) = 1 THEN hallados[0] END AS vp
+  OPTIONAL MATCH (vp)-[:INCLUYE]->(rm:Regla)
+  WITH n, vp, rm ORDER BY rm.prioridad_inferencia
+  WITH n, vp, collect(rm) AS reglas, coalesce(vp.ids_requeridos, []) AS requeridos
+  WITH n, reglas, requeridos,
+       [i IN requeridos WHERE NOT any(m IN reglas WHERE m.id = i)] AS faltantes,
+       [m IN reglas WHERE m.estado_resultante IS NULL] AS sin_estado,
+       [m IN reglas WHERE NOT m.prioridad_inferencia IS :: INTEGER] AS sin_orden,
+       [i IN range(0, size(reglas) - 1)
+        WHERE i > 0 AND any(j IN range(0, i - 1)
+                            WHERE reglas[j].prioridad_inferencia = reglas[i].prioridad_inferencia)] AS repetidos
+  RETURN [m IN reglas | {regla: m, orden: m.prioridad_inferencia,
+                         estado: m.estado_resultante, motivo: m.motivo_resultante}] AS reglas_estado,
+    CASE WHEN n = 1 AND size(faltantes) = 0 AND size(reglas) = size(requeridos)
+              AND size(sin_estado) = 0 AND size(sin_orden) = 0 AND size(repetidos) = 0
+              AND size(reglas) > 0
+         THEN [] ELSE ['configuración del estado de SM2: manifiesto, reglas, orden o '
+                    + 'estado resultante no válidos'] END AS problemas_estado
+}
+WITH *, {reglas: reglas_estado, hechos: hechos_estado} AS entrada
+""" + EVALUAR_CONDICIONES + """
+WITH * ORDER BY orden
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     anio, anio_origen, win11, win11_origen, valor_mercado, antiguedad, vma,
+     revalorizacion_ssd, conocimiento_completo, problemas_estado,
+     collect({orden: orden, estado: datos.estado, motivo: datos.motivo,
+              filas: filas, cumplida: cumplida}) AS evaluadas_estado
+WITH *, [e IN evaluadas_estado WHERE e.cumplida] AS estados_aplicables,
+     [e IN evaluadas_estado WHERE any(f IN e.filas
+        WHERE NOT f.campo IN ['procesador', 'procesador_origen', 'linea', 'ram_declarada',
+                              'ram_informada', 'ram_tasada', 'valor_proc', 'anio'])] AS campos_ajenos
+WITH *, reduce(ganadora = null, e IN estados_aplicables |
+                 CASE WHEN ganadora IS NULL THEN e
+                      WHEN e.orden < ganadora.orden THEN e ELSE ganadora END) AS estado_elegido,
+     CASE WHEN size(problemas_estado) = 0 AND size(campos_ajenos) = 0
+               AND size(estados_aplicables) > 0
+          THEN [] ELSE ['configuración del estado de SM2: ninguna regla aplicable o una '
+                     + 'condición usa un hecho no declarado'] END AS problemas_estado_total
+WHERE size(problemas_estado_total) = 0
+WITH *, estado_elegido.estado AS estado, estado_elegido.motivo AS motivo_clave
 WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
      anio, anio_origen, win11, win11_origen, valor_mercado,
      estado, motivo_clave, antiguedad, vma, revalorizacion_ssd, conocimiento_completo,
@@ -758,6 +808,46 @@ def _criterios_valuacion_sm2() -> tuple:
     return valores, dict(leidos["criterios_usados"])
 
 
+def _politica_valuacion_sm2() -> dict:
+    """Lee del grafo la política de valuación que la consulta aplica como parámetros.
+
+    El manifiesto de la etapa declara dos reglas: la fórmula (escala de redondeo del VMA y
+    qué criterios aplica) y R2.4 (si busca la generación anterior y si exige la misma
+    familia). Una configuración ausente, incompleta o inválida corta la valuación con un
+    error explícito: nunca se reemplaza por los valores que tenía el código.
+    """
+    driver = obtener_driver_neo4j()
+    with driver.session(database=NEO4J_DATABASE) as s:
+        filas = [dict(r) for r in s.run(CONSULTA_POLITICA_VALUACION_SM2)]
+    formulas = [f for f in filas if f.get("rol") == "formula"]
+    anteriores = [f for f in filas if f.get("rol") == "r24"]
+
+    def numerico(valor) -> bool:
+        return isinstance(valor, (int, float)) and not isinstance(valor, bool)
+
+    def booleano(valor) -> bool:
+        return isinstance(valor, bool)
+
+    problema = None
+    if len(filas) != 2 or len(formulas) != 1 or len(anteriores) != 1:
+        problema = "el manifiesto de la etapa no declara exactamente la fórmula y R2.4"
+    elif not numerico(formulas[0].get("escala")) or formulas[0]["escala"] <= 0:
+        problema = "la regla de valuación no declara una escala de redondeo positiva"
+    elif not booleano(formulas[0].get("descuento")) or not booleano(formulas[0].get("reval")):
+        problema = "la regla de valuación no declara si aplica el descuento y la revalorización"
+    elif not booleano(anteriores[0].get("r24")) or not booleano(anteriores[0].get("familia")):
+        problema = "R2.4 no declara su activación y el requisito de misma familia"
+    if problema:
+        raise RuntimeError(
+            "[ERROR INFERENCIA NEO4J] Política de valuación SM2 incompleta: " + problema + ".")
+    formula, regla_r24 = formulas[0], anteriores[0]
+    return {"escala_redondeo_ars": formula["escala"],
+            "aplica_descuento_negociacion": formula["descuento"],
+            "aplica_revalorizacion_upgrade": formula["reval"],
+            "r24_activo": regla_r24["r24"],
+            "r24_misma_familia": regla_r24["familia"]}
+
+
 def _normalizar_texto_procesador(texto: str) -> str:
     """'5500 U' → '5500u' y '13ª' → '13a': variantes de escritura del aviso, sin cambiar el hecho."""
     normalizado = str(texto or "").lower().replace("ª", "a")
@@ -792,6 +882,7 @@ def inferir_valuacion_sm2_cypher(procesador: str, modelo: str, texto: str,
     `aplicar_politica_ram=False` fija el factor de RAM con `ram_final_fijada` (consulta pública).
     """
     criterios, procedencia = _criterios_valuacion_sm2()
+    politica = _politica_valuacion_sm2()
     driver = obtener_driver_neo4j()
     with driver.session(database=NEO4J_DATABASE) as s:
         rec = s.run(
@@ -810,7 +901,8 @@ def inferir_valuacion_sm2_cypher(procesador: str, modelo: str, texto: str,
             anio_referencia=float(criterios["anio_referencia"]),
             anio_min_w11=float(criterios["anio_min_w11"]),
             descuento=float(criterios["descuento_negociacion"]),
-            reval=float(criterios["reval_ssd"])).single()
+            reval=float(criterios["reval_ssd"]),
+            **politica).single()
     valuacion = dict(rec["valuacion"]) if rec and rec.get("valuacion") else {}
     valuacion["criterios"] = criterios
     if traza is not None:
@@ -1499,13 +1591,78 @@ def generar_dictamen_sintesis(resumen: dict) -> str:
     return "\n".join(lineas)
 
 
+# Clasificación Firme/Provisional (I12): manifiesto, reglas y condiciones son datos del
+# grafo. Python sólo cuenta los hechos de la traza y transporta el veredicto.
+CONSULTA_CLASIFICACION_DECISION = """
+CALL () {
+  OPTIONAL MATCH (vp:VersionPoliticas {etapa:'SM0-clasificacion', activa:true})
+  WITH collect(DISTINCT vp) AS hallados
+  WITH size(hallados) AS n, CASE WHEN size(hallados) = 1 THEN hallados[0] END AS vp
+  OPTIONAL MATCH (vp)-[:INCLUYE]->(rm:Regla)
+  WITH n, vp, rm ORDER BY rm.prioridad_inferencia
+  WITH n, vp, collect(rm) AS reglas, coalesce(vp.ids_requeridos, []) AS requeridos
+  WITH n, reglas, requeridos,
+       [i IN requeridos WHERE NOT any(m IN reglas WHERE m.id = i)] AS faltantes,
+       [m IN reglas WHERE m.estado_resultante IS NULL] AS sin_estado,
+       [m IN reglas WHERE NOT m.prioridad_inferencia IS :: INTEGER] AS sin_orden
+  RETURN [m IN reglas | {regla: m, orden: m.prioridad_inferencia,
+                         estado: m.estado_resultante}] AS reglas_clasificacion,
+    CASE WHEN n = 1 AND size(faltantes) = 0 AND size(reglas) = size(requeridos)
+              AND size(sin_estado) = 0 AND size(sin_orden) = 0 AND size(reglas) > 0
+         THEN [] ELSE ['configuración de la clasificación Firme/Provisional: manifiesto, reglas '
+                    + 'o estado resultante no válidos'] END AS problemas
+}
+WITH *, {reglas: reglas_clasificacion,
+         hechos: {criterios_sin_validar: $criterios_sin_validar,
+                  costos_sin_validar: $costos_sin_validar,
+                  datos_inferidos: $datos_inferidos,
+                  datos_pendientes: $datos_pendientes}} AS entrada
+""" + EVALUAR_CONDICIONES + """
+WITH * ORDER BY orden
+WITH problemas, collect({orden: orden, estado: datos.estado, filas: filas,
+                          cumplida: cumplida}) AS evaluadas
+WITH problemas, [e IN evaluadas WHERE e.cumplida] AS aplicables,
+     [e IN evaluadas WHERE any(f IN e.filas
+        WHERE NOT f.campo IN ['criterios_sin_validar', 'costos_sin_validar',
+                              'datos_inferidos', 'datos_pendientes'])] AS campos_ajenos
+WITH problemas, aplicables, campos_ajenos,
+     reduce(ganadora = null, e IN aplicables |
+            CASE WHEN ganadora IS NULL THEN e
+                 WHEN e.orden < ganadora.orden THEN e ELSE ganadora END) AS elegida
+RETURN elegida.estado AS estado_decision,
+       CASE WHEN size(problemas) = 0 AND size(campos_ajenos) = 0 AND elegida IS NOT NULL
+            THEN [] ELSE ['clasificación Firme/Provisional: ninguna regla aplicable, condición '
+                       + 'con un hecho no declarado o política incompleta'] END AS problemas_total
+"""
+
+
 def _estado_decision(traza: dict) -> dict:
-    """Firme solo si todos los criterios y costos usados están validados y no hubo datos inferidos ni pendientes."""
+    """Firme solo si todos los criterios y costos usados están validados y no hubo datos inferidos
+    ni pendientes.
+
+    La clasificación es una etapa del grafo (`SM0-clasificacion`): Python cuenta los hechos de
+    la traza, transporta el veredicto que resolvió el grafo y arma la lista de pendientes que
+    publica el dictamen. Una configuración incompleta corta con error explícito.
+    """
     provisionales = sorted(
         [f"{n} ({c['id']} {c.get('version', '')})" for n, c in traza["criterios_usados"].items() if c.get("estado") != "Validado"]
         + [f"costo {t} ({c['id']})" for t, c in traza["costos_usados"].items() if c.get("estado") != "Validado"])
-    firme = not provisionales and not traza["datos_inferidos"] and not traza["datos_pendientes"]
-    return {"estado_decision": "Firme" if firme else "Provisional", "criterios_pendientes": provisionales}
+    driver = obtener_driver_neo4j()
+    with driver.session(database=NEO4J_DATABASE) as s:
+        fila = s.run(CONSULTA_CLASIFICACION_DECISION,
+                     criterios_sin_validar=len([1 for c in traza["criterios_usados"].values()
+                                                if c.get("estado") != "Validado"]),
+                     costos_sin_validar=len([1 for c in traza["costos_usados"].values()
+                                             if c.get("estado") != "Validado"]),
+                     datos_inferidos=len(traza["datos_inferidos"]),
+                     datos_pendientes=len(traza["datos_pendientes"])).single()
+    clasificacion = dict(fila) if fila else {}
+    if clasificacion.get("problemas_total") or not clasificacion.get("estado_decision"):
+        raise RuntimeError(
+            "[ERROR INFERENCIA NEO4J] La clasificación Firme/Provisional no se pudo resolver desde "
+            "Neo4j (etapa SM0-clasificacion).")
+    return {"estado_decision": clasificacion["estado_decision"],
+            "criterios_pendientes": provisionales}
 
 
 def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True,
