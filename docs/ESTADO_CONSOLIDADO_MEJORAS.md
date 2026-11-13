@@ -15,7 +15,7 @@ idéntica a la de la copia. El respaldo inmediatamente anterior a esa escritura 
 | Parte | Estado registrado |
 |---|---|
 | Código | Rama `mejoras/politicas-sm1-estado`. El bloque mínimo del código sigue con cambios locales sin commit; esta unidad sólo registró el script de integración y su evidencia. |
-| Base original/de trabajo | PG2, actualización histórica del catálogo a 333 avisos y, desde el 13/11/2026, las ocho semillas aditivas del bloque (diagnóstico B2, correcciones mínimas y políticas). Pasó de 814 nodos y 1905 relaciones a 931 y 2046; huella `cf1a70d5…`. |
+| Base original/de trabajo | PG2, actualización histórica del catálogo a 333 avisos y, desde el 13/11/2026, las nueve semillas aditivas del bloque (diagnóstico B2, patrones de redacción, correcciones mínimas, políticas y supuestos operativos). Pasó de 814 nodos y 1905 relaciones a 931 y 2046, y a **940 y 2052** al sumar los patrones de redacción; huella `c22a9f58…`. |
 | Base aislada de pruebas | Diagnóstico, políticas anteriores y correcciones nuevas aplicadas. Último snapshot: 932 nodos, 2046 relaciones, 19 restricciones y marcador de pruebas único. |
 | Nueva copia de trabajo | **Creada el 13/11/2026 y ya idéntica a la original promovida**: contenedor `evaltic-neo4j-mejoras` (bolt `127.0.0.1:7688`), volumen `proyecto-ia-final_neo4j_mejoras`. 931 nodos y 2046 relaciones. Queda como gemela de comparación y respaldo caliente, no como base pendiente de promoción. |
 | Respaldo | Dos respaldos verificados: `_respaldo_original/20261113-0050/` (estado previo a todo, sha256 `3131c0de…`) y `_respaldo_original/20261113-0126-pre-promocion/` (inmediatamente anterior a escribir la original, sha256 `4ab2417c…`). El primero se restauró con éxito en el volumen de la copia. |
