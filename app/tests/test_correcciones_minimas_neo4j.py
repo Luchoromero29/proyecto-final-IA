@@ -79,13 +79,24 @@ class CorreccionesMinimasTest(unittest.TestCase):
         asumidos = resultado["traza"].get("datos_asumidos", [])
         self.assertTrue(asumidos, "el supuesto declarado en el grafo no llegó a la traza")
         self.assertIn("SUP-SM1-BAT-CICLOS", asumidos[0])
-        self.assertIn("Datos asumidos", resultado["respuesta"])
+        self.assertEqual(1, resultado["respuesta"].count("Datos asumidos"),
+                         "el supuesto se informa una sola vez, no duplicado")
 
         con_ciclos = dict(hechos, ciclos_bateria=900)
         resultado2 = self._publico("PC-15", texto="Batería al 60% con 900 ciclos, 8GB y SSD. ¿Qué reparar?",
                                    datos=con_ciclos, verificacion=None)
         self.assertEqual([], resultado2["traza"].get("datos_asumidos", []))
         self.assertNotIn("Datos asumidos", resultado2["respuesta"])
+
+        # Salud por encima de CE-01: la regla crisp no dispara, así que no hay supuesto que
+        # informar ni batería que cobrar aunque los ciclos falten.
+        sobre_umbral = dict(hechos, salud_bateria_pct=80)
+        resultado3 = self._publico("PC-15", texto="Batería al 80%, 8GB y SSD. ¿Qué hay que reparar?",
+                                   datos=sobre_umbral, verificacion=None)
+        claves3 = [t["clave"] for t in resultado3["sm1_tecnico"].get("plan_reparacion", [])]
+        self.assertNotIn("bateria", claves3)
+        self.assertEqual([], resultado3["traza"].get("datos_asumidos", []))
+        self.assertNotIn("Datos asumidos", resultado3["respuesta"])
 
     def test_conserva_positivos_precio_y_procesador(self):
         for ident in ("PC-07", "PC-14", "PC-19", "PC-20", "PC-29", "PC-30", "PC-49"):

@@ -633,6 +633,14 @@ class Ejecucion:
         self.llm = llm
 
 
+def _supuesto_falso(campo):
+    """Supuesto operativo como lo declara el grafo (fixture del doble offline)."""
+    if campo == "ciclos":
+        return ("Ciclos de batería no informados: se asume el reemplazo de la batería "
+                "(R1.2, supuesto conservador) [supuesto SUP-SM1-BAT-CICLOS, Provisional]")
+    return None
+
+
 def _ejecutar(caso):
     """Ejecuta el pipeline público con las fronteras externas simuladas."""
     driver = mock.MagicMock()
@@ -652,6 +660,7 @@ def _ejecutar(caso):
             mock.patch.object(oe, "consultar_resolucion_sm1", side_effect=_resolucion_sm1_falsa), \
             mock.patch.object(oe, "inferir_valuacion_sm2_cypher", side_effect=_valuacion_falsa) as mercado, \
             mock.patch.object(oe, "inferir_sm1_bat_cypher", side_effect=_sm1_bat_falso), \
+            mock.patch.object(oe, "inferir_supuesto_cypher", side_effect=_supuesto_falso), \
             mock.patch.object(oe, "inferir_sm1_ter_cypher", side_effect=_sm1_ter_falso), \
             mock.patch.object(oe, "inferir_sm2_rie_cypher", side_effect=_sm2_rie_falso), \
             mock.patch.object(oe, "inferir_sm2_dem_cypher", side_effect=_sm2_dem_falso), \

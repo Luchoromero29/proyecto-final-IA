@@ -199,20 +199,19 @@ def inferir_supuesto_cypher(campo: str):
     """Devuelve el supuesto operativo que el grafo declara para un dato no informado.
 
     El texto sale de :SupuestoOperativo, no de Python: si el grafo no lo declara, no se
-    informa nada y el motor sigue sin explicitar la condición.
+    informa nada. Un fallo de la consulta no se puede confundir con "no hay supuesto":
+    se propaga como error de inferencia, igual que el resto de SM1.
     """
-    driver = obtener_driver_neo4j()
-    if not driver:
-        return None
     try:
-        with driver.session(database=NEO4J_DATABASE) as session:
+        with obtener_driver_neo4j().session(database=NEO4J_DATABASE) as session:
             fila = session.run(
                 "MATCH (c:Condicion {campo:$campo})-[:ASUME]->(s:SupuestoOperativo) "
                 "RETURN s.texto AS texto, s.id AS id, s.estado_validacion AS estado LIMIT 1",
                 campo=campo,
             ).single()
-    except Exception:
-        return None
+    except Exception as exc:
+        raise RuntimeError(
+            "[ERROR INFERENCIA NEO4J] Falló la consulta de supuestos operativos.") from exc
     if not fila or not fila["texto"]:
         return None
     estado = f", {fila['estado']}" if fila["estado"] else ""
@@ -1660,8 +1659,6 @@ def generar_dictamen_sintesis(resumen: dict) -> str:
 
     if resumen.get("datos_a_verificar"):
         lineas.append(f"• Datos pendientes de validación en taller: {'; '.join(resumen['datos_a_verificar'])}.")
-    if resumen.get("datos_asumidos"):
-        lineas.append(f"• Datos asumidos por el motor: {'; '.join(resumen['datos_asumidos'])}.")
 
     return "\n".join(lineas)
 
@@ -2133,10 +2130,8 @@ def consultar_sm1(texto: str, verbose: bool = True, verificacion_tecnica: Option
         costo_mostrado = f"${res.get('costo_total', 0):,} ARS"
         respaldo = (f"Diagnóstico: {res.get('motivo') or 'equipo reparable'}. Plan: {plan}. "
                     f"Costo total: ${res.get('costo_total', 0):,} ARS (costos provisionales).")
-        if traza.get("datos_asumidos"):
-            respaldo += " Datos asumidos por el motor: " + "; ".join(traza["datos_asumidos"]) + "."
         explicacion = _explicar(PROMPT_EXPLICACION_SM1, resultado, respaldo)
-    # El supuesto no depende de lo que redacte el LLM: si el grafo lo declara y se usó, se informa.
+    # Único lugar donde se informa el supuesto: no se repite en el respaldo ni en el prompt.
     if traza.get("datos_asumidos"):
         explicacion = ((explicacion or "").rstrip() + "\nDatos asumidos por el motor: "
                        + "; ".join(traza["datos_asumidos"]) + ".")
