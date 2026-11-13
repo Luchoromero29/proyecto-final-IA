@@ -1,0 +1,5 @@
+# Preparación fallida: salida 1; helper terminó con salida 3, no OOM. Cero comparaciones.
+7d1c0bff3bdc76327409b084d2a9ad13e457cf90c3be6a6d718d61679674ce1b
+2026-11-10 20:46:39.097+0000 INFO  Logging config in use: File '/var/lib/neo4j/conf/user-logs.xml'
+2026-11-10 20:46:39.108+0000 INFO  Neo4j Server shutdown initiated by request
+2026-11-10 20:46:39.109+0000 INFO  Stopped.

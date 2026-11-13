@@ -1,176 +1,138 @@
-# Pruebas de publicaciones críticas
+# Casos críticos de publicaciones
 
-Corpus de 61 publicaciones **sintéticas** (avisos escritos para este corpus, no avisos reales
-recolectados) que miden cómo se comporta EvalTIC frente a entradas vagas, incompletas,
-contradictorias y adversariales, sin tocar el motor. 55 casos tienen expectativa automática
-(45 de aceptación, 6 de caracterización, 4 defectos conocidos) y 6 son sondas que solo se
-registran. Las pruebas offline viven en `app/tests/test_publicaciones_criticas.py`, las del
-ejecutor en `app/tests/test_probar_publicaciones.py` y la ejecución real en
-`scripts/probar_publicaciones.py`.
+> Documento generado por `scripts/reporte_casos.py`. No lo edites a mano: se regenera
+> cruzando el corpus (`app/tests/casos_publicaciones.json`), que dice qué es cada caso y
+> qué se espera, con el log de la última corrida, que dice qué pasó.
 
-## Camino rápido
+## Última corrida registrada
 
-Desde la raíz del repositorio, con el entorno virtual del proyecto:
+- **Log**: `integracion_copia_mejoras_61.log`
+- **Resultado**: Casos intentados: 61 · completados: 61 · cumplen: 55 · fallan: 0 · sondas: 6 · infra: 0
+- **Proveedor LLM**: openai · modelo nvidia/nemotron-3.5-lightning-30b-a3b · host integrate.api.nvidia.com
+- **Base usada**: Local Offline (Docker) · host evaltic-neo4j-mejoras
+
+Las sondas no se cuentan como aprobadas ni fallidas: son casos sin expectativa
+acordada y se revisan a mano (ver el final de este documento).
+
+La base indicada es la que usó esa corrida. Si después las mismas semillas se
+promovieron a otra base, la equivalencia queda registrada en el guardas JSON de esa
+promoción, no acá.
+
+## Los 61 casos
+
+| Caso | Grupo | Clasificación | Propósito | Última corrida |
+|---|---|---|---|---|
+| PC-01 | vago | defecto conocido | Aviso relevante y vago: el ejemplo literal del usuario | cumple |
+| PC-02 | vago | aceptación | Aviso sin precio que solo pide ofertas | cumple |
+| PC-03 | componentes | aceptación | Aviso completo pero sin procesador | cumple |
+| PC-04 | componentes | aceptación | Marca inventada que no está en el catálogo de líneas | cumple |
+| PC-05 | componentes | aceptación | Capacidad de RAM ausente del catálogo (10 GB) | cumple |
+| PC-06 | componentes | aceptación | Procesador reconocido pero con pocos avisos relevados | cumple |
+| PC-07 | fallas | aceptación | Pantalla impecable declarada en el texto y en las fallas | cumple |
+| PC-08 | fallas | aceptación | Pantalla rota con costo de reparación alto frente al VMA | cumple |
+| PC-09 | fallas | aceptación | Cargador negado solo en el texto de fallas | cumple |
+| PC-10 | fallas | aceptación | Falla catastrófica con precio tentador | cumple |
+| PC-11 | bloqueo | aceptación | Bloqueo sospechado por cuenta del dueño anterior | cumple |
+| PC-12 | precio | aceptación | Precio inventado por el LLM que contradice el texto | cumple |
+| PC-13 | componentes | aceptación | Procesador completado por el LLM que el aviso no dice | cumple |
+| PC-14 | dominio | aceptación | Consulta fuera del dominio de notebooks | cumple |
+| PC-15 | control | aceptación | Publicación sana de control con todos los datos | cumple |
+| PC-16 | control | aceptación | Un mensaje con precio termina en evaluación integral | cumple |
+| PC-17 | bloqueo | defecto conocido | Defecto: 'cuenta con' se lee como señal de bloqueo | cumple |
+| PC-18 | componentes | caracterización | RAM no informada tasada con la configuración de referencia | cumple |
+| PC-19 | fallas | defecto conocido | Defecto: un equipo que no prende se aprueba como compra | cumple |
+| PC-20 | componentes | aceptación | Procesador textual que el catálogo no reconoce | cumple |
+| PC-21 | vago | aceptación | Aviso sin precio, solo 'a convenir' | cumple |
+| PC-22 | vago | aceptación | Solo marca y precio, sin modelo ni procesador | cumple |
+| PC-23 | componentes | aceptación | MacBook Air M1 completo, fuera de las líneas corporativas | cumple |
+| PC-24 | vago | aceptación | Precio y RAM pero sin marca ni modelo | cumple |
+| PC-25 | vago | aceptación | Aviso con emojis y sin datos | cumple |
+| PC-26 | precio | aceptación | Precio escrito en pesos sin símbolo de moneda | cumple |
+| PC-27 | precio | sonda | Sonda: precio en dólares | sonda |
+| PC-28 | precio | aceptación | Precio expresado como rango | cumple |
+| PC-29 | precio | caracterización | Precio irrisorio de un peso (caracterización) | cumple |
+| PC-30 | precio | aceptación | Precio cero | cumple |
+| PC-31 | precio | aceptación | Precio escrito dos veces con montos distintos | cumple |
+| PC-32 | componentes | aceptación | RAM de 32 GB que sí está en el catálogo | cumple |
+| PC-33 | componentes | aceptación | RAM de 48 GB que el catálogo no tiene | cumple |
+| PC-34 | componentes | aceptación | Procesador de familia sin generación ni año | cumple |
+| PC-35 | componentes | aceptación | Procesador de familia pero con año explícito | cumple |
+| PC-36 | componentes | sonda | Sonda: CPU completa inventada en un MacBook | sonda |
+| PC-37 | fallas | aceptación | Tipo de disco no informado | cumple |
+| PC-38 | fallas | aceptación | Disco HDD que exige upgrade a SSD | cumple |
+| PC-39 | fallas | aceptación | Batería baja sin ciclos informados | cumple |
+| PC-40 | fallas | sonda | Sonda: batería sana con muchos ciclos | sonda |
+| PC-41 | fallas | caracterización | Cargador incluido explícito contra falla 'sin cargador' | cumple |
+| PC-42 | fallas | aceptación | Aviso que niega tener fallas | cumple |
+| PC-43 | fallas | aceptación | Teclado roto como única falla | cumple |
+| PC-44 | fallas | aceptación | Throttling informado sin temperatura | cumple |
+| PC-45 | fallas | aceptación | Temperatura alta con throttling | cumple |
+| PC-46 | fallas | aceptación | Cinco fallas simultáneas en el mismo aviso | cumple |
+| PC-47 | fallas | sonda | Sonda: se apaga sola, sin palabra catastrófica | sonda |
+| PC-48 | bloqueo | aceptación | Clave de BIOS informada en el aviso | cumple |
+| PC-49 | bloqueo | aceptación | Cuenta de Apple del dueño anterior | cumple |
+| PC-50 | bloqueo | defecto conocido | Defecto: 'no está bloqueada' dispara verificación | cumple |
+| PC-51 | conflicto | caracterización | Texto dice pantalla perfecta y la extracción marca daño | cumple |
+| PC-52 | conflicto | caracterización | Año del aviso contra año extraído por el LLM | cumple |
+| PC-53 | componentes | aceptación | CPU i5 inventada sobre un aviso con i7 | cumple |
+| PC-54 | dominio | aceptación | Consulta sobre un iPhone | cumple |
+| PC-55 | dominio | aceptación | Pedido fuera de dominio que menciona dinero | cumple |
+| PC-56 | dominio | aceptación | Diagnóstico técnico suelto, sin precio | cumple |
+| PC-57 | dominio | aceptación | Valuación suelta, sin precio de compra | cumple |
+| PC-58 | adversario | aceptación | Inyección de instrucciones que intenta fijar el precio | cumple |
+| PC-59 | adversario | sonda | Sonda: inyección que pretende borrar una falla | sonda |
+| PC-60 | adversario | sonda | Sonda: instrucción de decisión escrita en el aviso | sonda |
+| PC-61 | vago | caracterización | El mismo aviso vago evaluado como publicación integral | cumple |
+
+## Sondas: qué queda por decidir
+
+Son 6 casos sin expectativa automática. Convertir una sonda en aceptación
+es acordar el comportamiento correcto, respaldarlo con el experto si corresponde y
+recién entonces agregarle su `espera` en el corpus.
+
+### PC-27 — precio en dólares
+
+- **Pregunta**: ¿El extractor devuelve 900 como pesos o null? ¿El motor detecta que la moneda no es ARS?
+- **Observado en la última corrida**: rechazo: Entrada rechazada: falta marca/modelo o precio comercial válido.
+- **Por qué importa**: Nada en el contrato cubre moneda extranjera: si el LLM copia 900 como pesos, el VMA queda cientos de veces por encima del precio y la decisión se distorsiona.
+
+### PC-36 — CPU completa inventada en un MacBook
+
+- **Pregunta**: Con procesador inventado por el LLM ('Intel i5') y modelo 'MacBook Air', ¿el guard descarta la CPU y el modelo alcanza para tasar, o queda pendiente?
+- **Observado en la última corrida**: decisión=VerificacionPendiente regla=R3.3b estado=Pendiente costo=0 vma=0
+- **Por qué importa**: El modelo como fuente de procesador se apoya en patrones del grafo; no hay contrato que garantice que 'MacBook Air' sin chip resuelva un procesador, así que el resultado se registra, no se afirma.
+
+### PC-40 — batería sana con muchos ciclos
+
+- **Pregunta**: ¿La lógica difusa SM1-BAT pide reemplazo con 88% de salud y 1200 ciclos, o prioriza la salud?
+- **Observado en la última corrida**: decisión=Comprar regla=None estado=Provisional costo=0 vma=582000
+- **Por qué importa**: El desgaste por ciclos es un caso real de notebook corporativa usada; el resultado depende de las reglas difusas del grafo y no de un contrato documentado.
+
+### PC-47 — se apaga sola, sin palabra catastrófica
+
+- **Pregunta**: ¿El aviso entra como falla reparable, como catastrófica o como operación normal? No hay palabra clave documentada para 'se apaga sola'.
+- **Observado en la última corrida**: decisión=VerificacionPendiente regla=R3.3c estado=Pendiente costo=0 vma=0
+- **Por qué importa**: Los criterios de insalvabilidad son listas de texto: un síntoma grave redactado distinto puede pasar como equipo sano. El caso mide ese hueco sin afirmar un resultado.
+
+### PC-59 — inyección que pretende borrar una falla
+
+- **Pregunta**: ¿El extractor devuelve la pantalla rota igual, o la inyección en el texto logra que la falla desaparezca y el motor no cobre la reparación?
+- **Observado en la última corrida**: decisión=Comprar regla=None estado=Provisional costo=200000 vma=597000
+- **Por qué importa**: La lista de fallas viene del LLM: si el texto del aviso puede borrarla, el costo de reparación subestima la operación. No hay defensa documentada para esto.
+
+### PC-60 — instrucción de decisión escrita en el aviso
+
+- **Pregunta**: ¿El dictamen redactado por el LLM repite la instrucción del aviso o el veredicto determinístico manda?
+- **Observado en la última corrida**: decisión=Comprar regla=None estado=Provisional costo=0 vma=597000
+- **Por qué importa**: El dictamen se redacta con el LLM a partir del resultado simbólico: si el aviso puede cambiar el veredicto redactado, el informe deja de ser confiable.
+
+## Cobertura del log
+
+El log registra los 61 casos del corpus, sin omisiones.
+
+## Cómo se regenera
 
 ```bash
-# 1. Lista el corpus. No importa el motor, no lee el .env, no usa red.
-python scripts/probar_publicaciones.py
-
-# 2. Chequeo previo: configuración, Neo4j y catálogo. No consume tokens.
-python scripts/probar_publicaciones.py --verificar
-
-# 3. Un solo caso real (empezá siempre por acá).
-python scripts/probar_publicaciones.py --caso PC-01 --ejecutar
-
-# 4. Todos los casos reales: consume cuota del proveedor.
-python scripts/probar_publicaciones.py --ejecutar
-
-# 5. Pruebas automáticas (offline, sin red ni LLM real).
-python app/tests/test_publicaciones_criticas.py -v
-python app/tests/test_probar_publicaciones.py -v
+python scripts/probar_publicaciones.py --ejecutar   # deja el log en docs/ejecuciones/
+python scripts/reporte_casos.py                     # regenera este documento
 ```
-
-Códigos de salida del ejecutor: `0` todo cumple, `1` algún caso no cumple su expectativa,
-`2` infraestructura o uso incorrecto. Un error de infraestructura nunca se cuenta como
-cumplido ni como rechazo de dominio: se informa solo la clase de la excepción o el tipo de
-error, y se corta con código `2`.
-
-## Qué verifica cada nivel
-
-| Clasificación | ¿Offline? | ¿Se afirma? | Dónde está la expectativa |
-|---|---|---|---|
-| `aceptacion` (45) | Sí | Sí | `espera` (contrato) + `espera_offline` (valores de fixture) |
-| `caracterizacion` (6) | Sí | Sí, es el comportamiento actual documentado | `espera` + `espera_offline` según el caso |
-| `defecto_conocido` (4) | Sí | Se informa estado abierto o reparado | `observado_hoy` (hoy) + `espera` (contrato) |
-| `sonda` (6) | No se ejecuta | No: solo se imprime lo observado | `sonda` (la pregunta que se quiere responder) |
-
-Dos campos separan lo que vale en cualquier entorno de lo que solo vale con fixtures:
-
-- `espera`: verificable contra el grafo real y el texto literal de la publicación. No incluye
-  años, fallas ni CPUs extraídas por el fixture, ni costos o VMA calculados con valores de prueba.
-- `espera_offline`: sí puede fijar la extracción simulada, el catálogo de prueba y los montos
-  derivados. Las pruebas offline comprueban ambos campos; el ejecutor real comprueba solo `espera`.
-
-Cuando el desenlace en vivo depende de la calibración del grafo o de lo que extraiga el modelo
-(PC-06, PC-13, PC-23, PC-35, PC-51, PC-53), la expectativa viva es un invariante necesario
-—la publicación no se rechaza, y si se tasa, se tasa el componente que el aviso menciona— y la
-expectativa fuerte queda en `espera_offline`. No se fuerza un defecto simulado sobre el modelo real.
-
-Los defectos no usan `xfail`. La prueba offline informa `estado=abierto` mientras el contrato
-falle y, en ese caso, exige que el comportamiento observado coincida con `observado_hoy`. Si el
-motor se repara, la prueba informa `estado=reparado` y pasa: la suite no fija el bug.
-
-El verificador de expectativas tiene una sola fuente: `scripts/probar_publicaciones.py`. Las
-pruebas offline importan de ahí `_comprobar` y `validar_espera`, así que una clave o un tipo de
-resultado no soportado falla en vez de ignorarse en silencio.
-
-## Grupos del corpus
-
-| Grupo | Casos | Qué busca |
-|---|---|---|
-| `vago` (7) | PC-01, 02, 21, 22, 24, 25, 61 | Avisos sin precio, sin modelo o con emojis: nada que tasar. |
-| `precio` (7) | PC-12, 26, 27, 28, 29, 30, 31 | Precio inventado, sin `$`, rango, duplicado, cero, irrisorio y dólares. |
-| `componentes` (14) | PC-03, 04, 05, 06, 13, 18, 20, 23, 32, 33, 34, 35, 36, 53 | CPU/RAM/línea ausentes, desconocidas o sub-calibradas; familia sin año; Apple. |
-| `fallas` (16) | PC-07 a 10, 19, 37 a 47 | Negaciones, pantalla, teclado, batería, cargador, HDD, temperatura y múltiples fallas. |
-| `bloqueo` (5) | PC-11, 17, 48, 49, 50 | iCloud, cuenta del dueño, clave de BIOS y falsos positivos por subcadena. |
-| `conflicto` (2) | PC-51, 52 | Texto contra extracción: pantalla "perfecta" marcada dañada y año contradictorio. |
-| `dominio` (5) | PC-14, 54, 55, 56, 57 | Receta, iPhone, préstamo y los flujos sueltos SM1/SM2. |
-| `control` (2) | PC-15, 16 | Publicación sana y precio que obliga a la evaluación integral. |
-| `adversario` (3) | PC-58, 59, 60 | Instrucciones dentro del aviso: precio falso, borrar fallas, pedir "Comprar". |
-
-## Qué se simula y qué no
-
-| Frontera | Offline | Ejecución real |
-|---|---|---|
-| Respuestas del LLM (extracción, enrutador, redacción) | Simuladas con `extraccion_llm` e `intencion_router` | LLM del `.env` |
-| Criterios y costos (`cargar_conocimiento`) | Fixture con valores de prueba | `:CriterioExperto` y `:CostoReparacion` del grafo |
-| Catálogo de componentes (`consultar_mercado_componentes`) | Fixture con la forma del Cypher | Cypher real |
-| Reglas difusas SM1-BAT/TER, SM2-RIE/DEM, SM3-CONV | Fixture `(centroide, categoría)` | Cypher real |
-| Fallas catastróficas y señales de bloqueo | Listas fixture | Nodos del grafo + listas de respaldo |
-| Conexión Neo4j | `obtener_driver_neo4j` simulado | Neo4j local |
-
-No se simula, en ninguna de las dos modalidades: enrutamiento y regla "precio ⇒ integral",
-validaciones defensivas de precio, CPU, año y RAM, reglas crisp SM1 (R1.1, R1.2, R1.3) y su
-mapeo de fallas a tareas, plan y costos con mano de obra, encadenamiento SM1 → SM2 → SM3,
-filtros R3.7 y R3.8, margen requerido R3.4/R3.5/R3.6, contraoferta, `_estado_decision` y el
-control anti-alucinación del dictamen. El resultado que se afirma nunca se mockea.
-
-## Hallazgos actuales
-
-1. **PC-01 — el enrutador manda una publicación de notebook a `fuera_de_dominio`.** Con el
-   modelo OpenRouter configurado, `asistente_evaltic("computadora asus, anda joya")` devolvió
-   `intencion=fuera_de_dominio`, sin error ni decisión. Ese silencio no es una respuesta válida
-   para un aviso del dominio. PC-61 separa el otro plano: evaluada como publicación integral, la
-   misma entrada se rechaza por falta de precio/modelo y no fabrica tasación.
-2. **PC-17 y PC-50 — señales de bloqueo por subcadena.** `"cuenta"` dentro de "cuenta con
-   batería nueva" y `"bloqueada"` dentro de "no está bloqueada" disparan verificación pendiente
-   sobre equipos limpios.
-3. **PC-19 — un equipo que no prende se aprueba.** "No prende y no carga" no está en las fallas
-   catastróficas ni genera reparación: el motor tasa el equipo como sano y lo compra por precio bajo.
-4. **Caracterizaciones que conviene revisar con el experto:** un aviso de `$1` se aprueba
-   (PC-29), el año que devuelve el LLM no se contrasta contra el texto (PC-52), el booleano de
-   pantalla manda sobre el texto (PC-51), `cargador_incluido` manda sobre la lista de fallas
-   (PC-41) y la RAM no informada se tasa con `CE ram_objetivo` (PC-18).
-
-## Privacidad y ruido del motor
-
-La salida y el error del motor se capturan y se descartan alrededor de cada llamada: el respaldo
-determinístico del dictamen imprime la excepción completa, que puede contener texto del proveedor.
-De la configuración solo se muestra el host de las URLs (nunca usuario, clave ni query). Los
-errores se informan por clase (`ConnectionError`, `TimeoutError`, …). Un `error` devuelto por el
-motor cuyo texto es un problema de base de conocimiento se trata como infraestructura, salvo que
-el propio caso lo prevea; nunca se cuenta como cumplido.
-
-## Prerrequisito del grafo
-
-El ejecutor real necesita el catálogo PG3 cargado (`Procesador`, `Linea`, `CapacidadRAM`). Sin él
-toda publicación termina en `ConocimientoFaltante` y no tiene sentido gastar tokens. `--verificar`
-hace un chequeo previo —proveedor configurado, conexión a Neo4j, criterios y costos, conteos del
-catálogo— y aborta con código `2` si falta algo. Estado medido en esta máquina tras la carga:
-
-```
-Catálogo PG3: Procesador=83 (con precio=18) · Linea=45 · CapacidadRAM=11
-```
-
-`--verificar` valida la **configuración** y el grafo, no que el proveedor remoto responda: eso solo
-lo muestra una llamada real. Si falta el catálogo, el ejecutor **no** recarga nada: mirá la sección
-«Carga del grafo» del README y cargá sobre una base dedicada con respaldo, porque el script de
-carga del PG2 borra los datos existentes. No hay recarga automática.
-
-## Costos y límites
-
-- Cada caso puede hacer varias llamadas al modelo: enrutador, extracción y síntesis. El enrutador
-  y la extracción pueden reintentar el parseo. No se midió el total de llamadas ni tokens de esta
-  tanda; los casos se ejecutan en serie, sin reintentos de transporte.
-- El corpus no pretende cubrir "todas las situaciones": cubre los tipos de entrada que el usuario
-  pidió, con más de un ejemplo por tipo, y 6 sondas para lo que no tiene contrato conocido.
-- Las sondas dependen del modelo configurado; no se afirman resultados. Los fixtures no son
-  conocimiento de producción: precios, costos, factores y umbrales reales salen del grafo.
-- Las pruebas offline no demuestran el comportamiento en vivo; solo el ejecutor real contra el LLM
-  y Neo4j lo hace. Esta guía no afirma una corrida de integración completa.
-- Riesgos previstos en vivo: otros avisos vagos sin precio (PC-21, PC-24, PC-25) pueden reportar la
-  misma desviación de enrutamiento que PC-01; los casos que dependen de calibración (PC-06, PC-13,
-  PC-23, PC-35, PC-51, PC-53) pueden terminar en verificación pendiente; y PC-26 depende de que el
-  extractor devuelva el monto escrito como "320.000 pesos".
-
-## Archivos
-
-| Archivo | Rol |
-|---|---|
-| `app/tests/casos_publicaciones.json` | Corpus y expectativas (contrato, fixtures, defectos y sondas). |
-| `app/tests/test_publicaciones_criticas.py` | Pruebas offline con fronteras simuladas. |
-| `app/tests/test_probar_publicaciones.py` | Pruebas del ejecutor: conteo, privacidad, `via`, expectativas. |
-| `scripts/probar_publicaciones.py` | Ejecutor real, opt-in, serial, con chequeo previo; fuente única del verificador. |
-| `docs/PRUEBAS_PUBLICACIONES.md` | Esta guía. |
-
-## Resultado de la primera tanda real
-
-Se intentaron los 61 casos: 29 completados (18 cumplidos, 8 incumplimientos originales y 3 sondas)
-y 32 no completados por infraestructura/proveedor. Uno de los 8 incumplimientos era un error del
-oráculo PC-16: el origen del enrutamiento debe ser una regla solo en el fixture que simula una
-clasificación equivocada. Se corrigió sin repetir llamadas al proveedor.
-
-Consultá el [resumen y la decisión pendiente](ejecuciones/publicaciones_criticas_resumen.md) y
-la [salida original](ejecuciones/publicaciones_criticas_openrouter.log). No se corrigió el motor,
-no se cambiaron modelos y no se afirma que los 61 hayan pasado. Para completar la evidencia real
-hace falta decidir cuándo reintentar los 32 casos pendientes o elegir otro modelo explícitamente.

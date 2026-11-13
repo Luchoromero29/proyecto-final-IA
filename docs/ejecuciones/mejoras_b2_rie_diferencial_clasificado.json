@@ -1,0 +1,92 @@
+{
+  "cadenas_completas": 24,
+  "rutas_publicas_completas": 3,
+  "riesgos_sin_resultado_iguales": 8,
+  "errores_arnes_conservados": [
+    {
+      "ruta": "RIE-DEM:15:4:True",
+      "error": [
+        "TypeError",
+        "'NoneType' object is not subscriptable"
+      ],
+      "limite": "RIE devuelve None en ambas versiones; el arnés intentó indexarlo. No se probó DEM para estas 8 entradas, sin ocultarlo ni repetirlo."
+    },
+    {
+      "ruta": "RIE-DEM:15:4:False",
+      "error": [
+        "TypeError",
+        "'NoneType' object is not subscriptable"
+      ],
+      "limite": "RIE devuelve None en ambas versiones; el arnés intentó indexarlo. No se probó DEM para estas 8 entradas, sin ocultarlo ni repetirlo."
+    },
+    {
+      "ruta": "RIE-DEM:15:6:True",
+      "error": [
+        "TypeError",
+        "'NoneType' object is not subscriptable"
+      ],
+      "limite": "RIE devuelve None en ambas versiones; el arnés intentó indexarlo. No se probó DEM para estas 8 entradas, sin ocultarlo ni repetirlo."
+    },
+    {
+      "ruta": "RIE-DEM:15:6:False",
+      "error": [
+        "TypeError",
+        "'NoneType' object is not subscriptable"
+      ],
+      "limite": "RIE devuelve None en ambas versiones; el arnés intentó indexarlo. No se probó DEM para estas 8 entradas, sin ocultarlo ni repetirlo."
+    },
+    {
+      "ruta": "RIE-DEM:15:9:True",
+      "error": [
+        "TypeError",
+        "'NoneType' object is not subscriptable"
+      ],
+      "limite": "RIE devuelve None en ambas versiones; el arnés intentó indexarlo. No se probó DEM para estas 8 entradas, sin ocultarlo ni repetirlo."
+    },
+    {
+      "ruta": "RIE-DEM:15:9:False",
+      "error": [
+        "TypeError",
+        "'NoneType' object is not subscriptable"
+      ],
+      "limite": "RIE devuelve None en ambas versiones; el arnés intentó indexarlo. No se probó DEM para estas 8 entradas, sin ocultarlo ni repetirlo."
+    },
+    {
+      "ruta": "RIE-DEM:15:12:True",
+      "error": [
+        "TypeError",
+        "'NoneType' object is not subscriptable"
+      ],
+      "limite": "RIE devuelve None en ambas versiones; el arnés intentó indexarlo. No se probó DEM para estas 8 entradas, sin ocultarlo ni repetirlo."
+    },
+    {
+      "ruta": "RIE-DEM:15:12:False",
+      "error": [
+        "TypeError",
+        "'NoneType' object is not subscriptable"
+      ],
+      "limite": "RIE devuelve None en ambas versiones; el arnés intentó indexarlo. No se probó DEM para estas 8 entradas, sin ocultarlo ni repetirlo."
+    }
+  ],
+  "diferencias_solicitadas": [
+    {
+      "ruta": "evaluar_publicacion_integral",
+      "campo": "sm3.criterios_pendientes",
+      "agregado": "caida_termica_sin_throttling (CE-31 v1)",
+      "motivo": "S9 migra caída sintética a criterio Provisional visible; no ocultar procedencia para hacer coincidir el legado."
+    },
+    {
+      "ruta": "asistente_evaltic",
+      "campo": "sm3.criterios_pendientes",
+      "agregado": "caida_termica_sin_throttling (CE-31 v1)",
+      "motivo": "S9 migra caída sintética a criterio Provisional visible; no ocultar procedencia para hacer coincidir el legado."
+    }
+  ],
+  "diferencias_no_solicitadas": [],
+  "base_exit": 0,
+  "actual_exit": 0,
+  "stdout_stderr_iguales": true,
+  "analisis_original_exit": 1,
+  "segundo_analisis_exit": 1,
+  "nota": "El original se conserva sin modificar: primero assert sobreestricto omitió CE-31; segundo análisis detectó 8 errores del arnés fuera de la inferencia. Clasificación explícita, no más ejecuciones de pruebas ni eliminación de fallos."
+}

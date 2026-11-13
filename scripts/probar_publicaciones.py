@@ -256,6 +256,15 @@ def _es_infra_excepcion(exc):
     return any(marca in str(exc) for marca in MARCAS_INFRA)
 
 
+def _categoria_excepcion(exc):
+    """Etiqueta de una lista cerrada; nunca imprime el mensaje ni el cuerpo privado."""
+    marcas = MARCAS_INFRA + ("[ERROR RESPUESTA LLM]", "[ERROR PARSEO]")
+    for marca in marcas:
+        if marca in str(exc):
+            return marca.strip("[]").replace("ERROR ", "").replace(" ", "_")
+    return "CONEXION" if isinstance(exc, (ConnectionError, TimeoutError)) else "SIN_MARCA"
+
+
 def _es_infra_conocimiento(resultado, espera):
     """Un error de base de conocimiento es infraestructura salvo que el caso lo prevea."""
     error = str(resultado.get("error") or "")
@@ -302,10 +311,12 @@ def ejecutar(seleccion, solo_verificar):
             resultado = _ejecutar_caso(oe, caso)
         except Exception as exc:  # clase solamente: el texto puede traer datos del proveedor
             if _es_infra_excepcion(exc):
-                print(f"  [INFRA] No se pudo ejecutar el caso: {type(exc).__name__}")
+                print(f"  [INFRA] No se pudo ejecutar el caso: {type(exc).__name__} "
+                      f"(categoría: {_categoria_excepcion(exc)})")
                 infra.append(caso["id"])
             else:
-                print(f"  [FALLO] Excepción inesperada: {type(exc).__name__}")
+                print(f"  [FALLO] Excepción inesperada: {type(exc).__name__} "
+                      f"(categoría: {_categoria_excepcion(exc)})")
                 fallidos.append(caso["id"])
             continue
         if _es_infra_conocimiento(resultado, caso.get("espera") or {}):
@@ -348,7 +359,8 @@ def main(argv=None):
         epilog=("Servicios necesarios para --ejecutar: Neo4j con el catálogo PG3 cargado (Procesador, Linea, "
                 "CapacidadRAM) y el proveedor LLM configurado en el .env. --verificar comprueba la configuración "
                 "y el grafo, no que el proveedor remoto responda. Cada caso puede hacer varias llamadas al modelo "
-                "(enrutador y extracción con reintentos de parseo, redacción), en serie y sin reintentos de "
+                "(enrutador y extracción con reintentos de parseo, redacción), en serie. Los errores muestran "
+                "sólo clase y categoría, nunca el cuerpo privado. Sin reintentos de "
                 "transporte: 61 casos consumen cuota real del proveedor. Empezá por --verificar y por un --caso."))
     parser.add_argument("--ejecutar", action="store_true",
                         help="llama de verdad al pipeline (LLM + Neo4j); consume tokens y tiempo")

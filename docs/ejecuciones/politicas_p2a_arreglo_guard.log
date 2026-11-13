@@ -1,0 +1,8 @@
+test_detecta_configuracion_propia_invalida (__main__.GuardaTest.test_detecta_configuracion_propia_invalida) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.121s
+
+OK
+OK propia sin regla (dueña por versión): la configuración de políticas de SM1 en Neo4j está incompleta o es inválida: configuración de políticas de SM1: la condición CND-PRUEBA-PROPIA-SUELTA no está requerida por ninguna regla de la etapa. Hay que aplicar cypher/Grupo_20_PG3_politicas_sm1_acciones.cypher con un procedimiento aditivo aprobado por el operador.
+OK propia sin identificador: la configuración de políticas de SM1 en Neo4j está incompleta o es inválida: configuración de políticas de SM1: una condición no declara identificador. Hay que aplicar cypher/Grupo_20_PG3_politicas_sm1_acciones.cypher con un procedimiento aditivo aprobado por el operador.

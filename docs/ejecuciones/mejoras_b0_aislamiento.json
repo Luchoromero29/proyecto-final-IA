@@ -1,0 +1,431 @@
+[
+  {
+    "id": "PC-15",
+    "referencia": "67de236",
+    "grafo": "PG3 actualizado, sin recarga",
+    "extraccion_prevalidacion": {
+      "precio_publicado": 220000,
+      "temperatura_cpu_c": 68,
+      "thermal_throttling": false,
+      "fallas": [],
+      "salud_bateria_pct": 91,
+      "ciclos_bateria": 110
+    },
+    "entrada_sm1": {
+      "precio_publicado": 220000,
+      "temperatura_cpu_c": 68,
+      "thermal_throttling": false,
+      "fallas": [],
+      "salud_bateria_pct": 91,
+      "ciclos_bateria": 110
+    },
+    "precio_postvalidacion": 220000,
+    "sm1": {
+      "estado": "Viable",
+      "es_viable": true,
+      "plan_reparacion": [
+        {
+          "tarea": "Service térmico (pasta térmica y limpieza)",
+          "costo": 30000,
+          "regla": "SM1-TER difusa (0.38 → Recomendada)"
+        },
+        {
+          "tarea": "Mano de obra y control de calidad",
+          "costo": 40000,
+          "regla": "Plan: mano de obra"
+        }
+      ],
+      "costo_total": 70000,
+      "cantidad_intervenciones": 1,
+      "upgrades": {
+        "ssd": false,
+        "ram": false
+      },
+      "fallas": []
+    },
+    "decision": "Comprar",
+    "traza": {
+      "reglas": [
+        "SM1-TER difusa (0.38 → Recomendada) → service_termico ($30,000)",
+        "Plan: mano de obra → mano_de_obra ($40,000)",
+        "SM2 componentes: Core i5 10ma gen ($683,000) × ThinkPad (1.075) × RAM 16 GB (1.08) − 10 % de negociación",
+        "SM3-CONV difusa (brecha 39.4 pp, descuento 0.0 %) → Comprar (0.83)"
+      ],
+      "criterios_usados": {
+        "ram_objetivo": {
+          "id": "CE-27",
+          "valor": 8,
+          "unidad": "GB",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "min_muestras_mercado": {
+          "id": "CE-29",
+          "valor": 5,
+          "unidad": "avisos",
+          "version": "v2",
+          "estado": "Provisional"
+        },
+        "anio_referencia": {
+          "id": "CE-13",
+          "valor": 2026,
+          "unidad": "año",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "descuento_negociacion": {
+          "id": "CE-30",
+          "valor": 10,
+          "unidad": "%",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "ratio_reparacion_max": {
+          "id": "CE-19",
+          "valor": 0.5,
+          "unidad": "adimensional",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "margen_base": {
+          "id": "CE-14",
+          "valor": 20,
+          "unidad": "%",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "umbral_intervenciones": {
+          "id": "CE-17",
+          "valor": 4,
+          "unidad": "intervenciones",
+          "version": "v1",
+          "estado": "Provisional"
+        }
+      },
+      "costos_usados": {
+        "service_termico": {
+          "id": "COS-TER",
+          "costo": 30000,
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "mano_de_obra": {
+          "id": "COS-MO",
+          "costo": 40000,
+          "version": "v1",
+          "estado": "Provisional"
+        }
+      },
+      "datos_inferidos": [],
+      "datos_pendientes": [],
+      "referencia_mercado": {
+        "procesador": {
+          "estado_validacion": "Provisional",
+          "valor_ref_ars": 683000,
+          "n_muestras": 12,
+          "fuente_valor": "Mediana de 12 avisos de Mercado Libre (9/11/2026), normalizada por línea y RAM",
+          "soporte_w11": true,
+          "nombre": "Core i5 10ma gen",
+          "gama": "media",
+          "anio": 2020,
+          "familia": "Core i5"
+        },
+        "generacion_anterior": null,
+        "linea": {
+          "estado_validacion": "Provisional",
+          "marca": "Lenovo",
+          "factor_precio": 1.075,
+          "nombre": "ThinkPad",
+          "origen_factor": "Línea (23 avisos)"
+        },
+        "grupo": {
+          "dias_promedio_venta": 12,
+          "nombre": "Corporativa",
+          "indice_repuestos": 9
+        },
+        "ram": {
+          "factor": 1.08,
+          "gb": 16
+        }
+      }
+    },
+    "rechazo": false
+  },
+  {
+    "id": "PC-19",
+    "referencia": "67de236",
+    "grafo": "PG3 actualizado, sin recarga",
+    "extraccion_prevalidacion": {
+      "precio_publicado": 100000,
+      "temperatura_cpu_c": null,
+      "thermal_throttling": null,
+      "fallas": [
+        "No prende",
+        "No carga"
+      ],
+      "salud_bateria_pct": null,
+      "ciclos_bateria": null
+    },
+    "entrada_sm1": {
+      "precio_publicado": 100000,
+      "temperatura_cpu_c": null,
+      "thermal_throttling": null,
+      "fallas": [
+        "No prende",
+        "No carga"
+      ],
+      "salud_bateria_pct": null,
+      "ciclos_bateria": null
+    },
+    "precio_postvalidacion": 100000,
+    "sm1": {
+      "estado": "Viable",
+      "es_viable": true,
+      "plan_reparacion": [],
+      "costo_total": 0,
+      "cantidad_intervenciones": 0,
+      "upgrades": {
+        "ssd": false,
+        "ram": false
+      },
+      "fallas": [
+        "No prende",
+        "No carga"
+      ]
+    },
+    "decision": "Comprar",
+    "traza": {
+      "reglas": [
+        "SM2 componentes: Core i5 10ma gen ($683,000) × HP 15/240/250 (0.962) × RAM 8 GB (1.0) − 10 % de negociación",
+        "SM3-CONV difusa (brecha 63.1 pp, descuento 0.0 %) → Comprar (0.71)"
+      ],
+      "criterios_usados": {
+        "ram_objetivo": {
+          "id": "CE-27",
+          "valor": 8,
+          "unidad": "GB",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "min_muestras_mercado": {
+          "id": "CE-29",
+          "valor": 5,
+          "unidad": "avisos",
+          "version": "v2",
+          "estado": "Provisional"
+        },
+        "anio_referencia": {
+          "id": "CE-13",
+          "valor": 2026,
+          "unidad": "año",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "descuento_negociacion": {
+          "id": "CE-30",
+          "valor": 10,
+          "unidad": "%",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "ratio_reparacion_max": {
+          "id": "CE-19",
+          "valor": 0.5,
+          "unidad": "adimensional",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "margen_base": {
+          "id": "CE-14",
+          "valor": 20,
+          "unidad": "%",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "umbral_intervenciones": {
+          "id": "CE-17",
+          "valor": 4,
+          "unidad": "intervenciones",
+          "version": "v1",
+          "estado": "Provisional"
+        }
+      },
+      "costos_usados": {},
+      "datos_inferidos": [
+        "Soporte de Windows 11 según el procesador Core i5 10ma gen: True"
+      ],
+      "datos_pendientes": [
+        "Salud de batería (verificar en la revisión)",
+        "Temperatura bajo carga (prueba de estrés)"
+      ],
+      "referencia_mercado": {
+        "procesador": {
+          "estado_validacion": "Provisional",
+          "valor_ref_ars": 683000,
+          "n_muestras": 12,
+          "fuente_valor": "Mediana de 12 avisos de Mercado Libre (9/11/2026), normalizada por línea y RAM",
+          "soporte_w11": true,
+          "nombre": "Core i5 10ma gen",
+          "gama": "media",
+          "anio": 2020,
+          "familia": "Core i5"
+        },
+        "generacion_anterior": null,
+        "linea": {
+          "estado_validacion": "Provisional",
+          "marca": "HP",
+          "factor_precio": 0.962,
+          "nombre": "HP 15/240/250",
+          "origen_factor": "Línea (23 avisos)"
+        },
+        "grupo": {
+          "dias_promedio_venta": 20,
+          "nombre": "Consumo",
+          "indice_repuestos": 7
+        },
+        "ram": {
+          "factor": 1.0,
+          "gb": 8
+        }
+      }
+    },
+    "rechazo": false
+  },
+  {
+    "id": "PC-29",
+    "referencia": "67de236",
+    "grafo": "PG3 actualizado, sin recarga",
+    "extraccion_prevalidacion": {
+      "precio_publicado": 115000,
+      "temperatura_cpu_c": null,
+      "thermal_throttling": null,
+      "fallas": [],
+      "salud_bateria_pct": 90,
+      "ciclos_bateria": null
+    },
+    "entrada_sm1": {
+      "precio_publicado": 115000,
+      "temperatura_cpu_c": null,
+      "thermal_throttling": null,
+      "fallas": [],
+      "salud_bateria_pct": 90,
+      "ciclos_bateria": null
+    },
+    "precio_postvalidacion": 115000,
+    "sm1": {
+      "estado": "Viable",
+      "es_viable": true,
+      "plan_reparacion": [],
+      "costo_total": 0,
+      "cantidad_intervenciones": 0,
+      "upgrades": {
+        "ssd": false,
+        "ram": false
+      },
+      "fallas": []
+    },
+    "decision": "Comprar",
+    "traza": {
+      "reglas": [
+        "SM2 componentes: Core i5 10ma gen ($683,000) × Aspire (0.972) × RAM 16 GB (1.08) − 10 % de negociación",
+        "SM3-CONV difusa (brecha 62.2 pp, descuento 0.0 %) → Comprar (0.71)"
+      ],
+      "criterios_usados": {
+        "bateria_reemplazo": {
+          "id": "CE-01",
+          "valor": 75,
+          "unidad": "%",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "ram_objetivo": {
+          "id": "CE-27",
+          "valor": 8,
+          "unidad": "GB",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "min_muestras_mercado": {
+          "id": "CE-29",
+          "valor": 5,
+          "unidad": "avisos",
+          "version": "v2",
+          "estado": "Provisional"
+        },
+        "anio_referencia": {
+          "id": "CE-13",
+          "valor": 2026,
+          "unidad": "año",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "descuento_negociacion": {
+          "id": "CE-30",
+          "valor": 10,
+          "unidad": "%",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "ratio_reparacion_max": {
+          "id": "CE-19",
+          "valor": 0.5,
+          "unidad": "adimensional",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "margen_base": {
+          "id": "CE-14",
+          "valor": 20,
+          "unidad": "%",
+          "version": "v1",
+          "estado": "Provisional"
+        },
+        "umbral_intervenciones": {
+          "id": "CE-17",
+          "valor": 4,
+          "unidad": "intervenciones",
+          "version": "v1",
+          "estado": "Provisional"
+        }
+      },
+      "costos_usados": {},
+      "datos_inferidos": [
+        "Soporte de Windows 11 según el procesador Core i5 10ma gen: True"
+      ],
+      "datos_pendientes": [
+        "Temperatura bajo carga (prueba de estrés)"
+      ],
+      "referencia_mercado": {
+        "procesador": {
+          "estado_validacion": "Provisional",
+          "valor_ref_ars": 683000,
+          "n_muestras": 12,
+          "fuente_valor": "Mediana de 12 avisos de Mercado Libre (9/11/2026), normalizada por línea y RAM",
+          "soporte_w11": true,
+          "nombre": "Core i5 10ma gen",
+          "gama": "media",
+          "anio": 2020,
+          "familia": "Core i5"
+        },
+        "generacion_anterior": null,
+        "linea": {
+          "estado_validacion": "Provisional",
+          "marca": "Acer",
+          "factor_precio": 0.972,
+          "nombre": "Aspire",
+          "origen_factor": "Línea (9 avisos)"
+        },
+        "grupo": {
+          "dias_promedio_venta": 20,
+          "nombre": "Consumo",
+          "indice_repuestos": 7
+        },
+        "ram": {
+          "factor": 1.08,
+          "gb": 16
+        }
+      }
+    },
+    "rechazo": false
+  }
+]

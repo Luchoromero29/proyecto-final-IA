@@ -1,0 +1,57 @@
+test_cambiar_resultado_en_grafo_cambia_la_decision_publica (test_politicas_neo4j.RepresentacionComercialTest.test_cambiar_resultado_en_grafo_cambia_la_decision_publica) ... FAIL
+test_habilitacion_en_grafo_no_depende_del_nombre_de_categoria (test_politicas_neo4j.RepresentacionComercialTest.test_habilitacion_en_grafo_no_depende_del_nombre_de_categoria) ... FAIL
+test_sin_correspondencia_no_se_compra_por_un_default (test_politicas_neo4j.RepresentacionComercialTest.test_sin_correspondencia_no_se_compra_por_un_default) ... FAIL
+
+======================================================================
+FAIL: test_cambiar_resultado_en_grafo_cambia_la_decision_publica (test_politicas_neo4j.RepresentacionComercialTest.test_cambiar_resultado_en_grafo_cambia_la_decision_publica)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_neo4j.py", line 50, in test_cambiar_resultado_en_grafo_cambia_la_decision_publica
+    self.assertEqual({"decision": "DescartarPorRiesgo", "contraoferta_sugerida_ars": None},
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     self._resolver())
+                     ^^^^^^^^^^^^^^^^^
+AssertionError: {'decision': 'DescartarPorRiesgo', 'contraoferta_sugerida_ars': None} != {'decision': 'Comprar', 'contraoferta_sugerida_ars': None}
+- {'contraoferta_sugerida_ars': None, 'decision': 'DescartarPorRiesgo'}
+?                                                  ^^^^  ------------
+
++ {'contraoferta_sugerida_ars': None, 'decision': 'Comprar'}
+?                                                  ^^^^^
+
+
+======================================================================
+FAIL: test_habilitacion_en_grafo_no_depende_del_nombre_de_categoria (test_politicas_neo4j.RepresentacionComercialTest.test_habilitacion_en_grafo_no_depende_del_nombre_de_categoria)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_neo4j.py", line 55, in test_habilitacion_en_grafo_no_depende_del_nombre_de_categoria
+    self.assertEqual({"decision": "Comprar", "contraoferta_sugerida_ars": 123000},
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     self._resolver())
+                     ^^^^^^^^^^^^^^^^^
+AssertionError: {'decision': 'Comprar', 'contraoferta_sugerida_ars': 123000} != {'decision': 'Comprar', 'contraoferta_sugerida_ars': None}
+- {'contraoferta_sugerida_ars': 123000, 'decision': 'Comprar'}
+?                               ^^^^^^
+
++ {'contraoferta_sugerida_ars': None, 'decision': 'Comprar'}
+?                               ^^^^
+
+
+======================================================================
+FAIL: test_sin_correspondencia_no_se_compra_por_un_default (test_politicas_neo4j.RepresentacionComercialTest.test_sin_correspondencia_no_se_compra_por_un_default)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_neo4j.py", line 60, in test_sin_correspondencia_no_se_compra_por_un_default
+    self.assertEqual({"decision": None, "contraoferta_sugerida_ars": None}, self._resolver())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'decision': None, 'contraoferta_sugerida_ars': None} != {'decision': 'Comprar', 'contraoferta_sugerida_ars': None}
+- {'contraoferta_sugerida_ars': None, 'decision': None}
+?                                                 ^ ^^
+
++ {'contraoferta_sugerida_ars': None, 'decision': 'Comprar'}
+?                                                 ^^ ^^^^^^
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.744s
+
+FAILED (failures=3)

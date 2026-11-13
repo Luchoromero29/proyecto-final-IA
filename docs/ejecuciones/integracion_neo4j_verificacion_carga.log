@@ -1,0 +1,29 @@
+# Verificación del respaldo y PG3 directo: job-7, salida 0.
+bc5cbb0987abdfd614ff9d2de6e2ee4dbd42a3db9cec5247f3d054db65ebfd22
+9fb54e1e3a6cbf6bb7ae84ffffd4813d188d0f78ddbc903aaa8200a15a469daf  /home/alvaro/Universidad/IA/Proyecto-IA-Final/_respaldo_original/neo4j-actualizacion.7Jn5Ne/contenido_original_v2.csv
+9fb54e1e3a6cbf6bb7ae84ffffd4813d188d0f78ddbc903aaa8200a15a469daf  /home/alvaro/Universidad/IA/Proyecto-IA-Final/_respaldo_original/neo4j-actualizacion.7Jn5Ne/contenido_restaurado_v4.csv
+RESPALDO VALIDADO: contenido original/restaurado idéntico.
+cypher/Grupo_20_PG3_mercado.cypher: OK
+datos/relevamiento_mercado.csv: OK
+app/orquestador_evaltic.py: OK
+PG3 directo ejecutado: salida 0, sin inicializador ni PG2.
+ready to start consuming query after 21 ms, results consumed after another 0 ms
+Set 279 properties
+0 rows
+ready to start consuming query after 152 ms, results consumed after another 0 ms
+Set 118 properties
+0 rows
+ready to start consuming query after 21 ms, results consumed after another 0 ms
+Set 92 properties
+0 rows
+ready to start consuming query after 175 ms, results consumed after another 0 ms
+Set 80 properties
+0 rows
+ready to start consuming query after 142 ms, results consumed after another 0 ms
+Set 10 properties
+0 rows
+ready to start consuming query after 113 ms, results consumed after another 0 ms
+Set 92 properties
+0 rows
+ready to start consuming query after 147 ms, results consumed after another 0 ms
+Set 118 properties

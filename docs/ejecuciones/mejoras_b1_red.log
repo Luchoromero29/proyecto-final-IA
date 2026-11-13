@@ -1,0 +1,134 @@
+test_cero_no_se_convierte_en_una_compra_por_el_valor_del_llm (test_integridad_extraccion.IntegridadPrecioTest.test_cero_no_se_convierte_en_una_compra_por_el_valor_del_llm) ... FAIL
+test_el_precio_literal_manda_sin_tolerancia_monetaria (test_integridad_extraccion.IntegridadPrecioTest.test_el_precio_literal_manda_sin_tolerancia_monetaria) ... FAIL
+test_los_formatos_ya_admitidos_conservan_su_contrato (test_integridad_extraccion.IntegridadPrecioTest.test_los_formatos_ya_admitidos_conservan_su_contrato) ... ok
+test_los_montos_cortos_se_validan_igual_que_los_miles (test_integridad_extraccion.IntegridadPrecioTest.test_los_montos_cortos_se_validan_igual_que_los_miles) ...
+  test_los_montos_cortos_se_validan_igual_que_los_miles (test_integridad_extraccion.IntegridadPrecioTest.test_los_montos_cortos_se_validan_igual_que_los_miles) (monto=25) ... FAIL
+  test_los_montos_cortos_se_validan_igual_que_los_miles (test_integridad_extraccion.IntegridadPrecioTest.test_los_montos_cortos_se_validan_igual_que_los_miles) (monto=999) ... FAIL
+  test_los_montos_cortos_se_validan_igual_que_los_miles (test_integridad_extraccion.IntegridadPrecioTest.test_los_montos_cortos_se_validan_igual_que_los_miles) (monto=1500) ... FAIL
+test_pesos_sin_simbolo_tienen_respaldo_aunque_el_llm_no_extraiga_precio (test_integridad_extraccion.IntegridadPrecioTest.test_pesos_sin_simbolo_tienen_respaldo_aunque_el_llm_no_extraiga_precio) ... FAIL
+test_sin_precio_en_el_texto_no_se_acepta_el_precio_inventado (test_integridad_extraccion.IntegridadPrecioTest.test_sin_precio_en_el_texto_no_se_acepta_el_precio_inventado) ... FAIL
+test_un_peso_no_se_reemplaza_por_el_precio_inventado_del_llm (test_integridad_extraccion.IntegridadPrecioTest.test_un_peso_no_se_reemplaza_por_el_precio_inventado_del_llm) ... FAIL
+test_un_tipo_incorrecto_del_llm_no_rompe_un_monto_explicito (test_integridad_extraccion.IntegridadPrecioTest.test_un_tipo_incorrecto_del_llm_no_rompe_un_monto_explicito) ... ERROR
+
+======================================================================
+ERROR: test_un_tipo_incorrecto_del_llm_no_rompe_un_monto_explicito (test_integridad_extraccion.IntegridadPrecioTest.test_un_tipo_incorrecto_del_llm_no_rompe_un_monto_explicito)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 54, in test_un_tipo_incorrecto_del_llm_no_rompe_un_monto_explicito
+    self._exigir_precio(self._caso("PC-31", "inventado"), 300000)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 16, in _exigir_precio
+    ejecucion = _ejecutar(caso)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 222, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1573, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1224, in evaluar_publicacion_integral
+    if datos.get("precio_publicado") is None or abs((datos.get("precio_publicado") or 0) - val_p) > 1000:
+                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+
+======================================================================
+FAIL: test_cero_no_se_convierte_en_una_compra_por_el_valor_del_llm (test_integridad_extraccion.IntegridadPrecioTest.test_cero_no_se_convierte_en_una_compra_por_el_valor_del_llm)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 44, in test_cero_no_se_convierte_en_una_compra_por_el_valor_del_llm
+    self._exigir_rechazo(caso)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 25, in _exigir_rechazo
+    self.assertEqual("Entrada rechazada: falta marca/modelo o precio comercial válido.",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     ejecucion.resultado.get("error"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Entrada rechazada: falta marca/modelo o precio comercial válido.' != None
+
+======================================================================
+FAIL: test_el_precio_literal_manda_sin_tolerancia_monetaria (test_integridad_extraccion.IntegridadPrecioTest.test_el_precio_literal_manda_sin_tolerancia_monetaria)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 51, in test_el_precio_literal_manda_sin_tolerancia_monetaria
+    self._exigir_precio(self._caso("PC-31", 300500), 300000)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 19, in _exigir_precio
+    self.assertEqual(esperado, resultado["datos_extraidos"]["precio_publicado"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 300000 != 300500
+
+======================================================================
+FAIL: test_los_montos_cortos_se_validan_igual_que_los_miles (test_integridad_extraccion.IntegridadPrecioTest.test_los_montos_cortos_se_validan_igual_que_los_miles) (monto=25)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 40, in test_los_montos_cortos_se_validan_igual_que_los_miles
+    self._exigir_precio(caso, monto)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 19, in _exigir_precio
+    self.assertEqual(esperado, resultado["datos_extraidos"]["precio_publicado"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 25 != 115000
+
+======================================================================
+FAIL: test_los_montos_cortos_se_validan_igual_que_los_miles (test_integridad_extraccion.IntegridadPrecioTest.test_los_montos_cortos_se_validan_igual_que_los_miles) (monto=999)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 40, in test_los_montos_cortos_se_validan_igual_que_los_miles
+    self._exigir_precio(caso, monto)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 19, in _exigir_precio
+    self.assertEqual(esperado, resultado["datos_extraidos"]["precio_publicado"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 999 != 115000
+
+======================================================================
+FAIL: test_los_montos_cortos_se_validan_igual_que_los_miles (test_integridad_extraccion.IntegridadPrecioTest.test_los_montos_cortos_se_validan_igual_que_los_miles) (monto=1500)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 40, in test_los_montos_cortos_se_validan_igual_que_los_miles
+    self._exigir_precio(caso, monto)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 19, in _exigir_precio
+    self.assertEqual(esperado, resultado["datos_extraidos"]["precio_publicado"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1500 != 115000
+
+======================================================================
+FAIL: test_pesos_sin_simbolo_tienen_respaldo_aunque_el_llm_no_extraiga_precio (test_integridad_extraccion.IntegridadPrecioTest.test_pesos_sin_simbolo_tienen_respaldo_aunque_el_llm_no_extraiga_precio)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 48, in test_pesos_sin_simbolo_tienen_respaldo_aunque_el_llm_no_extraiga_precio
+    self._exigir_precio(self._caso("PC-26", None), 320000)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 18, in _exigir_precio
+    self.assertNotIn("error", resultado)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'error' unexpectedly found in {'error': 'Entrada rechazada: falta marca/modelo o precio comercial válido.', 'datos_extraidos': {'marca': 'Acer', 'modelo': 'Aspire 5', 'procesador': 'i5 10ma gen', 'precio_publicado': None, 'anio_fabricacion': 2020, 'ram_gb': 8, 'tipo_disco': 'SSD', 'fallas': []}, 'intencion': 'evaluacion_integral', 'respuesta': 'Entrada rechazada: falta marca/modelo o precio comercial válido.', 'enrutamiento': {'intencion': 'evaluacion_integral', 'origen': 'LLM', 'motivo': 'fixture'}}
+
+======================================================================
+FAIL: test_sin_precio_en_el_texto_no_se_acepta_el_precio_inventado (test_integridad_extraccion.IntegridadPrecioTest.test_sin_precio_en_el_texto_no_se_acepta_el_precio_inventado)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 59, in test_sin_precio_en_el_texto_no_se_acepta_el_precio_inventado
+    self._exigir_rechazo(caso)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 25, in _exigir_rechazo
+    self.assertEqual("Entrada rechazada: falta marca/modelo o precio comercial válido.",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     ejecucion.resultado.get("error"))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Entrada rechazada: falta marca/modelo o precio comercial válido.' != None
+
+======================================================================
+FAIL: test_un_peso_no_se_reemplaza_por_el_precio_inventado_del_llm (test_integridad_extraccion.IntegridadPrecioTest.test_un_peso_no_se_reemplaza_por_el_precio_inventado_del_llm)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 33, in test_un_peso_no_se_reemplaza_por_el_precio_inventado_del_llm
+    self._exigir_precio(self._caso(), 1)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_integridad_extraccion.py", line 19, in _exigir_precio
+    self.assertEqual(esperado, resultado["datos_extraidos"]["precio_publicado"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 115000
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.037s
+
+FAILED (failures=8, errors=1)

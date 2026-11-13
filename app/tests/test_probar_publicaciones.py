@@ -165,9 +165,10 @@ class EjecutorTest(unittest.TestCase):
     def test_conteo_separa_cumplidos_fallidos_e_infraestructura(self):
         motor = MotorFalso({
             caso("PC-02")["entrada"]: {"error": "Entrada rechazada: falta marca/modelo o precio comercial válido."},
-            caso("PC-44")["entrada"]: {"sm1_tecnico": {"plan_reparacion": [{"tarea": "Reemplazo de teclado"}],
-                                                       "costo_total": 65000},
-                                       "sm3_financiero": {"decision": "Comprar", "estado_decision": "Provisional"}},
+            caso("PC-44")["entrada"]: {"sm1_tecnico": {"plan_reparacion": [], "costo_total": 0},
+                                       "sm2_comercial": {"vma_estimado_ars": 100},
+                                       "sm3_financiero": {"decision": "VerificacionPendiente",
+                                                         "regla_aplicada": "R3.3c"}},
             caso("PC-07")["entrada"]: ConnectionError("falla de prueba"),
         })
         codigo, salida, errores = self._correr(
@@ -222,6 +223,16 @@ class EjecutorTest(unittest.TestCase):
         self.assertEqual(["integral", "asistente"], [punto for punto, _ in motor.llamadas])
 
     # --- privacidad ---
+    def test_categoria_del_error_no_expone_el_cuerpo_privado(self):
+        motor = MotorFalso({caso("PC-48")["entrada"]:
+                            RuntimeError("[ERROR API REMOTA] sk-live SECRETO cuerpo privado")})
+        codigo, salida, errores = self._correr(motor, ["--ejecutar", "--caso", "PC-48"])
+        self.assertEqual(2, codigo)
+        self.assertIn("categoría: API_REMOTA", salida)
+        self.assertNotIn("SECRETO", salida + errores)
+        self.assertNotIn("sk-live", salida + errores)
+        self.assertIn("cumplen: 0", salida)
+
     def test_no_expone_la_salida_cruda_del_motor(self):
         motor = MotorFalso({caso("PC-02")["entrada"]: {
             "error": "Entrada rechazada: falta marca/modelo o precio comercial válido."}}, ruido=RUIDO_SECRETO)

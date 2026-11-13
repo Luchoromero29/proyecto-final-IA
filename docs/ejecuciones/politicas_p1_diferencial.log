@@ -1,0 +1,1 @@
+{"estado": "OK", "rutas": 12, "diferencias": [], "exit_codes": [0, 0], "stdout_stderr_por_ruta": "idénticos", "proyeccion_protegida": "d3bff60e62990562ccca493ce95840d731f788b4a606f5412d9bff0dd23d6fc4", "evidencia": "docs/ejecuciones/politicas_p1_diferencial.json"}

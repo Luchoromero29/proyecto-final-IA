@@ -100,6 +100,16 @@ input_texto = st.text_area(
     placeholder="Pega aquí la descripción de la notebook, estado técnico, componentes dañados y precio pedido..."
 )
 
+with st.expander("Verificación técnica del operador (opcional, no la deduce el LLM)"):
+    st.caption("Sólo esta declaración puede liberar una verificación pendiente. La fuente tiene que "
+               "describir dónde y cómo se revisó el equipo, y los diagnósticos son los que confirmó "
+               "el técnico (por ejemplo: bateria, cargador, pantalla, teclado, termico, "
+               "almacenamiento, placa). Ningún dato del aviso ni del modelo se toma como diagnóstico.")
+    fuente_verificacion = st.text_input("Fuente de la verificación",
+                                        placeholder="Ej.: revisión en persona en el taller, 12/11/2026")
+    diagnosticos_verificacion = st.text_input("Diagnósticos confirmados (separados por coma)",
+                                              placeholder="Ej.: bateria")
+
 col_btn, _ = st.columns([2, 5])
 with col_btn:
     btn_evaluar = st.button("🚀 Evaluar con EvalTIC", use_container_width=True, type="primary")
@@ -108,7 +118,11 @@ if btn_evaluar and input_texto.strip():
     with st.spinner("Ejecutando pipeline neuro-simbólico sándwich (SM1 ➔ SM2 ➔ SM3)..."):
         t0 = time.time()
         try:
-            resultado = asistente_evaltic(input_texto, verbose=False)
+            verificacion = None
+            diagnosticos = [d.strip() for d in diagnosticos_verificacion.split(",") if d.strip()]
+            if fuente_verificacion.strip() and diagnosticos:
+                verificacion = {"fuente": fuente_verificacion.strip(), "diagnosticos": diagnosticos}
+            resultado = asistente_evaltic(input_texto, verbose=False, verificacion_tecnica=verificacion)
             t_total = round(time.time() - t0, 2)
             ruta = resultado.get("enrutamiento", {})
             st.caption(f"Enrutador (System Prompt maestro): **{ruta.get('intencion')}** · origen: {ruta.get('origen')}")
@@ -215,7 +229,13 @@ if btn_evaluar and input_texto.strip():
 
             with tab_sm1:
                 st.subheader("Submódulo 1 — Diagnóstico Técnico y Plan de Reacondicionamiento")
-                if sm1.get('es_viable') is None:
+                if sm1.get('estado') == "VerificacionPendiente":
+                    st.warning("Verificación técnica pendiente antes de decidir.")
+                    for dato in sm1.get("verificacion_requerida") or []:
+                        st.write(f"• {dato}")
+                    if sm1.get('motivo'):
+                        st.caption(sm1['motivo'])
+                elif sm1.get('es_viable') is None:
                     st.info("No se evaluó: la operación quedó pendiente de verificación antes del diagnóstico.")
                 elif not sm1['es_viable']:
                     st.error(f"**Motivo de Inviabilidad:** {sm1.get('motivo')}")

@@ -1,0 +1,41 @@
+{
+  "base_original": "sin acceso",
+  "delta_autorizado": [
+    {
+      "agregados": {
+        "contraoferta_habilitada": false,
+        "representacion_version": "politicas-P1-v1",
+        "resultado_decision": "DescartarPorRiesgo"
+      },
+      "id": "Conveniencia.Descartar"
+    },
+    {
+      "agregados": {
+        "contraoferta_habilitada": true,
+        "representacion_version": "politicas-P1-v1",
+        "resultado_decision": "ComprarConOfertaMenor"
+      },
+      "id": "Conveniencia.Negociar"
+    },
+    {
+      "agregados": {
+        "contraoferta_habilitada": false,
+        "representacion_version": "politicas-P1-v1",
+        "resultado_decision": "Comprar"
+      },
+      "id": "Conveniencia.Comprar"
+    }
+  ],
+  "nota": "Sólo scratch marcado. Datos completos antes del cambio de consumidor; transacción confirmada tras validar protección e idempotencia. Intento1 fallido por tipos Date/DateTime conservado aparte.",
+  "primera_carga": {
+    "actualizadas": 3,
+    "configuradas": 3,
+    "errores": []
+  },
+  "resto_grafo": "idéntico a proyección P0 (serialización canónica)",
+  "segunda_carga": {
+    "actualizadas": 0,
+    "configuradas": 3,
+    "errores": []
+  }
+}

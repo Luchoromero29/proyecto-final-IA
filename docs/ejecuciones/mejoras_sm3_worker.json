@@ -1,0 +1,322 @@
+{
+  "unidad": "B2 — SM3: política crisp y cálculos inferidos en Neo4j (S9)",
+  "spec": "odd/tasks/mejoras-evaltic.md T2 (S1, S4, S8, S9); plan docs/PLAN_MEJORAS_EVALTIC.md",
+  "fecha": "2026-11-09",
+  "base": "d93b86d (rama mejoras/b1-integridad-precio)",
+  "interprete": "/home/alvaro/Universidad/IA/Proyecto/.venv/bin/python",
+  "alcance": {
+    "migrado": [
+      "R3.7 (ratio de reparación sobre CE ratio_reparacion_max)",
+      "R3.8 (riesgo Alto + demanda Baja)",
+      "margen requerido: base -> R3.4 o R3.5 (excluyentes) -> R3.6",
+      "contraoferta (fórmula, redondeo a miles medio al par, clamp a cero)",
+      "brecha de margen y descuento requerido (entradas crisp de SM3-CONV)",
+      "mapeo categoría difusa -> tipo de decisión y habilitación de la contraoferta",
+      "procedencia de criterios y textos de reglas, devueltos por el grafo"
+    ],
+    "no_tocado": [
+      "SM1 (diagnóstico, fallas, costos)",
+      "SM2 (valuación por componentes, R2.4, difusas RIE/DEM)",
+      "inferir_sm3_conv_cypher (Mamdani SM3-CONV): se reutiliza sin cambios",
+      "CE(), costo(), cargar_conocimiento(), nueva_traza(): sin cambios",
+      "corpus casos_publicaciones.json, logs históricos, .env, dependencias, grafo de trabajo"
+    ],
+    "grafo": "sólo lectura sobre bolt://127.0.0.1:17687 (auth=None), marcador (:EntornoPruebas {id:'mejoras-evaltic'}) verificado en setUpModule; ninguna escritura, ninguna recarga"
+  },
+  "comandos": [
+    {
+      "id": "red_migracion",
+      "comando": "PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python /tmp/diff-sm3.3kKqet/red_probe.py /tmp/diff-sm3.3kKqet/base /home/alvaro/Universidad/IA/Proyecto-IA-Final/_respaldo_original/wt-mejoras-sm3",
+      "exit": 0,
+      "stdout": [
+        "[base d93b86d] con el conocimiento del grafo: Comprar / None",
+        "[base d93b86d] con umbrales alterados en Python: DescartarPorRiesgo / R3.7",
+        "[base d93b86d] ¿la decisión cambió? SÍ (falla la migración)",
+        "[rama B2/SM3] con el conocimiento del grafo: Comprar / None",
+        "[rama B2/SM3] con umbrales alterados en Python: Comprar / None",
+        "[rama B2/SM3] ¿la decisión cambió? NO (correcto)"
+      ],
+      "stderr": "",
+      "nota": "RED observado sobre el código base: la decisión dependía de lo que Python leyera de cargar_conocimiento. GREEN en la rama: la procedencia y la comparación vienen de la consulta Cypher."
+    },
+    {
+      "id": "tests_neo4j",
+      "comando": "EVALTIC_NEO4J_PRUEBAS_URI=bolt://127.0.0.1:17687 PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python -m unittest discover -s app/tests -p test_sm3_neo4j.py -v",
+      "exit": 0,
+      "stdout": "Ran 19 tests in 0.861s / OK",
+      "stderr": "sin stderr",
+      "detalle": "19 casos: entorno marcado, R3.7 (dispara, umbral exacto, centésima redondeada), R3.8 (dispara y no dispara), R3.4, R3.5, R3.6, contraoferta en empate a medio millar, entradas de la difusa, procedencia y orden de criterios, mapeo de categoría, VMA no positivo, entradas no numéricas, y 3 pruebas de ruta pública integral con extractor controlado y redactor adversario."
+    },
+    {
+      "id": "suite_offline",
+      "comando": "PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python -m unittest discover -s app/tests -v",
+      "exit": 0,
+      "stdout": "Ran 84 tests in 0.184s / OK (skipped=1)",
+      "stderr": "sin stderr",
+      "nota": "El módulo test_sm3_neo4j se omite solo cuando no hay EVALTIC_NEO4J_PRUEBAS_URI; la suite offline no necesita Neo4j. Base d93b86d: 79 pruebas OK; la rama suma 5 pruebas del adapter SM3."
+    },
+    {
+      "id": "diferencial_ruta_publica_sm3",
+      "comando": "PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python /tmp/diff-sm3.3kKqet/public_sm3.py <raíz> (ejecutado dos veces: copia de d93b86d en TMPDIR y rama)",
+      "exit_base": 0,
+      "exit_rama": 0,
+      "stdout": "21 líneas JSON idénticas; diff vacío (exit 0)",
+      "stderr_base": "",
+      "stderr_rama": "",
+      "casos": "12 casos base + 9 de límite: fila del umbral del ratio (0,5), ratio con centésima redondeada (0,4995), empate decimal exacto del ratio (0,505), empate decimal inexacto del margen (6,55 %), contraoferta en empate a medio millar (300.500 -> 300.000), precio igual a la contraoferta, precio sobre el VMA, riesgo/demanda en las nueve combinaciones relevantes y 0 y 3/4/5 intervenciones.",
+      "nota": "La comparación incluye resultado, orientadores, reglas activadas en orden y criterios usados con su procedencia."
+    },
+    {
+      "id": "barrido_diferencial",
+      "comando": "PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python /tmp/diff-sm3.3kKqet/sweep_sm3.py /tmp/diff-sm3.3kKqet/base /home/alvaro/Universidad/IA/Proyecto-IA-Final/_respaldo_original/wt-mejoras-sm3",
+      "exit": 0,
+      "stdout": "{\"comparados\": 540, \"diferencias\": 0, \"detalle\": []}",
+      "stderr": "sin stderr (6,8 s)",
+      "nota": "5 precios/costos x 3 VMA x 2 intervenciones x 3 riesgos x 3 demandas sobre el Neo4j de pruebas, comparando resultado + traza completos."
+    },
+    {
+      "id": "diferencial_integral",
+      "comando": "PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python /tmp/diff-sm3.3kKqet/public_integral.py <raíz> (ejecutado dos veces: copia de d93b86d y rama)",
+      "exit_base": 0,
+      "exit_rama": 0,
+      "stdout": "3 líneas JSON idénticas (sm1, sm2, sm3, traza y dictamen); diff vacío; decisiones: Comprar (sin regla crisp), DescartarPorRiesgo R3.8, DescartarPorRiesgo R3.7",
+      "stderr_base": "",
+      "stderr_rama": "",
+      "nota": "Ruta pública evaluar_publicacion_integral con extractor controlado y redactor adversario (cifras inventadas) contra el Neo4j de pruebas: el dictamen determinístico del grafo coincide entre base y rama."
+    },
+    {
+      "id": "diff_check",
+      "comando": "git diff --check",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "hallazgos_no_ocultos": [
+    {
+      "momento": "primera versión del motor (redondeo dentro del Cypher)",
+      "observado": "1 diferencia real en el diferencial de ruta pública: con costo/vma = 101.000/200.000 = 0,505 la base devolvía DescartarPorRiesgo (R3.7) y la rama devolvía Comprar. Causa: Cypher redondea la representación decimal del número (medio al par -> 0,50) y la política vigente redondeaba el valor binario IEEE-754 (-> 0,51).",
+      "accion": "Se movió el redondeo decimal a un único punto del adapter, sobre valores crudos que devuelve el grafo (CONSULTA_INDICADORES y CONSULTA_CRISP no redondean). Ninguna condición ni umbral se evalúa en Python. El diferencial quedó sin diferencias y el caso 0,505 está cubierto en las pruebas de Neo4j y en el diferencial."
+    },
+    {
+      "momento": "primera pasada de la suite offline sobre la rama",
+      "observado": "FAILED (errors=39): TypeError: 'unittest.mock.Mock' object does not support the context manager protocol. Los dobles del fixture interceptaban inferir_sm3_conv_cypher pero no las nuevas consultas Cypher.",
+      "accion": "Se agregaron dobles documentados de las tres consultas en test_publicaciones_criticas.py (misma forma que el Cypher, criterios del fixture) y 5 pruebas del adapter. La suite offline volvió a 84 OK."
+    },
+    {
+      "momento": "autoría de las pruebas",
+      "observado": "Dos expectativas propias mal calculadas contra los criterios del fixture: margen requerido esperado 25,0 frente al real 17,0 (margen_base 12 % + prima 5 pp con umbral 3) y contraoferta esperada 800.000 frente a 880.000. También una brecha esperada 30,1 frente a la real -19,9 (redondeo de 0,05 a 0,1).",
+      "accion": "Se corrigieron las expectativas al valor que fija la política del fixture; no se cambió la implementación para que pasaran."
+    }
+  ],
+  "tdd": {
+    "red": "RED de migración observado sobre d93b86d (la decisión cambiaba con los criterios leídos en Python), RED de cuantización (el redondeo decimal nativo invertía R3.7 con ratio 0,505) y dos regresiones reproducidas verbatim antes de la batch2 (123456789012345.67 con 2 decimales y 10^300 con -3).",
+    "green": "24/24 pruebas de Neo4j y 86/86 de la suite offline; 4.923 comparaciones de cuantización y 2.196 de magnitudes sin diferencias; los dos fallos previos ahora coinciden con round() de Python.",
+    "preserve": "Diferencial de ruta pública de 30 casos (27 idénticos; 3 diferencias documentadas de mensaje en entradas de tipo inválido), barrido de 1.350 combinaciones con 0 diferencias (incluye VMA 0, VMA negativo y precio booleano), diferencial integral de 3 avisos idéntico, y 79/79 -> 86/86 offline sin cambiar expectativas del corpus."
+  },
+  "riesgos": [
+    "El dominio de la cuantización quedó verificado en todo el rango probado (2^-60 a 2^1023, incluidos los dos fallos previos) con 4.923 + 2.196 comparaciones sin diferencias. Ya no hay una limitación de dominio declarada para importes; quedan fuera de prueba sólo magnitudes exóticas (subnormales por debajo de 2^-60), que redondean a cero con su signo.",
+    "Entradas de tipo inválido: la clase (TypeError) y el modo de fallo coinciden con la base, pero el mensaje es propio y nombra el campo. Se conserva el dominio numérico de la base (int, float y bool como 0/1); no se convirtió '350000' en número en silencio. Es el único resto del diferencial público (3 líneas de 30 casos).",
+    "El mapeo categoría difusa -> tipo de decisión está declarado en CONSULTA_DECISION: el grafo no lo representa hoy como relación. Candidato a conocimiento versionado (requiere decisión del experto, no de esta unidad).",
+    "Observación fuera de esta unidad: inferir_sm3_conv_cypher (compartida con SM1/SM2) sigue haciendo round(float(centroide), 2) en Python sobre el centroide que devuelve el grafo; no afecta la decisión (usa la categoría) pero sí el conveniencia_score informado.",
+    "Directorios temporales fuera del árbol creados por esta unidad y aún presentes: /tmp/sm3probe y /tmp/diff-sm3.3kKqet (copia de d93b86d, scripts de diferencial, logs y el snippet sincronizado). El padre debe eliminarlos; no se agregó nada temporal al repositorio.",
+    "__pycache__ en app/ y app/tests/ creados por la verificación de compilación (ignorados por git); los debe eliminar el padre, no ejecuté borrados.",
+    "El grafo de pruebas compartido se usó sólo en lectura; las expectativas se calculan leyendo los criterios del propio grafo para no fijar valores si el conocimiento cambia."
+  ],
+  "archivos": [
+    "app/inferencia_sm3.py (nuevo, 255 líneas): cuantización decimal IEEE-754 en Cypher con atajo de representación binaria, política crisp completa, mapeo de decisión y transporte con driver explícito.",
+    "app/orquestador_evaltic.py (+77/-35): import del módulo, helper registrar_criterios() y ejecutar_motor_sm3 como adapter sin aritmética (dominio de tipos, traducción de division_por_cero, procedencia y salida pública).",
+    "app/tests/test_sm3_neo4j.py (nuevo, 433 líneas): 24 pruebas contra Neo4j aislado y sólo lectura, omitidas sin EVALTIC_NEO4J_PRUEBAS_URI; matriz de cuantización de 68 valores x 3 precisiones con los bordes del atajo.",
+    "app/tests/test_publicaciones_criticas.py (+137): dobles de la consulta Cypher de SM3 y 7 pruebas del adapter y de su contrato público.",
+    "docs/DECISION_NEO4J.md (nuevo, 128 líneas): qué infiere el grafo, la cuantización con su atajo y la verificación, política conservada, autoridad del dictamen, límites y comandos.",
+    "docs/ejecuciones/mejoras_sm3_worker.json: evidencia de la entrega, de la corrección batch1 y de esta batch2 (comandos, exit codes, stdout/stderr, fallos previos verbatim y riesgos)."
+  ],
+  "integración": [
+    "Sin commits ni push: el padre integra y hace el commit de la unidad.",
+    "El adapter importa inferencia_sm3 como módulo hermano: funciona con el directorio app/ en sys.path (script, app_web y las pruebas).",
+    "No se agregó conocimiento al grafo ni se ejecutó ninguna recarga; el Cypher de SM3 depende de que existan los 6 :CriterioExperto usados por la política, y cargar_conocimiento() ya los valida al inicio del pipeline."
+  ],
+  "correcciones_batch1": {
+    "pedido": "Mover la cuantización decimal a Cypher, restaurar el contrato público de VMA<=0 y auditar el dominio de tipos; sin commits.",
+    "comandos": [
+      {
+        "id": "cuantizacion_vs_python",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/sm3probe/pruebacuant.py (Cypher de cuantización vs round() de Python, Neo4j de pruebas sólo lectura)",
+        "exit": 0,
+        "stdout": "{\"comparados\": 4923, \"fallas\": 0, \"detalle\": []}",
+        "nota": "Empates exactos (0,625 / 2,5 / 2500), empates decimales inexactos (0,505 / 6,55 / 2,675 / 0,065), ceros con signo, negativos, valores diminutos y magnitudes hasta 1e13, en precisiones 1, 2 y -3."
+      },
+      {
+        "id": "cuantizacion_extremos",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/sm3probe/extremos.py",
+        "exit": 0,
+        "stdout": "1e300 con decimales -3 → ClientError long overflow; 123456789012345.67 con decimales 2 → 123456789012345.69 en el grafo frente a 123456789012345.67 en Python; el resto de los 42 casos coincide",
+        "nota": "Ambos fuera del dominio verificado (|valor| <= 9e13 para 1-2 decimales). Documentado en docs/DECISION_NEO4J.md."
+      },
+      {
+        "id": "tests_neo4j_batch1",
+        "comando": "EVALTIC_NEO4J_PRUEBAS_URI=bolt://127.0.0.1:17687 PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python -m unittest discover -s app/tests -p test_sm3_neo4j.py -v",
+        "exit": 0,
+        "stdout": "Ran 24 tests in 0.986s / OK",
+        "stderr": "sin stderr",
+        "detalle": "Suma: cuantización del grafo contra round() de Python (49 valores x 3 precisiones), empates 0,505 y 6,55 por la ruta pública, signo del cero, VMA cero con ZeroDivisionError y traza vacía, VMA negativo evaluado como antes, booleanos como números."
+      },
+      {
+        "id": "suite_offline_batch1",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python -m unittest discover -s app/tests -v",
+        "exit": 0,
+        "stdout": "Ran 86 tests in 0.195s / OK (skipped=1)",
+        "stderr": "sin stderr"
+      },
+      {
+        "id": "diferencial_ruta_publica_batch1",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/diff-sm3.3kKqet/public_sm3.py <raíz> (copia de d93b86d y rama)",
+        "exit_base": 0,
+        "exit_rama": 0,
+        "stdout": "30 casos; stderr vacío en ambos; 27 idénticos byte a byte y 3 diferencias de mensaje en entradas de tipo inválido (misma clase TypeError y mismo error_tipo)",
+        "detalle_diferencias": [
+          "['350000', 0, 661000, ...] base: TypeError unsupported operand type(s) for -: 'float' and 'str' / rama: TypeError [ERROR ENTRADA SM3] 'precio' debe ser numérico (int, float); se recibió str.",
+          "[400000, 'mucho', 661000, ...] base: TypeError unsupported operand type(s) for -: 'float' and 'str' / rama: TypeError [ERROR ENTRADA SM3] 'costo_rep' debe ser numérico (int, float); se recibió str.",
+          "[400000, 0, None, ...] base: TypeError unsupported operand type(s) for -: 'NoneType' and 'float' / rama: TypeError [ERROR ENTRADA SM3] 'vma' debe ser numérico (int, float); se recibió NoneType."
+        ],
+        "nota": "VMA 0, 0.0 y -0.0 coinciden exactamente: ZeroDivisionError('division by zero'); VMA negativo y booleanos coinciden en resultado, reglas y criterios. El valor de los argumentos de VMA cero se corrigió a 'division by zero' tras observar el mensaje real de la base (la primera versión decía 'float division by zero')."
+      },
+      {
+        "id": "barrido_diferencial_batch1",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/diff-sm3.3kKqet/sweep_sm3.py /tmp/diff-sm3.3kKqet/base <rama>",
+        "exit": 0,
+        "stdout": "{\"comparados\": 1350, \"diferencias\": 0, \"detalle\": []}",
+        "nota": "Grilla ampliada con VMA 0, VMA negativo y precio booleano: 1350 combinaciones de resultado + traza completos, idénticas a d93b86d."
+      },
+      {
+        "id": "diferencial_integral_batch1",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/diff-sm3.3kKqet/public_integral.py <raíz> (copia de d93b86d y rama)",
+        "exit_base": 0,
+        "exit_rama": 0,
+        "stdout": "3 avisos; stderr vacío; diff vacío (sm1, sm2, sm3, traza y dictamen idénticos)"
+      },
+      {
+        "id": "diff_check_batch1",
+        "comando": "git diff --check",
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "hallazgos_no_ocultos": [
+      {
+        "momento": "diseño de la cuantización",
+        "observado": "El primer intento (CALL sin cláusula de alcance) fue rechazado por Neo4j: «Importing WITH should consist only of simple references to outside variables». La versión con cláusula de alcance (CALL (variable) { ... }) funciona y no emite avisos de deprecación en Neo4j 5.26."
+      },
+      {
+        "momento": "orden de cláusulas de la cuantización",
+        "observado": "Dos errores propios detectados por la batería numérica antes de integrar: (a) el caso «cero» quedaba después de «múltiplo exacto» y devolvía el valor en lugar de 0 (6,55 con decimales -3); (b) el caso «exacto» quedaba después de «entero = 0» y devolvía 0 en lugar del valor (1.234.567.890.123.456,5 con 2 decimales). Corregido el orden y verificado con 4.923 comparaciones."
+      },
+      {
+        "momento": "contrato de VMA cero",
+        "observado": "La base d93b86d no lanza 'float division by zero' sino ZeroDivisionError('division by zero') para vma 0, 0.0 y -0.0 (medido con el intérprete del proyecto). El adapter se alineó a ese mensaje exacto."
+      }
+    ],
+    "decisiones": [
+      "La cuantización es una utilidad numérica explícita en Cypher aplicada por la consulta de SM3; no hay UDF, plugin, dependencia nueva ni motor de reglas.",
+      "El adapter ya no redondea, no divide y no compara umbrales: sólo valida el dominio, traduce el código division_por_cero a la excepción de la base, registra procedencia y arma la salida.",
+      "Un VMA negativo se sigue evaluando (ratio 0, contraoferta acotada a cero, descuento sobre el precio) porque era el comportamiento real de la base."
+    ]
+  },
+  "correcciones_batch2": {
+    "pedido": "Resolver los dos fallos conocidos de cuantización (123456789012345.67 con 2 decimales y 10^300 con -3) sin precisión arbitraria, sin dependencias y sin tocar el redondeo en Python.",
+    "fallos_reproducidos_antes_del_arreglo": [
+      {
+        "valor": 123456789012345.67,
+        "decimales": 2,
+        "python": 123456789012345.67,
+        "grafo": 123456789012345.69,
+        "igual": false
+      },
+      {
+        "valor": 1e+300,
+        "decimales": -3,
+        "python": 1e+300,
+        "error": "ClientError: long overflow",
+        "igual": false
+      }
+    ],
+    "arreglo": "Atajo de representación binaria en _CUERPO_CUANTIZADOR: si 2^(est-52) >= cuanto decimal (0,1 / 0,01 / 1000) se devuelve el valor antes de la aritmética entera. Justificación matemática verificada: el error de cuantización es <= cuanto/2 <= ulp/2, el double representable más cercano al resultado es el propio valor, y no hay empate posible (con 1-2 decimales, ulp >= 10^-d implica que valor·10^d no es semientero; con miles, ulp >= 1000 implica múltiplo de 1024 y 500 no lo es). Los cuantos son constantes de representación numérica, no conocimiento experto.",
+    "comandos": [
+      {
+        "id": "repro_antes",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/sm3probe/batch2_repro.py (contra el código de la entrega batch1)",
+        "exit": 0,
+        "stdout": "[{\"valor\": 123456789012345.67, \"decimales\": 2, \"python\": 123456789012345.67, \"grafo\": 123456789012345.69, \"igual\": false}, {\"valor\": 1e+300, \"decimales\": -3, \"python\": 1e+300, \"error\": \"ClientError: \", \"igual\": false}]",
+        "nota": "Ambos fallos reproducidos verbatim antes de tocar nada."
+      },
+      {
+        "id": "repro_despues",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/sm3probe/batch2_repro.py (contra la rama corregida)",
+        "exit": 0,
+        "stdout": "[{\"valor\": 123456789012345.67, \"decimales\": 2, \"python\": 123456789012345.67, \"grafo\": 123456789012345.67, \"igual\": true}, {\"valor\": 1e+300, \"decimales\": -3, \"python\": 1e+300, \"grafo\": 1e+300, \"igual\": true}]",
+        "nota": "Los dos valores ya coinciden con round() de Python; el snippet del probe se regenera desde el módulo de la rama (una sola fuente)."
+      },
+      {
+        "id": "matriz_batch2",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/sm3probe/pruebacuant.py",
+        "exit": 0,
+        "stdout": "{\"comparados\": 4923, \"fallas\": 0, \"detalle\": []}",
+        "nota": "La matriz de empates, ceros con signo, negativos y diminutos sigue sin diferencias después del atajo."
+      },
+      {
+        "id": "magnitudes_batch2",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/sm3probe/magnitud.py",
+        "exit": 0,
+        "stdout": "{\"comparados\": 2196, \"fallas\": 0, \"detalle\": []}",
+        "nota": "Barrido nuevo e independiente de magnitudes: potencias de dos y vecinos binarios desde 2^-60 hasta 2^1023, los bordes del atajo (est 44..64 con desplazamientos de 1 ulp), los dos valores que habían fallado y magnitudes cercanas (9e13, 9.1e13, 1e14, 1e15, 1e15+0.125, 4.5e15, 1e16..1e20, 2^55+0.25, 1e100, 1e300, 1.7e308), en las tres precisiones."
+      },
+      {
+        "id": "tests_neo4j_batch2",
+        "comando": "EVALTIC_NEO4J_PRUEBAS_URI=bolt://127.0.0.1:17687 PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python -m unittest discover -s app/tests -p test_sm3_neo4j.py -v",
+        "exit": 0,
+        "stdout": "Ran 24 tests in 4.438s / OK",
+        "stderr": "sin stderr",
+        "detalle": "La matriz de cuantización pasó de 49 a 68 valores: agrega los dos fallos, los bordes del atajo (2^45·1,5 y 2^48·1,5 por debajo del cuanto; 2^46·1,5 y 2^49·1,5 por encima) y magnitudes cercanas."
+      },
+      {
+        "id": "suite_offline_batch2",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 /home/alvaro/Universidad/IA/Proyecto/.venv/bin/python -m unittest discover -s app/tests -v",
+        "exit": 0,
+        "stdout": "Ran 86 tests in 0.173s / OK (skipped=1)",
+        "stderr": "sin stderr"
+      },
+      {
+        "id": "diferencial_ruta_publica_batch2",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/diff-sm3.3kKqet/public_sm3.py <rama> y diff contra la salida base ya capturada",
+        "exit": 0,
+        "stdout": "30 casos; 3 líneas de diferencia, todas del mensaje del TypeError en entradas de tipo inválido (clase y error_tipo iguales)",
+        "nota": "VMA cero/negativo, booleanos y los 27 casos numéricos siguen idénticos a d93b86d."
+      },
+      {
+        "id": "barrido_diferencial_batch2",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/diff-sm3.3kKqet/sweep_sm3.py <base> <rama>",
+        "exit": 0,
+        "stdout": "{\"comparados\": 1350, \"diferencias\": 0, \"detalle\": []}"
+      },
+      {
+        "id": "diferencial_integral_batch2",
+        "comando": "PYTHONDONTWRITEBYTECODE=1 <venv>/python /tmp/diff-sm3.3kKqet/public_integral.py <rama> y diff contra la salida base ya capturada",
+        "exit": 0,
+        "stdout": "diff vacío (3 avisos: sm1, sm2, sm3, traza y dictamen idénticos)"
+      },
+      {
+        "id": "diff_check_batch2",
+        "comando": "git diff --check",
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "hallazgos": [
+      "El atajo propuesto se verificó algebraicamente antes de implementarlo: con ulp >= cuanto no hay empate posible, porque valor·10^decimales sería semientero solo si el producto fuera impar, y la condición de ulp lo impide; para miles, el valor sería múltiplo de 1024 y 500 no lo es.",
+      "El atajo se ubicó antes del cálculo de mantisa y divisores, así que 10^300 nunca llega a la aritmética entera que desbordaba.",
+      "Las dos zonas quedan contiguas: donde el atajo no aplica, |valor·10^decimales| sigue por debajo de 2^53 y la división entera es exacta (est = 45 → hasta 7,04e13 para 2 decimales; est = 48 → hasta 5,6e14 para 1 decimal; est = 55..61 → numerador escalado acotado para miles)."
+    ]
+  }
+}

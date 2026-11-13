@@ -1,0 +1,2 @@
+{"antes_sha256": "c9d7ce6864d0e2c4299065d2126e04e54662450db1e6b37172fbb2d32c0f5bc3", "despues_sha256": "f04310cb1a07201b6fd3cdfc59eea7d8b605a049dcc8b3cb8ad7cb56d9ea8e5e", "primera": {"configuradas": 2, "actualizadas": 2, "errores": []}, "segunda": {"configuradas": 2, "actualizadas": 0, "errores": []}, "nodos": 876, "relaciones": 1983, "restricciones": 19, "allowlist": {"R1.1": "Inviable", "R3.3c": "VerificacionPendiente"}}
+COMMIT_OK: comparación completa verificada antes de commit; sólo scratch17687.

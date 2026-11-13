@@ -1,0 +1,58 @@
+{
+  "corrida": "integracion_copia_mejoras_61",
+  "base": "evaltic-neo4j-mejoras (volumen proyecto-ia-final_neo4j_mejoras, bolt 127.0.0.1:7688)",
+  "original_intacta": {
+    "huella": "364ab2d585a0dad3210ebfeacccb3bd1eef82f451247ce06e0543790c04edc12",
+    "nodos": 814,
+    "relaciones": 1905,
+    "restricciones": 19,
+    "nota": "no recibió semillas; PG2 y el refresco de mercado no se ejecutaron"
+  },
+  "copia": {
+    "huella": "cf1a70d5182e4542d4abb07c9174788d173abe3cbc1dc00c890c1d71ce0db2d6",
+    "nodos": 931,
+    "relaciones": 2046,
+    "restricciones": 19,
+    "referencia_scratch": "932 nodos / 2046 relaciones; el nodo de diferencia es su marcador EntornoPruebas"
+  },
+  "respaldo": {
+    "ruta": "_respaldo_original/20261113-0050/neo4j_data.tar.gz",
+    "sha256": "3131c0deb4be8741876a2513a751a2dcfdd205de774453443144a2c642cec986",
+    "restauracion_comprobada": true
+  },
+  "semillas_aplicadas": 8,
+  "delta_semillas": {
+    "nodos": [
+      814,
+      931
+    ],
+    "relaciones": [
+      1905,
+      2046
+    ]
+  },
+  "idempotencia": {
+    "segunda_pasada_cambios": 0,
+    "huella_antes": "cf1a70d5182e4542d4abb07c9174788d173abe3cbc1dc00c890c1d71ce0db2d6",
+    "huella_despues": "cf1a70d5182e4542d4abb07c9174788d173abe3cbc1dc00c890c1d71ce0db2d6"
+  },
+  "tanda": {
+    "intentados": 61,
+    "completados": 61,
+    "cumplen": 55,
+    "fallan": 0,
+    "sondas": 6,
+    "infra": 0,
+    "exit": 0
+  },
+  "guarda_grafo": "la huella de la copia es la misma antes y después de la tanda: la corrida no escribió en el grafo",
+  "sondas_pendientes_de_aceptacion": [
+    "PC-27",
+    "PC-36",
+    "PC-40",
+    "PC-47",
+    "PC-59",
+    "PC-60"
+  ],
+  "proveedor": "openai (host integrate.api.nvidia.com), modelo nvidia/nemotron-3.5-lightning-30b-a3b"
+}
