@@ -53,19 +53,24 @@ El punto de entrada único es `asistente_evaltic` en `app/orquestador_evaltic.py
 | CLI, una consulta | `docker compose exec app python orquestador_evaltic.py "aviso o consulta"` |
 | CLI, pruebas oficiales | `docker compose exec app python orquestador_evaltic.py --test` |
 
+## Estado actual de las mejoras
+
+El [estado consolidado de mejoras](docs/ESTADO_CONSOLIDADO_MEJORAS.md) reúne los cambios
+anteriores y recientes, sus archivos, resultados y pendientes. Distingue lo aplicado a la
+base original de lo probado en aislamiento y prepara la futura integración sobre una copia.
+
 ## Estructura
 
 ```text
 app/orquestador_evaltic.py   motor: enrutador, SM1, SM2, SM3, pipeline y pruebas oficiales
 app/app_web.py               interfaz Streamlit (solo presentación)
-app/tests/                   pruebas offline de la capa LLM (sin API ni Neo4j)
+app/tests/                   pruebas offline y con Neo4j aislado
 cypher/Grupo_20_PG2_U1_carga.cypher       base del PG2: esquema, reglas, frames y difusa
 cypher/Grupo_20_PG3_mercado.cypher        componentes, líneas, RAM, avisos, costos y criterios (incluye CE-29 v2)
 cypher/Grupo_20_PG2_U1_consultas.cypher   consultas de ejemplo
 datos/relevamiento_mercado.csv            333 avisos de Mercado Libre (9/11/2026), seed del PG3
 scripts/cargar_grafo.sh                   carga automática usado por el contenedor neo4j-init
 docs/                                     entregables PG3 y PI4 (ver docs/README.md)
-odd/tasks/                                registro de la adaptación de la capa LLM
 docker-compose.yml · Dockerfile · *.bat   entorno local (Neo4j + init + app + Ollama opcional)
 ```
 
@@ -259,6 +264,29 @@ igual dispara el PG2 destructivo. Por eso **no es seguro** sobre un grafo ajeno.
 cargarlo. Usalo solo si es eso lo que querés, con respaldo y sobre la base dedicada; nunca como paso normal
 de actualización.
 
+### Copiar la base y aplicar sólo las mejoras aditivas
+
+Las semillas de diagnóstico (B2), de políticas y de correcciones mínimas son aditivas: no requieren
+recalibrar el mercado ni volver a ejecutar el PG2. El procedimiento es duplicar la base de trabajo y
+actualizar la copia, nunca la original:
+
+```bash
+sh scripts/base_mejoras.sh respaldo      # tar del volumen + sha256; detiene el original unos segundos
+RESPALDO_FUENTE=_respaldo_original/<fecha> sh scripts/base_mejoras.sh copiar
+sh scripts/base_mejoras.sh actualizar    # las 8 semillas aditivas, en orden, sobre la copia
+sh scripts/base_mejoras.sh verificar     # original vs copia, y el conocimiento aplicado
+```
+
+La copia es el contenedor `evaltic-neo4j-mejoras` (bolt `127.0.0.1:7688`, browser `127.0.0.1:7475`) con su
+propio volumen `proyecto-ia-final_neo4j_mejoras`. `copiar` restaura el respaldo en un volumen nuevo, así que
+también comprueba que el respaldo sirve, y aborta si la huella del grafo no coincide con la original.
+`actualizar` es idempotente: una segunda pasada deja nodos y relaciones iguales. Para bajar la copia
+conservando su volumen: `sh scripts/base_mejoras.sh detener`.
+
+Para correr la app o los casos contra la copia, apuntá el consumidor a `bolt://127.0.0.1:7688`
+(`NEO4J_LOCAL_URI`). Y no la apuntes al `neo4j-init`: ese servicio recarga el mercado sobre la base del
+`docker-compose.yml`.
+
 <a id="cambios-de-codigo-y-configuracion"></a>
 
 ### Cambios de código y configuración
@@ -299,8 +327,8 @@ Informe del PG3, infografía, los tres PI4, diagramas, salidas de ejecución y e
 
 ## Cambios recientes de la calibración
 
-Ajustes posteriores a la primera calibración; las salidas y tablas completas están en
-`docs/ejecuciones/` y en `docs/fuentes_html/Grupo_20_PG3_ProyectoFinal.html`.
+Ajustes posteriores a la primera calibración; los registros crudos (logs y JSON) están en
+`docs/ejecuciones/` y las tablas del informe en `docs/fuentes_html/Grupo_20_PG3_ProyectoFinal.html`.
 
 | Cambio | Efecto |
 |---|---|
@@ -320,7 +348,10 @@ Ajustes posteriores a la primera calibración; las salidas y tablas completas es
       dentro de las 71 pruebas offline de `app/tests/`.
 - [ ] Validación de criterios, costos y factores con el experto (todo sigue `Provisional`).
 - [ ] R1.4 (RAM soldada sin expansión) como limitación `NoAmpliable` y R3.1b (rechazo comercial directo).
-- [ ] Pasar al grafo las listas de palabras clave que todavía viven en Python.
+- [ ] Completar la representación pendiente de políticas y su integración sobre una copia de la base;
+      las correcciones contextuales ya probadas y sus límites están en el estado consolidado.
+- [ ] Acreditar PC26: la última tanda real tuvo 54 expectativas cumplidas, 0 incumplimientos,
+      6 sondas y un error de infraestructura. No se declara 55/55.
 - [ ] `qwen2.5:1.5b` extrae mal a veces (completa procesadores o cuela aspectos positivos en `fallas`);
       alternativa: un modelo más grande por API.
 
