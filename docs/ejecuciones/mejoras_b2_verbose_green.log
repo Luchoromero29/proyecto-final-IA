@@ -1,0 +1,8 @@
+test_error_con_verbose_por_defecto (test_diagnostico_neo4j.ConsultaSM1VerboseTest.test_error_con_verbose_por_defecto) ... ok
+test_pendiente_con_verbose_por_defecto (test_diagnostico_neo4j.ConsultaSM1VerboseTest.test_pendiente_con_verbose_por_defecto) ... ok
+test_viable_conserva_su_salida_verbose (test_diagnostico_neo4j.ConsultaSM1VerboseTest.test_viable_conserva_su_salida_verbose) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.586s
+
+OK

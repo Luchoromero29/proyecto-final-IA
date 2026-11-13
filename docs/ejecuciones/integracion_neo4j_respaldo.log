@@ -1,0 +1,549 @@
+# Copia fría y dump (job-2, salida 0)
+Flag --time has been deprecated, use --timeout instead
+neo4j-evaltic
+Copia fría completa del volumen terminada.
+neo4j-evaltic
+Original reiniciado healthy sin init; permisos datos/ restaurados.
+2026-11-10T18:44:08.303204302Z main ERROR Could not determine local host name
+java.net.UnknownHostException: b69b40af0c8d: b69b40af0c8d: Temporary failure in name resolution
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1936)
+	at org.apache.logging.log4j.core.util.NetUtils.getHostname(NetUtils.java:71)
+	at org.apache.logging.log4j.core.util.NetUtils.getLocalHostname(NetUtils.java:56)
+	at org.apache.logging.log4j.core.LoggerContext.lambda$setConfiguration$2(LoggerContext.java:691)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
+	at org.apache.logging.log4j.core.LoggerContext.setConfiguration(LoggerContext.java:691)
+	at org.neo4j.logging.log4j.LogConfig.configureLoggingForStream(LogConfig.java:375)
+	at org.neo4j.logging.log4j.LogConfig$Builder.build(LogConfig.java:302)
+	at org.neo4j.logging.log4j.Log4jLogProvider.<init>(Log4jLogProvider.java:41)
+	at org.neo4j.commandline.Util.configuredLogProvider(Util.java:47)
+	at org.neo4j.commandline.dbms.DumpCommand.execute(DumpCommand.java:136)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:92)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:37)
+	at picocli.CommandLine.executeUserObject(CommandLine.java:2045)
+	at picocli.CommandLine.access$1500(CommandLine.java:148)
+	at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2465)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2457)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2419)
+	at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2277)
+	at picocli.CommandLine$RunLast.execute(CommandLine.java:2421)
+	at picocli.CommandLine.execute(CommandLine.java:2174)
+	at org.neo4j.cli.AdminTool.execute(AdminTool.java:94)
+	at org.neo4j.cli.AdminTool.main(AdminTool.java:82)
+Caused by: java.net.UnknownHostException: b69b40af0c8d: Temporary failure in name resolution
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Native Method)
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Inet6AddressImpl.java:52)
+	at java.base/java.net.InetAddress$PlatformResolver.lookupByName(InetAddress.java:1211)
+	at java.base/java.net.InetAddress.getAddressesFromNameService(InetAddress.java:1828)
+	at java.base/java.net.InetAddress$NameServiceAddresses.get(InetAddress.java:1139)
+	at java.base/java.net.InetAddress.getAllByName0(InetAddress.java:1818)
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1931)
+	... 22 more
+
+2026-11-10 18:44:08.555+0000 INFO  [o.n.c.d.DumpCommand] Starting dump of database 'neo4j'
+
+Files: 1/55, data:  0.0%
+Files: 1/55, data:  0.0%
+Files: 2/55, data:  0.0%
+Files: 3/55, data:  0.0%
+Files: 4/55, data:  0.0%
+Files: 5/55, data:  0.1%
+Files: 6/55, data:  0.1%
+Files: 7/55, data:  0.1%
+Files: 8/55, data:  0.1%
+Files: 9/55, data:  0.1%
+Files: 10/55, data:  0.1%
+Files: 11/55, data:  0.2%
+Files: 12/55, data:  0.2%
+Files: 13/55, data:  0.2%
+Files: 14/55, data:  0.2%
+Files: 15/55, data:  0.2%
+Files: 16/55, data:  0.3%
+Files: 17/55, data:  0.3%
+Files: 18/55, data:  0.3%
+Files: 19/55, data:  0.3%
+Files: 20/55, data:  0.3%
+Files: 21/55, data:  0.3%
+Files: 22/55, data:  0.3%
+Files: 23/55, data:  0.3%
+Files: 24/55, data:  0.3%
+Files: 25/55, data:  0.4%
+Files: 26/55, data:  0.4%
+Files: 27/55, data:  0.4%
+Files: 28/55, data:  0.4%
+Files: 29/55, data:  0.4%
+Files: 30/55, data:  0.4%
+Files: 31/55, data:  0.4%
+Files: 32/55, data:  0.5%
+Files: 33/55, data:  0.5%
+Files: 34/55, data:  0.5%
+Files: 35/55, data:  0.5%
+Files: 36/55, data:  0.5%
+Files: 37/55, data:  0.5%
+Files: 38/55, data:  0.6%
+Files: 39/55, data:  0.6%
+Files: 40/55, data:  0.6%
+Files: 41/55, data:  0.6%
+Files: 42/55, data:  0.6%
+Files: 43/55, data:  0.7%
+Files: 44/55, data:  0.7%
+Files: 45/55, data:  0.7%
+Files: 46/55, data:  0.7%
+Files: 47/55, data:  0.7%
+Files: 48/55, data:  0.7%
+Files: 49/55, data:  0.8%
+Files: 50/55, data:  0.8%
+Files: 51/55, data:  0.8%
+Files: 52/55, data:  0.8%
+Files: 53/55, data:  0.8%
+Files: 54/55, data:  1.0%
+Files: 54/55, data:  2.0%
+Files: 54/55, data:  3.0%
+Files: 54/55, data:  4.0%
+Files: 54/55, data:  5.0%
+Files: 54/55, data:  6.0%
+Files: 54/55, data:  7.0%
+Files: 54/55, data:  8.0%
+Files: 54/55, data:  9.0%
+Files: 54/55, data: 10.0%
+Files: 54/55, data: 11.0%
+Files: 54/55, data: 12.0%
+Files: 54/55, data: 13.0%
+Files: 54/55, data: 14.0%
+Files: 54/55, data: 15.0%
+Files: 54/55, data: 16.0%
+Files: 54/55, data: 17.0%
+Files: 54/55, data: 18.0%
+Files: 54/55, data: 19.0%
+Files: 54/55, data: 20.0%
+Files: 54/55, data: 21.0%
+Files: 54/55, data: 22.0%
+Files: 54/55, data: 23.0%
+Files: 54/55, data: 24.0%
+Files: 54/55, data: 25.0%
+Files: 54/55, data: 26.0%
+Files: 54/55, data: 27.0%
+Files: 54/55, data: 28.0%
+Files: 54/55, data: 29.0%
+Files: 54/55, data: 30.0%
+Files: 54/55, data: 31.0%
+Files: 54/55, data: 32.0%
+Files: 54/55, data: 33.0%
+Files: 54/55, data: 34.0%
+Files: 54/55, data: 35.0%
+Files: 54/55, data: 36.0%
+Files: 54/55, data: 37.0%
+Files: 54/55, data: 38.0%
+Files: 54/55, data: 39.0%
+Files: 54/55, data: 40.0%
+Files: 54/55, data: 41.0%
+Files: 54/55, data: 42.0%
+Files: 54/55, data: 43.0%
+Files: 54/55, data: 44.0%
+Files: 54/55, data: 45.0%
+Files: 54/55, data: 46.0%
+Files: 54/55, data: 47.0%
+Files: 54/55, data: 48.0%
+Files: 54/55, data: 49.0%
+Files: 54/55, data: 50.0%
+Files: 54/55, data: 51.0%
+Files: 54/55, data: 52.0%
+Files: 54/55, data: 53.0%
+Files: 54/55, data: 54.0%
+Files: 54/55, data: 55.0%
+Files: 54/55, data: 56.0%
+Files: 54/55, data: 57.0%
+Files: 54/55, data: 58.0%
+Files: 54/55, data: 59.0%
+Files: 54/55, data: 60.0%
+Files: 54/55, data: 61.0%
+Files: 54/55, data: 62.0%
+Files: 54/55, data: 63.0%
+Files: 54/55, data: 64.0%
+Files: 54/55, data: 65.0%
+Files: 54/55, data: 66.0%
+Files: 54/55, data: 67.0%
+Files: 54/55, data: 68.0%
+Files: 54/55, data: 69.0%
+Files: 54/55, data: 70.0%
+Files: 54/55, data: 71.0%
+Files: 54/55, data: 72.0%
+Files: 54/55, data: 73.0%
+Files: 54/55, data: 74.0%
+Files: 54/55, data: 75.0%
+Files: 54/55, data: 76.0%
+Files: 54/55, data: 77.0%
+Files: 54/55, data: 78.0%
+Files: 54/55, data: 79.0%
+Files: 54/55, data: 80.0%
+Files: 54/55, data: 81.0%
+Files: 54/55, data: 82.0%
+Files: 54/55, data: 83.0%
+Files: 54/55, data: 84.0%
+Files: 54/55, data: 85.0%
+Files: 54/55, data: 86.0%
+Files: 54/55, data: 87.0%
+Files: 54/55, data: 88.0%
+Files: 54/55, data: 89.0%
+Files: 54/55, data: 90.0%
+Files: 54/55, data: 91.0%
+Files: 54/55, data: 92.0%
+Files: 54/55, data: 93.0%
+Files: 54/55, data: 94.0%
+Files: 54/55, data: 95.0%
+Files: 54/55, data: 96.0%
+Files: 54/55, data: 97.0%
+Files: 54/55, data: 98.0%
+Files: 54/55, data: 99.0%
+Files: 54/55, data: 99.6%
+Files: 55/55, data: 100.0%
+Files: 55/55, data: 100.0%
+Done: 55 files, 259.2MiB processed in 0.467 seconds.
+2026-11-10 18:44:09.590+0000 INFO  [o.n.c.d.DumpCommand] Dump completed successfully
+056b97a8090a8d038e10ff4eb38015f75b2c16fd61cfc93275714bbb1d383e24  /home/alvaro/Universidad/IA/Proyecto-IA-Final/_respaldo_original/neo4j-actualizacion.7Jn5Ne/neo4j.dump
+Dump generado desde copia offline, no desde el volumen original.
+
+# Restauración aislada y consistencia (job-3, salida 0)
+2026-11-10T18:44:40.694740009Z main ERROR Could not determine local host name
+java.net.UnknownHostException: a3f9a6cca602: a3f9a6cca602: Temporary failure in name resolution
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1936)
+	at org.apache.logging.log4j.core.util.NetUtils.getHostname(NetUtils.java:71)
+	at org.apache.logging.log4j.core.util.NetUtils.getLocalHostname(NetUtils.java:56)
+	at org.apache.logging.log4j.core.LoggerContext.lambda$setConfiguration$2(LoggerContext.java:691)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
+	at org.apache.logging.log4j.core.LoggerContext.setConfiguration(LoggerContext.java:691)
+	at org.neo4j.logging.log4j.LogConfig.configureLoggingForStream(LogConfig.java:375)
+	at org.neo4j.logging.log4j.LogConfig$Builder.build(LogConfig.java:302)
+	at org.neo4j.logging.log4j.Log4jLogProvider.<init>(Log4jLogProvider.java:41)
+	at org.neo4j.commandline.Util.configuredLogProvider(Util.java:47)
+	at org.neo4j.commandline.dbms.LoadCommand.execute(LoadCommand.java:146)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:92)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:37)
+	at picocli.CommandLine.executeUserObject(CommandLine.java:2045)
+	at picocli.CommandLine.access$1500(CommandLine.java:148)
+	at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2465)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2457)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2419)
+	at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2277)
+	at picocli.CommandLine$RunLast.execute(CommandLine.java:2421)
+	at picocli.CommandLine.execute(CommandLine.java:2174)
+	at org.neo4j.cli.AdminTool.execute(AdminTool.java:94)
+	at org.neo4j.cli.AdminTool.main(AdminTool.java:82)
+Caused by: java.net.UnknownHostException: a3f9a6cca602: Temporary failure in name resolution
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Native Method)
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Inet6AddressImpl.java:52)
+	at java.base/java.net.InetAddress$PlatformResolver.lookupByName(InetAddress.java:1211)
+	at java.base/java.net.InetAddress.getAddressesFromNameService(InetAddress.java:1828)
+	at java.base/java.net.InetAddress$NameServiceAddresses.get(InetAddress.java:1139)
+	at java.base/java.net.InetAddress.getAllByName0(InetAddress.java:1818)
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1931)
+	... 22 more
+
+Database: neo4j
+Format: Neo4j ZSTD Dump.
+Files: 55
+Bytes: 271745024
+
+2026-11-10T18:44:44.651838625Z main ERROR Could not determine local host name
+java.net.UnknownHostException: a693430e74e4: a693430e74e4: Temporary failure in name resolution
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1936)
+	at org.apache.logging.log4j.core.util.NetUtils.getHostname(NetUtils.java:71)
+	at org.apache.logging.log4j.core.util.NetUtils.getLocalHostname(NetUtils.java:56)
+	at org.apache.logging.log4j.core.LoggerContext.lambda$setConfiguration$2(LoggerContext.java:691)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
+	at org.apache.logging.log4j.core.LoggerContext.setConfiguration(LoggerContext.java:691)
+	at org.neo4j.logging.log4j.LogConfig.configureLoggingForStream(LogConfig.java:375)
+	at org.neo4j.logging.log4j.LogConfig$Builder.build(LogConfig.java:302)
+	at org.neo4j.logging.log4j.Log4jLogProvider.<init>(Log4jLogProvider.java:41)
+	at org.neo4j.commandline.Util.configuredLogProvider(Util.java:47)
+	at org.neo4j.commandline.dbms.LoadCommand.execute(LoadCommand.java:146)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:92)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:37)
+	at picocli.CommandLine.executeUserObject(CommandLine.java:2045)
+	at picocli.CommandLine.access$1500(CommandLine.java:148)
+	at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2465)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2457)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2419)
+	at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2277)
+	at picocli.CommandLine$RunLast.execute(CommandLine.java:2421)
+	at picocli.CommandLine.execute(CommandLine.java:2174)
+	at org.neo4j.cli.AdminTool.execute(AdminTool.java:94)
+	at org.neo4j.cli.AdminTool.main(AdminTool.java:82)
+Caused by: java.net.UnknownHostException: a693430e74e4: Temporary failure in name resolution
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Native Method)
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Inet6AddressImpl.java:52)
+	at java.base/java.net.InetAddress$PlatformResolver.lookupByName(InetAddress.java:1211)
+	at java.base/java.net.InetAddress.getAddressesFromNameService(InetAddress.java:1828)
+	at java.base/java.net.InetAddress$NameServiceAddresses.get(InetAddress.java:1139)
+	at java.base/java.net.InetAddress.getAllByName0(InetAddress.java:1818)
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1931)
+	... 22 more
+
+
+Files: 1/55, data:  0.0%
+Files: 1/55, data:  0.0%
+Files: 2/55, data:  0.0%
+Files: 3/55, data:  0.0%
+Files: 4/55, data:  0.0%
+Files: 5/55, data:  0.1%
+Files: 6/55, data:  0.1%
+Files: 7/55, data:  0.1%
+Files: 8/55, data:  0.1%
+Files: 9/55, data:  0.1%
+Files: 10/55, data:  0.1%
+Files: 11/55, data:  0.2%
+Files: 12/55, data:  0.2%
+Files: 13/55, data:  0.2%
+Files: 14/55, data:  0.2%
+Files: 15/55, data:  0.2%
+Files: 16/55, data:  0.3%
+Files: 17/55, data:  0.3%
+Files: 18/55, data:  0.3%
+Files: 19/55, data:  0.3%
+Files: 20/55, data:  0.3%
+Files: 21/55, data:  0.3%
+Files: 22/55, data:  0.3%
+Files: 23/55, data:  0.3%
+Files: 24/55, data:  0.3%
+Files: 25/55, data:  0.4%
+Files: 26/55, data:  0.4%
+Files: 27/55, data:  0.4%
+Files: 28/55, data:  0.4%
+Files: 29/55, data:  0.4%
+Files: 30/55, data:  0.4%
+Files: 31/55, data:  0.4%
+Files: 32/55, data:  0.5%
+Files: 33/55, data:  0.5%
+Files: 34/55, data:  0.5%
+Files: 35/55, data:  0.5%
+Files: 36/55, data:  0.5%
+Files: 37/55, data:  0.5%
+Files: 38/55, data:  0.6%
+Files: 39/55, data:  0.6%
+Files: 40/55, data:  0.6%
+Files: 41/55, data:  0.6%
+Files: 42/55, data:  0.6%
+Files: 43/55, data:  0.7%
+Files: 44/55, data:  0.7%
+Files: 45/55, data:  0.7%
+Files: 46/55, data:  0.7%
+Files: 47/55, data:  0.7%
+Files: 48/55, data:  0.7%
+Files: 49/55, data:  0.8%
+Files: 50/55, data:  0.8%
+Files: 51/55, data:  0.8%
+Files: 52/55, data:  0.8%
+Files: 53/55, data:  0.8%
+Files: 54/55, data:  1.0%
+Files: 54/55, data:  2.0%
+Files: 54/55, data:  3.0%
+Files: 54/55, data:  4.0%
+Files: 54/55, data:  5.0%
+Files: 54/55, data:  6.0%
+Files: 54/55, data:  7.0%
+Files: 54/55, data:  8.0%
+Files: 54/55, data:  9.0%
+Files: 54/55, data: 10.0%
+Files: 54/55, data: 11.0%
+Files: 54/55, data: 12.0%
+Files: 54/55, data: 13.0%
+Files: 54/55, data: 14.0%
+Files: 54/55, data: 15.0%
+Files: 54/55, data: 16.0%
+Files: 54/55, data: 17.0%
+Files: 54/55, data: 18.0%
+Files: 54/55, data: 19.0%
+Files: 54/55, data: 20.0%
+Files: 54/55, data: 21.0%
+Files: 54/55, data: 22.0%
+Files: 54/55, data: 23.0%
+Files: 54/55, data: 24.0%
+Files: 54/55, data: 25.0%
+Files: 54/55, data: 26.0%
+Files: 54/55, data: 27.0%
+Files: 54/55, data: 28.0%
+Files: 54/55, data: 29.0%
+Files: 54/55, data: 30.0%
+Files: 54/55, data: 31.0%
+Files: 54/55, data: 32.0%
+Files: 54/55, data: 33.0%
+Files: 54/55, data: 34.0%
+Files: 54/55, data: 35.0%
+Files: 54/55, data: 36.0%
+Files: 54/55, data: 37.0%
+Files: 54/55, data: 38.0%
+Files: 54/55, data: 39.0%
+Files: 54/55, data: 40.0%
+Files: 54/55, data: 41.0%
+Files: 54/55, data: 42.0%
+Files: 54/55, data: 43.0%
+Files: 54/55, data: 44.0%
+Files: 54/55, data: 45.0%
+Files: 54/55, data: 46.0%
+Files: 54/55, data: 47.0%
+Files: 54/55, data: 48.0%
+Files: 54/55, data: 49.0%
+Files: 54/55, data: 50.0%
+Files: 54/55, data: 51.0%
+Files: 54/55, data: 52.0%
+Files: 54/55, data: 53.0%
+Files: 54/55, data: 54.0%
+Files: 54/55, data: 55.0%
+Files: 54/55, data: 56.0%
+Files: 54/55, data: 57.0%
+Files: 54/55, data: 58.0%
+Files: 54/55, data: 59.0%
+Files: 54/55, data: 60.0%
+Files: 54/55, data: 61.0%
+Files: 54/55, data: 62.0%
+Files: 54/55, data: 63.0%
+Files: 54/55, data: 64.0%
+Files: 54/55, data: 65.0%
+Files: 54/55, data: 66.0%
+Files: 54/55, data: 67.0%
+Files: 54/55, data: 68.0%
+Files: 54/55, data: 69.0%
+Files: 54/55, data: 70.0%
+Files: 54/55, data: 71.0%
+Files: 54/55, data: 72.0%
+Files: 54/55, data: 73.0%
+Files: 54/55, data: 74.0%
+Files: 54/55, data: 75.0%
+Files: 54/55, data: 76.0%
+Files: 54/55, data: 77.0%
+Files: 54/55, data: 78.0%
+Files: 54/55, data: 79.0%
+Files: 54/55, data: 80.0%
+Files: 54/55, data: 81.0%
+Files: 54/55, data: 82.0%
+Files: 54/55, data: 83.0%
+Files: 54/55, data: 84.0%
+Files: 54/55, data: 85.0%
+Files: 54/55, data: 86.0%
+Files: 54/55, data: 87.0%
+Files: 54/55, data: 88.0%
+Files: 54/55, data: 89.0%
+Files: 54/55, data: 90.0%
+Files: 54/55, data: 91.0%
+Files: 54/55, data: 92.0%
+Files: 54/55, data: 93.0%
+Files: 54/55, data: 94.0%
+Files: 54/55, data: 95.0%
+Files: 54/55, data: 96.0%
+Files: 54/55, data: 97.0%
+Files: 54/55, data: 98.0%
+Files: 54/55, data: 99.0%
+Files: 54/55, data: 99.6%
+Files: 55/55, data: 100.0%
+Files: 55/55, data: 100.0%
+Done: 55 files, 259.2MiB processed in 0.916 seconds.
+2026-11-10T18:44:52.875742755Z main ERROR Could not determine local host name
+java.net.UnknownHostException: 70cf18213536: 70cf18213536: Temporary failure in name resolution
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1936)
+	at org.apache.logging.log4j.core.util.NetUtils.getHostname(NetUtils.java:71)
+	at org.apache.logging.log4j.core.util.NetUtils.getLocalHostname(NetUtils.java:56)
+	at org.apache.logging.log4j.core.LoggerContext.lambda$setConfiguration$2(LoggerContext.java:691)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
+	at org.apache.logging.log4j.core.LoggerContext.setConfiguration(LoggerContext.java:691)
+	at org.neo4j.logging.log4j.LogConfig.configureLoggingForStream(LogConfig.java:375)
+	at org.neo4j.logging.log4j.LogConfig$Builder.build(LogConfig.java:302)
+	at org.neo4j.logging.log4j.Log4jLogProvider.<init>(Log4jLogProvider.java:41)
+	at org.neo4j.commandline.Util.configuredLogProvider(Util.java:47)
+	at org.neo4j.consistency.CheckCommand.checkWith(CheckCommand.java:191)
+	at org.neo4j.consistency.CheckCommand.execute(CheckCommand.java:171)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:92)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:37)
+	at picocli.CommandLine.executeUserObject(CommandLine.java:2045)
+	at picocli.CommandLine.access$1500(CommandLine.java:148)
+	at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2465)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2457)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2419)
+	at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2277)
+	at picocli.CommandLine$RunLast.execute(CommandLine.java:2421)
+	at picocli.CommandLine.execute(CommandLine.java:2174)
+	at org.neo4j.cli.AdminTool.execute(AdminTool.java:94)
+	at org.neo4j.cli.AdminTool.main(AdminTool.java:82)
+Caused by: java.net.UnknownHostException: 70cf18213536: Temporary failure in name resolution
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Native Method)
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Inet6AddressImpl.java:52)
+	at java.base/java.net.InetAddress$PlatformResolver.lookupByName(InetAddress.java:1211)
+	at java.base/java.net.InetAddress.getAddressesFromNameService(InetAddress.java:1828)
+	at java.base/java.net.InetAddress$NameServiceAddresses.get(InetAddress.java:1139)
+	at java.base/java.net.InetAddress.getAllByName0(InetAddress.java:1818)
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1931)
+	... 23 more
+
+Running consistency check with max off-heap:256.0MiB
+  Store size:400.0KiB
+  Allocated page cache:400.0KiB
+  Off-heap memory for caching:8.000MiB
+2026-11-10T18:44:53.846246869Z main ERROR Could not determine local host name
+java.net.UnknownHostException: 70cf18213536: 70cf18213536: Temporary failure in name resolution
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1936)
+	at org.apache.logging.log4j.core.util.NetUtils.getHostname(NetUtils.java:71)
+	at org.apache.logging.log4j.core.util.NetUtils.getLocalHostname(NetUtils.java:56)
+	at org.apache.logging.log4j.core.LoggerContext.lambda$setConfiguration$2(LoggerContext.java:691)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
+	at org.apache.logging.log4j.core.LoggerContext.setConfiguration(LoggerContext.java:691)
+	at org.neo4j.logging.log4j.LogConfig.configureLoggingFromFile(LogConfig.java:388)
+	at org.neo4j.logging.log4j.LogConfig$Builder.build(LogConfig.java:306)
+	at org.neo4j.logging.log4j.LogConfig.createLoggerFromXmlConfig(LogConfig.java:136)
+	at org.neo4j.logging.log4j.LogConfig.createLoggerFromXmlConfig(LogConfig.java:109)
+	at org.neo4j.consistency.ConsistencyCheckService.runFullConsistencyCheck(ConsistencyCheckService.java:487)
+	at org.neo4j.consistency.CheckCommand.checkWith(CheckCommand.java:223)
+	at org.neo4j.consistency.CheckCommand.execute(CheckCommand.java:171)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:92)
+	at org.neo4j.cli.AbstractCommand.call(AbstractCommand.java:37)
+	at picocli.CommandLine.executeUserObject(CommandLine.java:2045)
+	at picocli.CommandLine.access$1500(CommandLine.java:148)
+	at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2465)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2457)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2419)
+	at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2277)
+	at picocli.CommandLine$RunLast.execute(CommandLine.java:2421)
+	at picocli.CommandLine.execute(CommandLine.java:2174)
+	at org.neo4j.cli.AdminTool.execute(AdminTool.java:94)
+	at org.neo4j.cli.AdminTool.main(AdminTool.java:82)
+Caused by: java.net.UnknownHostException: 70cf18213536: Temporary failure in name resolution
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Native Method)
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Inet6AddressImpl.java:52)
+	at java.base/java.net.InetAddress$PlatformResolver.lookupByName(InetAddress.java:1211)
+	at java.base/java.net.InetAddress.getAddressesFromNameService(InetAddress.java:1828)
+	at java.base/java.net.InetAddress$NameServiceAddresses.get(InetAddress.java:1139)
+	at java.base/java.net.InetAddress.getAllByName0(InetAddress.java:1818)
+	at java.base/java.net.InetAddress.getLocalHost(InetAddress.java:1931)
+	... 24 more
+
+ID Generator consistency check
+....................  10%
+....................  20%
+....................  30%
+....................  40%
+....................  50%
+....................  60%
+....................  70%
+....................  80%
+....................  90%
+.................... 100%
+Index structure consistency check
+....................  10%
+....................  20%
+....................  30%
+....................  40%
+....................  50%
+....................  60%
+....................  70%
+....................  80%
+....................  90%
+.................... 100%
+Consistency check
+....................  10%
+....................  20%
+....................  30%
+....................  40%
+....................  50%
+....................  60%
+....................  70%
+....................  80%
+....................  90%
+.................... 100%
+Metadatos, restauración aislada y consistencia: aprobados.

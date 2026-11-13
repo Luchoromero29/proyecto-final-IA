@@ -1,0 +1,67 @@
+{
+  "corrida": "promocion_original",
+  "fecha": "2026-11-13",
+  "orden": [
+    "respaldo",
+    "detener original",
+    "aplicar 8 semillas",
+    "reiniciar",
+    "verificar"
+  ],
+  "original_antes": {
+    "huella": "364ab2d585a0dad3210ebfeacccb3bd1eef82f451247ce06e0543790c04edc12",
+    "nodos": 814,
+    "relaciones": 1905,
+    "restricciones": 19
+  },
+  "respaldo_previo": {
+    "ruta": "_respaldo_original/20261113-0126-pre-promocion/neo4j_data.tar.gz",
+    "sha256": "4ab2417c4cfcec451bae87779ac05cb9842635e9f825b1d2eec8534c4b64db55",
+    "verificado": "sha256sum -c OK"
+  },
+  "original_despues": {
+    "huella": "cf1a70d5182e4542d4abb07c9174788d173abe3cbc1dc00c890c1d71ce0db2d6",
+    "nodos": 931,
+    "relaciones": 2046,
+    "restricciones": 19
+  },
+  "delta": {
+    "nodos": 117,
+    "relaciones": 141
+  },
+  "semillas_aplicadas": [
+    "Grupo_20_PG3_diagnostico.cypher",
+    "Grupo_20_PG3_correcciones_minimas.cypher",
+    "Grupo_20_PG3_politicas.cypher",
+    "Grupo_20_PG3_politicas_sm1_acciones.cypher",
+    "Grupo_20_PG3_politicas_sm1_estado.cypher",
+    "Grupo_20_PG3_politicas_sm3_filtro.cypher",
+    "Grupo_20_PG3_politicas_sm3_riesgo_demanda.cypher",
+    "Grupo_20_PG3_politicas_bloque.cypher"
+  ],
+  "no_ejecutados": [
+    "Grupo_20_PG2_U1_carga.cypher (borra todo)",
+    "Grupo_20_PG3_mercado.cypher (borra Línea/AvisoMercado)"
+  ],
+  "equivalencia_con_la_copia": {
+    "digesto_nodos": "061eabc76f4e037ca04b165dc523d790ff1969bc298614f4442476794fed1634",
+    "digesto_relaciones": "a7e0d2053202ab2d5240fabc10bba17960cc78185649c4dfa34dcf473c7b680d",
+    "igual_en_copia": true,
+    "metodo": "sha256 sobre etiquetas+propiedades de cada nodo y sobre tipo+propiedades+extremos de cada relación"
+  },
+  "conocimiento": {
+    "Diagnostico": 7,
+    "FallaSintoma": 4,
+    "PatronTexto": 30,
+    "Condicion": 29,
+    "VersionPoliticas": 6,
+    "PasoCalculo": 5,
+    "CriterioExperto": 32,
+    "Regla": 55,
+    "AvisoMercado": 333,
+    "Procesador": 93,
+    "Linea": 46,
+    "EntornoPruebas": 0
+  },
+  "nota": "La tanda de 61 casos se corrió sobre la copia, no sobre el original promovido: la equivalencia de contenido es lo que transfiere esa evidencia."
+}

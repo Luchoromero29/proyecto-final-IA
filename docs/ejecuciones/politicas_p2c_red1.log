@@ -1,0 +1,70 @@
+test_el_ambito_de_la_condicion_manda (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_ambito_de_la_condicion_manda) ... ok
+test_el_artefacto_rechaza_una_configuracion_previa_distinta (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_artefacto_rechaza_una_configuracion_previa_distinta) ... ok
+test_el_campo_de_la_condicion_manda (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_campo_de_la_condicion_manda) ... ok
+test_el_comparador_almacenado_decide_la_intervencion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_comparador_almacenado_decide_la_intervencion) ... ok
+test_el_estado_resultante_ausente_falla_cerrado (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_ausente_falla_cerrado) ... FAIL
+test_el_estado_resultante_del_inviable_lo_declara_la_regla (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_del_inviable_lo_declara_la_regla) ... FAIL
+test_el_estado_resultante_del_pendiente_lo_declara_la_regla (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_del_pendiente_lo_declara_la_regla) ... FAIL
+test_el_estado_resultante_invalido_falla_cerrado (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_invalido_falla_cerrado) ... FAIL
+test_el_estado_resultante_no_se_reescribe_en_la_segunda_aplicacion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_no_se_reescribe_en_la_segunda_aplicacion) ... ok
+test_el_operando_por_criterio_sale_del_grafo (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_operando_por_criterio_sale_del_grafo) ... ok
+test_el_vinculo_de_la_categoria_difusa_es_dato (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_vinculo_de_la_categoria_difusa_es_dato) ... ok
+test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) ... ok
+test_la_segunda_aplicacion_no_cambia_la_proyeccion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_segunda_aplicacion_no_cambia_la_proyeccion) ... ok
+test_los_grupos_combinan_or_dentro_y_and_entre_grupos (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_los_grupos_combinan_or_dentro_y_and_entre_grupos) ... ok
+test_una_condicion_de_otra_etapa_no_cambia_el_resultado_de_sm1 (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_una_condicion_de_otra_etapa_no_cambia_el_resultado_de_sm1) ... ok
+
+======================================================================
+FAIL: test_el_estado_resultante_ausente_falla_cerrado (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_ausente_falla_cerrado)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 208, in test_el_estado_resultante_ausente_falla_cerrado
+    self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ErrorConocimiento' != 'Inviable'
+- ErrorConocimiento
++ Inviable
+
+
+======================================================================
+FAIL: test_el_estado_resultante_del_inviable_lo_declara_la_regla (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_del_inviable_lo_declara_la_regla)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 197, in test_el_estado_resultante_del_inviable_lo_declara_la_regla
+    self.assertEqual("VerificacionPendiente",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+                     self._diagnostico(PERFORADA, {})["sm1_tecnico"]["estado"])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'VerificacionPendiente' != 'Inviable'
+- VerificacionPendiente
++ Inviable
+
+
+======================================================================
+FAIL: test_el_estado_resultante_del_pendiente_lo_declara_la_regla (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_del_pendiente_lo_declara_la_regla)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 203, in test_el_estado_resultante_del_pendiente_lo_declara_la_regla
+    self.assertEqual("Inviable", self._diagnostico(NO_PRENDE, {})["sm1_tecnico"]["estado"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Inviable' != 'VerificacionPendiente'
+- Inviable
++ VerificacionPendiente
+
+
+======================================================================
+FAIL: test_el_estado_resultante_invalido_falla_cerrado (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_invalido_falla_cerrado)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 215, in test_el_estado_resultante_invalido_falla_cerrado
+    self.assertEqual("ErrorConocimiento", detalle.get("estado"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ErrorConocimiento' != 'VerificacionPendiente'
+- ErrorConocimiento
++ VerificacionPendiente
+
+
+----------------------------------------------------------------------
+Ran 15 tests in 10.991s
+
+FAILED (failures=4)

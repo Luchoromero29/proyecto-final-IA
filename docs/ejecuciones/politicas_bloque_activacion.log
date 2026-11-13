@@ -1,0 +1,3 @@
+PRIMERA {"actualizadas":93,"conflictos":0,"errores":[]}
+{"allowlist_sha256":"ccd8c66c297afdd11ce789c32f9c1a1e132e3e2f11d823cb67dc57a5540da577","antes_sha256":"f04310cb1a07201b6fd3cdfc59eea7d8b605a049dcc8b3cb8ad7cb56d9ea8e5e","despues_sha256":"7ddde337694a58e45320d2c0967148af2fb5f224486aebc62247ae9d0912e19d","nodos_antes":876,"nodos_despues":915,"relaciones_antes":1983,"relaciones_despues":2033,"restricciones":19,"segunda":{"actualizadas":0,"conflictos":0,"errores":[]}}
+COMMIT_OK: comparación completa y allowlist exacta verificadas ANTES del commit; sólo scratch17687; sin pruebas funcionales.

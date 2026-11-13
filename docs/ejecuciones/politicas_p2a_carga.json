@@ -1,0 +1,92 @@
+{
+  "fecha_utc": "2026-11-11T20:39:18.895022+00:00",
+  "uri": "bolt://127.0.0.1:17687",
+  "base_datos": "neo4j",
+  "artefacto": "cypher/Grupo_20_PG3_politicas_sm1_acciones.cypher",
+  "operacion": "aplicacion_controlada_scratch",
+  "antes": {
+    "nodos": 876,
+    "relaciones": 1983,
+    "restricciones": 19,
+    "sha256_proyeccion": "b42c4587225bb7c9f13da9025d527f22bf7a4885d54d2e047bbce2884036435a",
+    "sha256_vista_protegida": "0ec2be060330abe9311bd70e4c83cc10ec5d6bd4950c2cd577286537d3258002"
+  },
+  "esperado": {
+    "sha256_vista_protegida": "0ec2be060330abe9311bd70e4c83cc10ec5d6bd4950c2cd577286537d3258002",
+    "sha256_proteccion_p0": "d3bff60e62990562ccca493ce95840d731f788b4a606f5412d9bff0dd23d6fc4",
+    "p1": {
+      "Conveniencia.Comprar": [
+        "Comprar",
+        false
+      ],
+      "Conveniencia.Negociar": [
+        "ComprarConOfertaMenor",
+        true
+      ],
+      "Conveniencia.Descartar": [
+        "DescartarPorRiesgo",
+        false
+      ]
+    }
+  },
+  "preflight": "ok",
+  "aplicacion_1": {
+    "respuesta": {
+      "compatible": true,
+      "errores_count": 0,
+      "errores": [],
+      "manifiestos_creados": 0,
+      "incluye_creadas": 0,
+      "condiciones_creadas": 0,
+      "criterios_enlazados": 0,
+      "obligaciones_vinculadas": 0,
+      "cambios": 0
+    },
+    "delta": {
+      "nodos": 0,
+      "relaciones": 0,
+      "obligaciones_vinculadas": 0
+    },
+    "sha256_proyeccion": "b42c4587225bb7c9f13da9025d527f22bf7a4885d54d2e047bbce2884036435a"
+  },
+  "aplicacion_2": {
+    "respuesta": {
+      "compatible": true,
+      "errores_count": 0,
+      "errores": [],
+      "manifiestos_creados": 0,
+      "incluye_creadas": 0,
+      "condiciones_creadas": 0,
+      "criterios_enlazados": 0,
+      "obligaciones_vinculadas": 0,
+      "cambios": 0
+    },
+    "sha256_proyeccion": "b42c4587225bb7c9f13da9025d527f22bf7a4885d54d2e047bbce2884036435a"
+  },
+  "resultado": "ya_aplicado",
+  "configuracion_aplicada": {
+    "valida": true,
+    "problemas": [],
+    "manifiestos": 1,
+    "condiciones": 9,
+    "incluye": 8,
+    "requiere": 9,
+    "criterios": 2,
+    "obligaciones": 11,
+    "obligaciones_vinculadas": 11
+  },
+  "despues": {
+    "nodos": 876,
+    "relaciones": 1983,
+    "restricciones": 19,
+    "sha256_proyeccion": "b42c4587225bb7c9f13da9025d527f22bf7a4885d54d2e047bbce2884036435a"
+  },
+  "obligas": {
+    "antes": 11,
+    "despues": 11,
+    "campos": [
+      "categoria_bat",
+      "categoria_ter"
+    ]
+  }
+}

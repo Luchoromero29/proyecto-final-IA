@@ -1,0 +1,12 @@
+test_cambiar_resultado_en_grafo_cambia_la_decision_publica (test_politicas_neo4j.RepresentacionComercialTest.test_cambiar_resultado_en_grafo_cambia_la_decision_publica) ... ok
+test_carga_conflictiva_no_sobrescribe_ni_actualiza_otros_conjuntos (test_politicas_neo4j.RepresentacionComercialTest.test_carga_conflictiva_no_sobrescribe_ni_actualiza_otros_conjuntos) ... ok
+test_carga_incompleta_no_aplica_un_subconjunto (test_politicas_neo4j.RepresentacionComercialTest.test_carga_incompleta_no_aplica_un_subconjunto) ... ok
+test_configuracion_invalida_o_ambigua_no_produce_compra (test_politicas_neo4j.RepresentacionComercialTest.test_configuracion_invalida_o_ambigua_no_produce_compra) ... ok
+test_habilitacion_en_grafo_no_depende_del_nombre_de_categoria (test_politicas_neo4j.RepresentacionComercialTest.test_habilitacion_en_grafo_no_depende_del_nombre_de_categoria) ... ok
+test_segunda_carga_no_cambia_propiedades_ni_reporta_escrituras (test_politicas_neo4j.RepresentacionComercialTest.test_segunda_carga_no_cambia_propiedades_ni_reporta_escrituras) ... ok
+test_sin_correspondencia_no_se_compra_por_un_default (test_politicas_neo4j.RepresentacionComercialTest.test_sin_correspondencia_no_se_compra_por_un_default) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.925s
+
+OK

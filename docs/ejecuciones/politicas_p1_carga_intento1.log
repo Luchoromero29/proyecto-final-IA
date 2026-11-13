@@ -1,0 +1,12 @@
+Carga P1, intento inicial: exit 1. La transacción NO se confirmó.
+
+Traceback (most recent call last):
+  File "<stdin>", line 28, in <module>
+AssertionError: Delta fuera de allowlist; rollback de la transacción
+
+Diagnóstico posterior de sólo lectura: rollback confirmado; proyección serializada
+byte-idéntica a P0, SHA256 d3bff60e62990562ccca493ce95840d731f788b4a606f5412d9bff0dd23d6fc4.
+Causa del verificador padre: comparaba objetos neo4j.time.Date/DateTime contra las
+cadenas de la instantánea JSON. No fue un cambio del grafo ni un defecto del seed.
+Corrección: comparar la misma serialización canónica que define la referencia,
+sin quitar campos protegidos ni ampliar la allowlist. No repetir el RED ni ocultar este intento.

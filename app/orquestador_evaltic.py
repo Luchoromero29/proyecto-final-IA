@@ -34,6 +34,19 @@ from typing import Optional, Dict, Any, List, Tuple
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 
+# Inferencia de SM1 en Neo4j (B2): las decisiones, reparaciones y costos del
+# diagnóstico técnico se resuelven en consultas Cypher explícitas.
+from inferencia_sm1 import (
+    consultar_resolucion_sm1,
+    normalizar_verificacion,
+    preparar_evidencias,
+)
+from inferencia_sm3 import (
+    inferir_sm3_crisp_cypher, resolver_decision_sm3_cypher,
+    _cuantizar as cuantizar_cypher,
+    _EVALUAR_CONDICIONES as EVALUAR_CONDICIONES,
+)
+
 # ------------------------------------------------------------------------------
 # 1. Configuración de Entorno (.env)
 # ------------------------------------------------------------------------------
@@ -123,39 +136,63 @@ def obtener_driver_neo4j():
 # Consultas en Cypher sobre Neo4j (Todo se consulta en el Grafo - Sin Hardcodear)
 # ==============================================================================
 
-def consultar_fallas_catastroficas_en_grafo() -> list:
-    """Consulta en Neo4j mediante Cypher las descripciones de fallas catastróficas registradas."""
-    driver = obtener_driver_neo4j()
-    if not driver:
-        return []
-    try:
-        with driver.session(database=NEO4J_DATABASE) as session:
-            q = "MATCH (f:FallaCatastrofica) RETURN collect(toLower(f.descripcion)) AS descripciones"
-            rec = session.run(q).single()
-            if rec and rec["descripciones"]:
-                return rec["descripciones"]
-    except Exception:
-        pass
-    return []
-
-
 def consultar_senales_bloqueo_en_grafo() -> list:
-    """Consulta en Neo4j mediante Cypher tipos y descripciones de bloqueo cargados en el grafo."""
-    driver = obtener_driver_neo4j()
-    senales = ["icloud", "bloqueada", "bloqueado", "cuenta", "clave de bios", "contraseña", "bios con clave", "mdm"]
-    if not driver:
-        return senales
+    """Vocabulario descriptivo del conocimiento, nunca instancias de casos :Bloqueo."""
+    with obtener_driver_neo4j().session(database=NEO4J_DATABASE) as session:
+        return [r["descripcion"] for r in session.run(
+            "MATCH (p:PatronTexto {ambito:'SM0-bloqueo'}) RETURN p.descripcion AS descripcion")]
+
+
+def inferir_contexto_textual_cypher(texto: str, ambito: str):
+    """Aplica patrones y consecuencias declarados en el grafo; no decide por palabras locales."""
     try:
-        with driver.session(database=NEO4J_DATABASE) as session:
-            q = "MATCH (b:Bloqueo) RETURN collect(DISTINCT toLower(b.tipo)) AS tipos"
-            rec = session.run(q).single()
-            if rec and rec["tipos"]:
-                for t in rec["tipos"]:
-                    if t and t not in senales:
-                        senales.append(t)
-    except Exception:
-        pass
-    return senales
+        with obtener_driver_neo4j().session(database=NEO4J_DATABASE) as session:
+            fila = session.run("""
+                OPTIONAL MATCH (l:Linea)
+                WITH collect(l.patron) AS catalogo
+                MATCH (p:PatronTexto {ambito:$ambito})-[:ACTIVA]->(r:Regla)
+                WITH catalogo, collect({patron:p, regla:r}) AS configuracion
+                WITH configuracion, [c IN configuracion
+                     WHERE $texto =~ c.patron.patron
+                       AND (c.regla.requiere_catalogo <> true OR
+                            any(p IN catalogo WHERE $texto =~ p))] AS coincidencias
+                RETURN size(configuracion) AS configurados,
+                       [c IN coincidencias | {decision:c.regla.decision,
+                        valor_hecho:c.regla.valor_hecho, regla:c.regla.regla_publica,
+                        descripcion:c.patron.descripcion}][0] AS coincidencia
+                """, texto=" ".join(texto.lower().split()), ambito=ambito).single()
+    except Exception as exc:
+        raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia de contexto textual.") from exc
+    if not fila or not fila["configurados"]:
+        raise ConocimientoFaltante(f"Faltan patrones y reglas del ámbito '{ambito}' en Neo4j.")
+    return fila["coincidencia"]
+
+
+def inferir_caida_termica_cypher(throttling, traza: dict) -> float:
+    """Resuelve los tres estados del hecho mediante condiciones y criterios del grafo."""
+    try:
+        with obtener_driver_neo4j().session(database=NEO4J_DATABASE) as session:
+            filas = list(session.run("""
+                MATCH (r:Regla {etapa:'SM1-TER-entrada'})-[:REQUIERE]->(c:Condicion)
+                WHERE (c.operador = '=' AND $throttling = c.valor)
+                   OR (c.operador = 'ausente' AND $throttling IS NULL)
+                OPTIONAL MATCH (r)-[:USA_CRITERIO]->(ce:CriterioExperto)
+                RETURN coalesce(ce.valor,r.caida_pp) AS caida, r.inferido AS inferido,
+                       r.motivo AS motivo, ce{.id,.nombre,.valor,.unidad,.version,
+                       estado:ce.estado_validacion} AS criterio
+                """, throttling=throttling))
+    except Exception as exc:
+        raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia de entrada térmica.") from exc
+    if len(filas) != 1 or filas[0]["caida"] is None:
+        raise ConocimientoFaltante("Falta un mapeo térmico único y completo en Neo4j.")
+    fila = filas[0]
+    if fila["criterio"]:
+        criterio = dict(fila["criterio"])
+        nombre = criterio.pop("nombre")
+        traza["criterios_usados"][nombre] = criterio
+    if fila["inferido"]:
+        traza["datos_inferidos"].append(fila["motivo"])
+    return float(fila["caida"])
 
 
 def inferir_sm1_bat_cypher(salud: float, ciclos: float) -> tuple:
@@ -259,13 +296,13 @@ def inferir_sm2_rie_cypher(antiguedad: float, repuestos: float, win11: bool) -> 
             WITH reglas, centroide, s, exp(-0.5 * ((centroide - s.c) / s.sigma)^2) AS mu
             ORDER BY mu DESC
             WITH reglas, centroide, collect(s.etiqueta)[0] AS categoria
-            RETURN round(centroide, 4) AS centroide, categoria
+            WITH round(centroide, 4) AS centroide, categoria
+            ''' + cuantizar_cypher("centroide", 2, "riesgo_cuantizado") + '''
+            RETURN riesgo_cuantizado AS centroide, categoria
             '''
             res = session.run(q, antiguedad=float(antiguedad), repuestos=float(repuestos), win11=bool(win11)).single()
             if res and res['centroide'] is not None:
-                c_val = round(float(res['centroide']), 2)
-                cat_val = res['categoria']
-                return c_val, cat_val
+                return float(res['centroide']), res['categoria']
     except Exception:
         pass
     return None
@@ -364,6 +401,11 @@ OPENROUTER_MAX_TOKENS_MINIMO = 4096
 
 # Desactivación real de razonamiento: solo para el host y el modelo verificados.
 OPENROUTER_MODELO_SIN_RAZONAMIENTO = "nvidia/nemotron-3.5-lightning:free"
+
+# NVIDIA expone el interruptor de razonamiento en su propia plantilla de chat y con
+# otro id de modelo; también se aplica solo al host y al modelo verificados.
+NVIDIA_HOST = "integrate.api.nvidia.com"
+NVIDIA_MODELO_SIN_RAZONAMIENTO = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
 
 def _entero_no_negativo(valor) -> Any:
@@ -514,6 +556,10 @@ def consultar_llm(system_prompt: str, user_content: str, json_mode: bool = False
         if host == OPENROUTER_HOST and OPENAI_MODEL == OPENROUTER_MODELO_SIN_RAZONAMIENTO:
             # Desactivación real del razonamiento (no solo ocultarlo) para el modelo verificado.
             payload["reasoning"] = {"enabled": False}
+        if host == NVIDIA_HOST and OPENAI_MODEL == NVIDIA_MODELO_SIN_RAZONAMIENTO:
+            # NVIDIA recibe el interruptor dentro de la plantilla de chat y conserva el
+            # presupuesto del llamador: no se aplica piso ni se toca max_tokens.
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
 
         endpoint = f"{OPENAI_BASE_URL.rstrip('/')}/chat/completions"
         try:
@@ -605,282 +651,655 @@ def costo(tarea: str, traza: dict) -> int:
     return int(c["costo"])
 
 
+# ------------------------------------------------------------------------------
+# 3b. Valuación comercial SM2 resuelta en Neo4j
+#     Python solo transporta los hechos del aviso (validando tipos y formatos) y
+#     formatea la salida. Una consulta Cypher explícita resuelve el componente, la
+#     RAM tasada, el año, el soporte de Windows 11, la antigüedad, R2.4 y el estado
+#     de la tasación: nada de eso se decide acá ni en el LLM.
+# ------------------------------------------------------------------------------
+# Criterios de Neo4j que usa la valuación: se leen con CE() para conservar la procedencia.
+_CRITERIOS_VALUACION_SM2 = ("ram_objetivo", "anio_referencia", "anio_min_w11",
+                            "min_muestras_mercado", "descuento_negociacion", "reval_ssd")
+
+# Política de la etapa de valuación: qué regla es la fórmula, cuál es R2.4 y qué declaran.
+# El manifiesto y sus dos reglas son datos; Python sólo los transporta y valida que estén
+# completos (una configuración inválida corta la evaluación, nunca usa valores del código).
+CONSULTA_POLITICA_VALUACION_SM2 = """
+MATCH (:VersionPoliticas {etapa:'SM2-valuacion', activa:true})-[:INCLUYE]->(r:Regla)
+RETURN r.rol AS rol, r.escala_redondeo_ars AS escala,
+       r.aplica_descuento_negociacion AS descuento, r.aplica_revalorizacion_upgrade AS reval,
+       r.r24_activo AS r24, r.r24_misma_familia AS familia
+"""
+
+# Claves que devolvía la consulta pública de componentes antes de la valuación completa.
+_CAMPOS_MERCADO_LEGADO = ("procesador", "generacion_anterior", "valor_proc", "linea", "grupo",
+                          "ram_informada_existe", "ram", "valor_mercado", "vma")
+
+_CONSULTA_VALUACION_SM2 = """
+// Hechos del aviso: el procesador puede venir en el campo propio o dentro del modelo.
+WITH toLower(coalesce($procesador, '')) AS tp_aviso,
+     toLower(coalesce($modelo, '')) AS tp_modelo,
+     toLower(coalesce($texto, '')) AS tt
+WITH tt,
+     CASE WHEN trim(tp_aviso) IN ['', 'null', 'none'] THEN trim(tp_modelo) ELSE trim(tp_aviso) END AS tp,
+     CASE WHEN trim(tp_aviso) IN ['', 'null', 'none'] THEN 'modelo' ELSE 'aviso' END AS procesador_origen
+OPTIONAL MATCH (p:Procesador) WHERE tp =~ p.patron
+WITH tt, tp, procesador_origen, p ORDER BY p.prioridad DESC LIMIT 1
+// R2.4: sin muestras propias → generación anterior más cercana de la misma familia con datos.
+// Su activación y el requisito de misma familia son datos de la Regla R2.4 de la etapa.
+OPTIONAL MATCH (v:Procesador)
+  WHERE $r24_activo AND p.valor_ref_ars IS NULL AND p.anio IS NOT NULL
+    AND (NOT $r24_misma_familia OR v.familia = p.familia) AND v <> p
+    AND v.valor_ref_ars IS NOT NULL AND v.anio IS NOT NULL AND v.anio <= p.anio
+WITH tt, tp, procesador_origen, p, v ORDER BY v.anio DESC, v.n_muestras DESC LIMIT 1
+OPTIONAL MATCH (l:Linea) WHERE tt =~ l.patron
+WITH tp, procesador_origen, p, v, l ORDER BY l.prioridad DESC LIMIT 1
+OPTIONAL MATCH (l)-[:PERTENECE_A_GRUPO]->(g:GrupoLinea)
+// RAM tasada: la del aviso, la que deja el plan de SM1 o la configuración de referencia
+WITH procesador_origen, tp, p, v, l, g,
+     CASE WHEN NOT $aplicar_politica_ram THEN $ram_final_fijada
+          WHEN $ram IS NULL THEN toInteger($ram_objetivo)
+          WHEN $ram_ampliada THEN toInteger($ram_objetivo)
+          ELSE toInteger($ram) END AS ram_final,
+     CASE WHEN NOT $aplicar_politica_ram THEN 'fijada'
+          WHEN $ram IS NULL THEN 'referencia'
+          WHEN $ram_ampliada THEN 'ampliada'
+          ELSE 'aviso' END AS ram_origen
+OPTIONAL MATCH (ri:CapacidadRAM {gb: $ram})
+OPTIONAL MATCH (r:CapacidadRAM {gb: ram_final})
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen,
+     coalesce(p.valor_ref_ars, v.valor_ref_ars) AS valor_proc
+// Año: el del aviso o el de la generación del procesador (nunca inventado)
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     CASE WHEN $anio IS NOT NULL THEN toFloat($anio) ELSE p.anio END AS anio,
+     CASE WHEN $anio IS NOT NULL THEN 'aviso' ELSE 'procesador' END AS anio_origen
+// Soporte de Windows 11: aviso → procesador → año contra CE anio_min_w11
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc, anio, anio_origen,
+     CASE WHEN $w11 IS NOT NULL THEN $w11
+          WHEN p.soporte_w11 IS NOT NULL THEN p.soporte_w11
+          ELSE anio >= $anio_min_w11 END AS win11,
+     CASE WHEN $w11 IS NOT NULL THEN 'aviso'
+          WHEN p.soporte_w11 IS NOT NULL THEN 'procesador'
+          ELSE 'anio' END AS win11_origen
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     anio, anio_origen, win11, win11_origen,
+     CASE WHEN valor_proc IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
+          THEN valor_proc * l.factor_precio * r.factor END AS valor_mercado
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     anio, anio_origen, win11, win11_origen, valor_mercado,
+     CASE WHEN anio IS NULL THEN null
+          ELSE CASE WHEN $anio_referencia - anio < 0 THEN 0.0
+                    ELSE toFloat($anio_referencia - anio) END END AS antiguedad,
+     // VMA: la escala del redondeo y qué criterios aplica son datos de la regla de valuación
+     CASE WHEN valor_mercado IS NULL THEN null
+          ELSE toInteger(round((valor_mercado * (1 - CASE WHEN $aplica_descuento_negociacion
+                                                         THEN $descuento / 100.0 ELSE 0.0 END)
+                                + CASE WHEN $hdd_a_ssd AND $aplica_revalorizacion_upgrade
+                                       THEN $reval ELSE 0 END) / $escala_redondeo_ars))
+               * $escala_redondeo_ars
+     END AS vma,
+     CASE WHEN $hdd_a_ssd AND $aplica_revalorizacion_upgrade THEN $reval ELSE 0 END
+     AS revalorizacion_ssd,
+     // Hay conocimiento completo cuando la consulta ya puede aplicar la política de valuación
+     (p IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
+      AND NOT ($ram IS NOT NULL AND ri IS NULL)) AS conocimiento_completo,
+     // Hechos que evalúa la etapa de clasificación del estado, tal como los resolvió la
+     // consulta: el procesador, su origen, la línea y las tres lecturas de la RAM.
+     {procesador: p, procesador_origen: procesador_origen, linea: l, ram_declarada: $ram,
+      ram_informada: ri, ram_tasada: r, valor_proc: valor_proc, anio: anio} AS hechos_estado
+// Clasificación del estado comercial (I11): manifiesto, reglas, prioridad y condiciones del
+// grafo; la consulta sólo evalúa los comparadores finitos sobre los hechos.
+CALL () {
+  OPTIONAL MATCH (vp:VersionPoliticas {etapa:'SM2-estado', activa:true})
+  WITH collect(DISTINCT vp) AS hallados
+  WITH size(hallados) AS n, CASE WHEN size(hallados) = 1 THEN hallados[0] END AS vp
+  OPTIONAL MATCH (vp)-[:INCLUYE]->(rm:Regla)
+  WITH n, vp, rm ORDER BY rm.prioridad_inferencia
+  WITH n, vp, collect(rm) AS reglas, coalesce(vp.ids_requeridos, []) AS requeridos
+  WITH n, reglas, requeridos,
+       [i IN requeridos WHERE NOT any(m IN reglas WHERE m.id = i)] AS faltantes,
+       [m IN reglas WHERE m.estado_resultante IS NULL] AS sin_estado,
+       [m IN reglas WHERE NOT m.prioridad_inferencia IS :: INTEGER] AS sin_orden,
+       [i IN range(0, size(reglas) - 1)
+        WHERE i > 0 AND any(j IN range(0, i - 1)
+                            WHERE reglas[j].prioridad_inferencia = reglas[i].prioridad_inferencia)] AS repetidos
+  RETURN [m IN reglas | {regla: m, orden: m.prioridad_inferencia,
+                         estado: m.estado_resultante, motivo: m.motivo_resultante}] AS reglas_estado,
+    CASE WHEN n = 1 AND size(faltantes) = 0 AND size(reglas) = size(requeridos)
+              AND size(sin_estado) = 0 AND size(sin_orden) = 0 AND size(repetidos) = 0
+              AND size(reglas) > 0
+         THEN [] ELSE ['configuración del estado de SM2: manifiesto, reglas, orden o '
+                    + 'estado resultante no válidos'] END AS problemas_estado
+}
+WITH *, {reglas: reglas_estado, hechos: hechos_estado} AS entrada
+""" + EVALUAR_CONDICIONES + """
+WITH * ORDER BY orden
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     anio, anio_origen, win11, win11_origen, valor_mercado, antiguedad, vma,
+     revalorizacion_ssd, conocimiento_completo, problemas_estado,
+     collect({orden: orden, estado: datos.estado, motivo: datos.motivo,
+              filas: filas, cumplida: cumplida}) AS evaluadas_estado
+WITH *, [e IN evaluadas_estado WHERE e.cumplida] AS estados_aplicables,
+     [e IN evaluadas_estado WHERE any(f IN e.filas
+        WHERE NOT f.campo IN ['procesador', 'procesador_origen', 'linea', 'ram_declarada',
+                              'ram_informada', 'ram_tasada', 'valor_proc', 'anio'])] AS campos_ajenos
+WITH *, reduce(ganadora = null, e IN estados_aplicables |
+                 CASE WHEN ganadora IS NULL THEN e
+                      WHEN e.orden < ganadora.orden THEN e ELSE ganadora END) AS estado_elegido,
+     CASE WHEN size(problemas_estado) = 0 AND size(campos_ajenos) = 0
+               AND size(estados_aplicables) > 0
+          THEN [] ELSE ['configuración del estado de SM2: ninguna regla aplicable o una '
+                     + 'condición usa un hecho no declarado'] END AS problemas_estado_total
+WHERE size(problemas_estado_total) = 0
+WITH *, estado_elegido.estado AS estado, estado_elegido.motivo AS motivo_clave
+WITH procesador_origen, tp, p, v, l, g, ri, r, ram_final, ram_origen, valor_proc,
+     anio, anio_origen, win11, win11_origen, valor_mercado,
+     estado, motivo_clave, antiguedad, vma, revalorizacion_ssd, conocimiento_completo,
+     // Criterios que la política aplicó de verdad: solo esos entran en la traza
+     [x IN [
+        {nombre: 'ram_objetivo', usado: tp <> ''},
+        {nombre: 'min_muestras_mercado', usado: tp <> '' AND conocimiento_completo},
+        {nombre: 'anio_referencia', usado: estado = 'Tasado'},
+        {nombre: 'descuento_negociacion', usado: estado = 'Tasado'},
+        {nombre: 'reval_ssd', usado: estado = 'Tasado' AND $hdd_a_ssd},
+        {nombre: 'anio_min_w11', usado: estado = 'Tasado' AND win11_origen = 'anio'}
+     ] WHERE x.usado | x.nombre] AS criterios_usados
+RETURN {
+  estado: estado,
+  motivo_clave: motivo_clave,
+  procesador: p {.nombre, .familia, .gama, .anio, .soporte_w11, .valor_ref_ars, .n_muestras,
+                 .fuente_valor, .estado_validacion},
+  procesador_origen: procesador_origen,
+  generacion_anterior: CASE WHEN p.valor_ref_ars IS NULL AND v IS NOT NULL
+                            THEN v {.nombre, .anio, .valor_ref_ars, .n_muestras} END,
+  valor_origen: CASE WHEN p.valor_ref_ars IS NOT NULL THEN 'propio'
+                     WHEN v IS NOT NULL THEN 'generacion_anterior' END,
+  valor_proc: valor_proc,
+  linea: l {.nombre, .marca, .factor_precio, .origen_factor, .estado_validacion},
+  grupo: g {.nombre, .dias_promedio_venta, .indice_repuestos},
+  ram_informada_existe: ri IS NOT NULL,
+  ram: r {.gb, .factor},
+  ram_final: ram_final,
+  ram_origen: ram_origen,
+  anio: anio,
+  anio_origen: anio_origen,
+  soporte_w11: win11,
+  w11_origen: win11_origen,
+  antiguedad: antiguedad,
+  valor_mercado: valor_mercado,
+  vma: vma,
+  revalorizacion_ssd: revalorizacion_ssd,
+  criterios_usados: criterios_usados
+} AS valuacion
+"""
+
+
+def _criterios_valuacion_sm2() -> tuple:
+    """Lee de Neo4j los criterios que puede aplicar la valuación.
+
+    Devuelve los valores y el registro de procedencia de cada uno (misma forma que `CE()`, que
+    además valida que existan). El registro se copia a la traza solo para los criterios que la
+    consulta informa como aplicados: anotar como aplicado un criterio que la política no evaluó
+    cambiaría el estado Firme/Provisional cuando el experto valide solo una parte del conocimiento.
+    """
+    leidos = nueva_traza()
+    valores = {nombre: CE(nombre, leidos) for nombre in _CRITERIOS_VALUACION_SM2}
+    return valores, dict(leidos["criterios_usados"])
+
+
+def _politica_valuacion_sm2() -> dict:
+    """Lee del grafo la política de valuación que la consulta aplica como parámetros.
+
+    El manifiesto de la etapa declara dos reglas: la fórmula (escala de redondeo del VMA y
+    qué criterios aplica) y R2.4 (si busca la generación anterior y si exige la misma
+    familia). Una configuración ausente, incompleta o inválida corta la valuación con un
+    error explícito: nunca se reemplaza por los valores que tenía el código.
+    """
+    driver = obtener_driver_neo4j()
+    with driver.session(database=NEO4J_DATABASE) as s:
+        filas = [dict(r) for r in s.run(CONSULTA_POLITICA_VALUACION_SM2)]
+    formulas = [f for f in filas if f.get("rol") == "formula"]
+    anteriores = [f for f in filas if f.get("rol") == "r24"]
+
+    def numerico(valor) -> bool:
+        return isinstance(valor, (int, float)) and not isinstance(valor, bool)
+
+    def booleano(valor) -> bool:
+        return isinstance(valor, bool)
+
+    problema = None
+    if len(filas) != 2 or len(formulas) != 1 or len(anteriores) != 1:
+        problema = "el manifiesto de la etapa no declara exactamente la fórmula y R2.4"
+    elif not numerico(formulas[0].get("escala")) or formulas[0]["escala"] <= 0:
+        problema = "la regla de valuación no declara una escala de redondeo positiva"
+    elif not booleano(formulas[0].get("descuento")) or not booleano(formulas[0].get("reval")):
+        problema = "la regla de valuación no declara si aplica el descuento y la revalorización"
+    elif not booleano(anteriores[0].get("r24")) or not booleano(anteriores[0].get("familia")):
+        problema = "R2.4 no declara su activación y el requisito de misma familia"
+    if problema:
+        raise RuntimeError(
+            "[ERROR INFERENCIA NEO4J] Política de valuación SM2 incompleta: " + problema + ".")
+    formula, regla_r24 = formulas[0], anteriores[0]
+    return {"escala_redondeo_ars": formula["escala"],
+            "aplica_descuento_negociacion": formula["descuento"],
+            "aplica_revalorizacion_upgrade": formula["reval"],
+            "r24_activo": regla_r24["r24"],
+            "r24_misma_familia": regla_r24["familia"]}
+
+
+def _normalizar_texto_procesador(texto: str) -> str:
+    """'5500 U' → '5500u' y '13ª' → '13a': variantes de escritura del aviso, sin cambiar el hecho."""
+    normalizado = str(texto or "").lower().replace("ª", "a")
+    return re.sub(r"(\d)\s+(u|h|hs|hx|hk|p)\b", r"\1\2", normalizado)
+
+
+def inferir_valuacion_sm2_cypher(procesador: str, modelo: str, texto: str,
+                                 ram_informada: Optional[int], ram_ampliada: bool,
+                                 hdd_a_ssd: bool, anio_informado: Optional[int],
+                                 soporte_w11_informado: Optional[bool],
+                                 traza: Optional[dict] = None,
+                                 ram_final_fijada: Optional[int] = None,
+                                 aplicar_politica_ram: bool = True) -> dict:
+    """
+    Resuelve la valuación de SM2 en una consulta Cypher explícita sobre Neo4j:
+      - identifica el :Procesador (regex sobre el procesador del aviso o del modelo),
+      - identifica la :Linea y su :GrupoLinea (regex sobre marca + modelo + texto),
+      - fija la RAM tasada: la del aviso, la que deja el plan de SM1 (CE ram_objetivo) o la
+        configuración de referencia (CE ram_objetivo) cuando el aviso no la informa,
+      - aplica R2.4 (generación anterior de la misma familia) cuando el procesador no tiene
+        muestras propias, y toma el año del aviso o del procesador,
+      - resuelve el soporte de Windows 11 (aviso → procesador → año ≥ CE anio_min_w11) y la
+        antigüedad contra CE anio_referencia,
+      - calcula valor de mercado = valor del procesador × factor de línea × factor de RAM y
+        VMA = valor de mercado × (1 − CE descuento_negociacion) + CE reval_ssd si hay upgrade,
+      - clasifica el estado: 'Tasado', 'Verificacion_pendiente' (falta de dato) o
+        'ConocimientoFaltante' (lo informado no existe en el grafo),
+      - informa en `criterios_usados` solo los criterios que la política aplicó, para que la traza
+        registre la procedencia con verdad.
+
+    Devuelve el mapa resuelto con la procedencia de cada dato y los valores de los criterios.
+    `aplicar_politica_ram=False` fija el factor de RAM con `ram_final_fijada` (consulta pública).
+    """
+    criterios, procedencia = _criterios_valuacion_sm2()
+    politica = _politica_valuacion_sm2()
+    driver = obtener_driver_neo4j()
+    with driver.session(database=NEO4J_DATABASE) as s:
+        rec = s.run(
+            _CONSULTA_VALUACION_SM2,
+            procesador=_normalizar_texto_procesador(procesador),
+            modelo=_normalizar_texto_procesador(modelo),
+            texto=texto or "",
+            ram=None if ram_informada is None else int(ram_informada),
+            ram_ampliada=bool(ram_ampliada),
+            ram_final_fijada=None if ram_final_fijada is None else int(ram_final_fijada),
+            aplicar_politica_ram=bool(aplicar_politica_ram),
+            hdd_a_ssd=bool(hdd_a_ssd),
+            anio=None if anio_informado is None else float(anio_informado),
+            w11=None if soporte_w11_informado is None else bool(soporte_w11_informado),
+            ram_objetivo=int(criterios["ram_objetivo"]),
+            anio_referencia=float(criterios["anio_referencia"]),
+            anio_min_w11=float(criterios["anio_min_w11"]),
+            descuento=float(criterios["descuento_negociacion"]),
+            reval=float(criterios["reval_ssd"]),
+            **politica).single()
+    valuacion = dict(rec["valuacion"]) if rec and rec.get("valuacion") else {}
+    valuacion["criterios"] = criterios
+    if traza is not None:
+        for nombre in valuacion.get("criterios_usados") or []:
+            if nombre not in procedencia:
+                raise RuntimeError(
+                    "[ERROR INFERENCIA NEO4J] La valuación SM2 informó un criterio desconocido: "
+                    f"'{nombre}'.")
+            traza["criterios_usados"][nombre] = procedencia[nombre]
+    return valuacion
+
+
 def consultar_mercado_componentes(procesador: str, texto: str, ram_informada: Optional[int],
                                   ram_final: int, hdd_a_ssd: bool) -> dict:
     """
-    Valuación por componentes, resuelta en Cypher sobre Neo4j:
+    Valuación por componentes con el factor de RAM ya fijado por el llamador (consulta pública):
       - identifica el :Procesador (regex sobre el procesador que extrajo el LLM),
       - identifica la :Linea y su :GrupoLinea (regex sobre marca + modelo + texto),
       - toma el factor de la :CapacidadRAM final (después de los upgrades de SM1),
       - calcula valor de mercado = valor del procesador × factor de línea × factor de RAM
         y VMA = valor de mercado × (1 − CE descuento_negociacion) + CE reval_ssd si se cambia HDD por SSD.
-    Devuelve lo que encontró (None en lo que no existe en el grafo).
+    Devuelve lo que encontró (None en lo que no existe en el grafo). El motor SM2 usa
+    `inferir_valuacion_sm2_cypher`, que resuelve además la RAM tasada y el estado.
     """
-    driver = obtener_driver_neo4j()
-    q = """
-    WITH toLower($procesador) AS tp, toLower($texto) AS tt
-    OPTIONAL MATCH (p:Procesador) WHERE tp =~ p.patron
-    WITH tt, p ORDER BY p.prioridad DESC LIMIT 1
-    // R2.4: sin muestras propias → generación anterior más cercana de la misma familia con datos
-    OPTIONAL MATCH (v:Procesador)
-      WHERE p.valor_ref_ars IS NULL AND p.anio IS NOT NULL AND v.familia = p.familia AND v <> p
-        AND v.valor_ref_ars IS NOT NULL AND v.anio IS NOT NULL AND v.anio <= p.anio
-    WITH tt, p, v ORDER BY v.anio DESC, v.n_muestras DESC LIMIT 1
-    OPTIONAL MATCH (l:Linea) WHERE tt =~ l.patron
-    WITH p, v, l ORDER BY l.prioridad DESC LIMIT 1
-    OPTIONAL MATCH (l)-[:PERTENECE_A_GRUPO]->(g:GrupoLinea)
-    OPTIONAL MATCH (ri:CapacidadRAM {gb: $ram_informada})
-    OPTIONAL MATCH (r:CapacidadRAM {gb: $ram_final})
-    MATCH (cd:CriterioExperto {nombre: 'descuento_negociacion'}), (cs:CriterioExperto {nombre: 'reval_ssd'})
-    WITH p, v, l, g, ri, r, cd, cs, coalesce(p.valor_ref_ars, v.valor_ref_ars) AS valor_proc
-    WITH p, v, l, g, ri, r, cd, cs, valor_proc,
-         CASE WHEN valor_proc IS NOT NULL AND l IS NOT NULL AND r IS NOT NULL
-              THEN valor_proc * l.factor_precio * r.factor END AS valor_mercado
-    RETURN p {.nombre, .familia, .gama, .anio, .soporte_w11, .valor_ref_ars, .n_muestras,
-              .fuente_valor, .estado_validacion} AS procesador,
-           CASE WHEN p.valor_ref_ars IS NULL AND v IS NOT NULL
-                THEN v {.nombre, .anio, .valor_ref_ars, .n_muestras} END AS generacion_anterior,
-           valor_proc,
-           l {.nombre, .marca, .factor_precio, .origen_factor, .estado_validacion} AS linea,
-           g {.nombre, .dias_promedio_venta, .indice_repuestos} AS grupo,
-           ri IS NOT NULL AS ram_informada_existe,
-           r {.gb, .factor} AS ram,
-           valor_mercado,
-           CASE WHEN valor_mercado IS NULL THEN null
-                ELSE toInteger(round((valor_mercado * (1 - cd.valor / 100.0)
-                                      + CASE WHEN $hdd_a_ssd THEN cs.valor ELSE 0 END) / 1000.0)) * 1000
-           END AS vma
-    """
-    with driver.session(database=NEO4J_DATABASE) as s:
-        # "5500 U" → "5500u": el sufijo del modelo a veces viene separado del número
-        #  Solo sufijos reales de procesador (no "i5 de 13ª"); "13ª" → "13a"
-        procesador = (procesador or "").lower().replace("ª", "a")
-        procesador = re.sub(r"(\d)\s+(u|h|hs|hx|hk|p)\b", r"\1\2", procesador)
-        r = s.run(q, procesador=procesador, texto=texto or "", ram_informada=ram_informada,
-                  ram_final=ram_final, hdd_a_ssd=bool(hdd_a_ssd)).single()
-    return dict(r) if r else {}
+    ref = inferir_valuacion_sm2_cypher(
+        procesador=procesador, modelo="", texto=texto, ram_informada=ram_informada,
+        ram_ampliada=False, hdd_a_ssd=hdd_a_ssd, anio_informado=None,
+        soporte_w11_informado=None, ram_final_fijada=ram_final, aplicar_politica_ram=False)
+    return {campo: ref.get(campo) for campo in _CAMPOS_MERCADO_LEGADO}
 
 
 # ------------------------------------------------------------------------------
 # 4. Módulo SM1: Diagnóstico Técnico y Reacondicionamiento (Álvaro Tapia)
 #    No cataloga fallas críticas aisladas: preserva y evalúa TODAS las fallas.
 # ------------------------------------------------------------------------------
-def ejecutar_motor_sm1(datos: dict, traza: dict) -> dict:
+def _numero(valor) -> Optional[float]:
+    """Normaliza un hecho numérico del aviso; si no es numérico se trata como no informado."""
+    if valor is None or isinstance(valor, bool):
+        return None
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return None
+
+
+def _booleano(valor) -> Optional[bool]:
+    """Normaliza un campo booleano del aviso: True/False, o None si no vino informado."""
+    return valor if isinstance(valor, bool) else None
+
+
+def ejecutar_motor_sm1(datos: dict, traza: dict, texto: str = "",
+                       verificacion_tecnica: Optional[dict] = None) -> dict:
     """
-    Evalúa el estado físico del equipo, plan de reparaciones y costos.
-    No se catalogan fallas críticas aisladas: se procesan y ponen TODAS las fallas.
-    Las fallas catastróficas se consultan en Neo4j mediante Cypher.
+    Evalúa el estado físico del equipo. La política (qué síntoma exige verificación, qué
+    reparación corresponde y cuánto cuesta) se infiere en Neo4j: acá sólo se preparan los
+    hechos ya validados, se piden las inferencias difusas y se registra la procedencia.
+
+    `verificacion_tecnica` es la evidencia del operador (fuente y diagnósticos confirmados);
+    es la única que puede liberar una verificación pendiente.
     """
     fallas = datos.get("fallas") or []
     if not isinstance(fallas, list):
         fallas = [str(fallas)] if fallas else []
 
-    # Consultar en Neo4j las descripciones de fallas catastróficas registradas
-    catastroficas_grafo = consultar_fallas_catastroficas_en_grafo()
-    criterios_insalvables = ["quemad", "en corto", "cortocircuito", "no da video", "perforad", "pista rota", "sulfataci", "insalvable"]
+    hechos: Dict[str, Any] = {}
+    pendientes_hechos: List[str] = []
 
-    falla_insalvable_hallada = None
-    for f in fallas:
-        f_low = str(f).lower()
-        if any(cat in f_low for cat in catastroficas_grafo) or any(crit in f_low for crit in criterios_insalvables):
-            falla_insalvable_hallada = f
-            break
-
-    # R1.1: Falla catastrófica detectada en la ontología del grafo → inviabilidad física
-    if falla_insalvable_hallada:
-        traza["reglas"].append(f"R1.1: falla insalvable detectada ('{falla_insalvable_hallada}') → Inviabilidad_Fisica_Insalvable")
-        return {
-            "estado": "Inviable",
-            "es_viable": False,
-            "regla_aplicada": "R1.1",
-            "motivo": f"Falla física irreparable detectada en el grafo: {falla_insalvable_hallada}.",
-            "plan_reparacion": [],
-            "costo_total": 0,
-            "cantidad_intervenciones": 0,
-            "upgrades": {"ssd": False, "ram": False},
-            "fallas": fallas
-        }
-
-    plan = []
-    upgrades = {"ssd": False, "ram": False}
-
-    def agregar(tarea: str, regla: str):
-        c = costo(tarea, traza)
-        desc = cargar_conocimiento()["costos"].get(tarea, {}).get("descripcion", tarea)
-        plan.append({"tarea": desc, "costo": c, "regla": regla})
-        traza["reglas"].append(f"{regla} → {tarea} (${c:,})")
-
-    # Batería: difusa si están salud y ciclos; crisp (R1.2) si solo está la salud
-    salud, ciclos = datos.get("salud_bateria_pct"), datos.get("ciclos_bateria")
+    # Batería: difusa si están salud y ciclos; crisp (R1.2) si sólo está la salud.
+    salud, ciclos = _numero(datos.get("salud_bateria_pct")), _numero(datos.get("ciclos_bateria"))
     if salud is not None and ciclos is not None:
-        res = inferir_sm1_bat_cypher(float(salud), float(ciclos))
+        res = inferir_sm1_bat_cypher(salud, ciclos)
         if not res:
             raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM1-BAT.")
-        if res[1] == "Obligatoria":
-            agregar("bateria", f"SM1-BAT difusa ({res[0]} → {res[1]})")
-    elif salud is not None:
-        if float(salud) < CE("bateria_reemplazo", traza):
-            agregar("bateria", "R1.2: salud de batería < CE bateria_reemplazo")
-    else:
-        traza["datos_pendientes"].append("Salud de batería (verificar en la revisión)")
+        traza["reglas"].append(f"SM1-BAT difusa ({res[0]} → {res[1]})")
+        hechos["categoria_bat"] = res[1]
+    elif salud is None:
+        pendientes_hechos.append("Salud de batería (verificar en la revisión)")
 
-    # Temperatura: difusa si hay temperatura; crisp si solo se informa throttling
-    temp, throttling = datos.get("temperatura_cpu_c"), datos.get("thermal_throttling")
+    # Temperatura: difusa si hay temperatura; crisp si sólo se informa throttling.
+    # Las caídas sintéticas son criterios del grafo (CE-31 / CE-32), no constantes de Python.
+    temp, throttling = _numero(datos.get("temperatura_cpu_c")), _booleano(datos.get("thermal_throttling"))
+    negacion_termica = inferir_contexto_textual_cypher(texto, "SM1-TER-hechos")
+    if negacion_termica is not None:
+        throttling = negacion_termica["valor_hecho"]
+        datos["thermal_throttling"] = throttling
     if temp is not None:
-        if throttling is None:
-            traza["datos_inferidos"].append("Caída de frecuencia no informada: se toma como leve (5 %)")
-        res = inferir_sm1_ter_cypher(float(temp), 20.0 if throttling else 5.0)
+        caida = inferir_caida_termica_cypher(throttling, traza)
+        res = inferir_sm1_ter_cypher(temp, caida)
         if not res:
             raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM1-TER.")
-        if res[1] in ("Obligatoria", "Recomendada"):
-            agregar("service_termico", f"SM1-TER difusa ({res[0]} → {res[1]})")
-    elif throttling is True:
-        agregar("service_termico", "Throttling informado → service térmico")
+        traza["reglas"].append(f"SM1-TER difusa ({res[0]} → {res[1]})")
+        hechos["categoria_ter"] = res[1]
     else:
-        traza["datos_pendientes"].append("Temperatura bajo carga (prueba de estrés)")
+        pendientes_hechos.append("Temperatura bajo carga (prueba de estrés)")
 
-    # Upgrades del plan (consultados en Neo4j)
-    ram = datos.get("ram_gb")
+    ram = _numero(datos.get("ram_gb"))
     if ram is None:
-        traza["datos_pendientes"].append("Memoria RAM")
-    elif ram < CE("ram_objetivo", traza):
-        agregar("ram_upgrade", "Plan: RAM < CE ram_objetivo")
-        upgrades["ram"] = True
+        pendientes_hechos.append("Memoria RAM")
+    disco = str(datos.get("tipo_disco") or "").upper() or None
+    if disco is None:
+        pendientes_hechos.append("Tipo de disco")
 
-    disco = str(datos.get("tipo_disco") or "").upper()
-    if disco == "HDD":
-        agregar("ssd_upgrade", "Plan: disco HDD → SSD")
-        upgrades["ssd"] = True
-    elif not disco:
-        traza["datos_pendientes"].append("Tipo de disco")
+    hechos.update({
+        "salud": salud, "ciclos": ciclos, "temp": temp, "throttling": throttling,
+        "ram": ram, "disco": disco,
+        "campos": {"pantalla_danada": _booleano(datos.get("pantalla_danada")),
+                   "teclado_danado": _booleano(datos.get("teclado_danado")),
+                   "cargador_incluido": _booleano(datos.get("cargador_incluido"))},
+    })
 
-    # Mapeo de fallas informadas a tareas en CostoReparacion de Neo4j
-    #  El LLM a veces lista como "falla" algo positivo ("pantalla perfecta"): esas se ignoran.
-    positivos = ("perfect", "impecable", "excelente", "funciona", "sin detalle", "sin rayas", "nuev", "ok", "bien")
-    fallas_negativas = [str(f).lower() for f in fallas if not any(p in str(f).lower() for p in positivos)]
-    txt_fallas = " ".join(fallas_negativas)
-    if datos.get("pantalla_danada") is True or any(k in txt_fallas for k in ("pantalla", "display", "raya")):
-        agregar("pantalla", "Plan: pantalla dañada")
-    if datos.get("teclado_danado") is True or any(k in txt_fallas for k in ("teclado", "tecla")):
-        agregar("teclado", "Plan: teclado dañado")
-    # El campo cargador_incluido manda; la lista de fallas solo se usa si el campo viene vacío
-    cargador = datos.get("cargador_incluido")
-    if cargador is False or (cargador is None and "sin cargador" in txt_fallas):
-        agregar("cargador", "Plan: reposición de cargador")
+    # Evidencia: las fallas informadas y el texto completo del aviso. El texto se incluye
+    # para que un síntoma no quede tapado porque el extractor lo omitió o lo clasificó mal.
+    evidencias, fallas_normalizadas = preparar_evidencias(fallas, texto)
+    verificacion = normalizar_verificacion(verificacion_tecnica)
 
-    n_intervenciones = len(plan)  # la mano de obra no cuenta como intervención (R3.6)
-    if plan:
-        agregar("mano_de_obra", "Plan: mano de obra")
+    # El grafo resuelve estado, plan, costos, cantidad de intervenciones y upgrades.
+    resolucion = consultar_resolucion_sm1(hechos, evidencias, fallas_normalizadas, verificacion_tecnica)
 
+    if resolucion["estado"] == "ConocimientoFaltante":
+        faltantes = []
+        if resolucion["desconocidos"]:
+            faltantes.append("el diagnóstico confirmado por el operador no está en la base de "
+                             f"conocimiento (Neo4j :Diagnostico): {', '.join(resolucion['desconocidos'])}")
+        if resolucion["incompletos"]:
+            faltantes.append("el diagnóstico confirmado no tiene reparación con costo en el grafo "
+                             "(:Diagnostico -[:SE_REPARA_CON]-> :CostoReparacion): "
+                             f"{', '.join(resolucion['incompletos'])}")
+        raise ConocimientoFaltante("; ".join(faltantes) + ".")
+
+    estado = resolucion["estado"]
+    plan = [{
+        "tarea": fila["descripcion_costo"], "costo": int(fila["costo_ars"]), "regla": fila["regla"],
+        "clave": fila["tarea"], "cuenta_como_intervencion": bool(fila.get("cuenta_como_intervencion", True)),
+        "costo_id": fila["costo_id"], "costo_version": fila["costo_version"],
+        "costo_estado": fila["costo_estado"],
+    } for fila in resolucion["plan"]]
+
+    # Procedencia: criterios y costos que el grafo usó quedan visibles en la traza.
+    for fila in resolucion["plan"]:
+        if fila.get("criterio_nombre"):
+            traza["criterios_usados"][fila["criterio_nombre"]] = {
+                "id": fila["criterio_id"], "valor": fila["criterio_valor"],
+                "unidad": fila["criterio_unidad"], "version": fila["criterio_version"],
+                "estado": fila["criterio_estado"]}
+        traza["costos_usados"][fila["tarea"]] = {
+            "id": fila["costo_id"], "costo": int(fila["costo_ars"]),
+            "version": fila["costo_version"], "estado": fila["costo_estado"]}
+
+    # Redacción del resultado ya decidido por el grafo.
+    motivo, verificacion_requerida = None, []
+    reglas_texto = []
+    if estado == "Inviable":
+        causa = resolucion.get("causa")
+        motivo = (f"Falla física irreparable detectada en el grafo: {causa}."
+                  if resolucion.get("causa_origen") == "aviso"
+                  else (causa or "Daño irreparable confirmado en la verificación técnica."))
+        reglas_texto.append(f"{resolucion.get('regla_aplicada') or 'R1.1'}: falla insalvable detectada "
+                            f"('{causa}') → Inviabilidad_Fisica_Insalvable")
+    elif estado == "VerificacionPendiente":
+        if verificacion is None:
+            for sintoma in resolucion["sintomas_detectados"]:
+                verificacion_requerida.append(f"Verificar el síntoma '{sintoma['descripcion']}' en persona")
+        for falla in resolucion["sin_tratamiento"]:
+            verificacion_requerida.append(
+                f"Falla sin tratamiento conocido en el grafo: '{falla}' (verificar y completar el conocimiento)")
+        motivo = ("El aviso afirma un síntoma o una falla que todavía no tiene diagnóstico técnico: "
+                  + "; ".join(verificacion_requerida)
+                  + ". No conviene comprar ni reparar a ciegas hasta esa verificación.")
+        reglas_texto.append(f"{resolucion.get('regla_aplicada') or 'R3.3c'}: síntoma o falla sin diagnóstico "
+                            "confirmado → Verificacion_pendiente (SolicitarVerificacion)")
+    if verificacion is not None and resolucion["confirmados"]:
+        reglas_texto.append(
+            f"Verificación técnica del operador ({verificacion['fuente']}): "
+            + ", ".join(sorted(set(resolucion["confirmados"])))
+            + " → la reparación y el costo se toman del grafo")
+    for fila in plan:
+        reglas_texto.append(f"{fila['regla']} → {fila['tarea'].lower()} (${fila['costo']:,})")
+    traza["reglas"].extend(reglas_texto)
+    if estado == "VerificacionPendiente":
+        traza["datos_pendientes"].extend(verificacion_requerida)
+    elif estado == "Viable":
+        traza["datos_pendientes"].extend(pendientes_hechos)
+
+    # `es_viable` es la única traducción de forma: un estado pendiente no es inviabilidad.
+    es_viable = {"Viable": True, "Inviable": False}.get(estado)
     return {
-        "estado": "Viable",
-        "es_viable": True,
+        "estado": estado,
+        "es_viable": es_viable,
+        "regla_aplicada": resolucion.get("regla_aplicada") if estado != "Viable" else None,
+        "motivo": motivo,
         "plan_reparacion": plan,
-        "costo_total": sum(t["costo"] for t in plan),
-        "cantidad_intervenciones": n_intervenciones,
-        "upgrades": upgrades,
-        "fallas": fallas
+        "costo_total": int(resolucion["costo_total"] or 0),
+        "cantidad_intervenciones": int(resolucion["cantidad_intervenciones"] or 0),
+        "upgrades": {"ssd": bool(resolucion["upgrades"].get("ssd")),
+                     "ram": bool(resolucion["upgrades"].get("ram"))},
+        "fallas": fallas,
+        "verificacion_requerida": verificacion_requerida,
+        "sintomas_detectados": [s["descripcion"] for s in resolucion["sintomas_detectados"]],
+        "fallas_sin_tratamiento": resolucion["sin_tratamiento"],
     }
 
 
 # ------------------------------------------------------------------------------
 # 5. Módulo SM2: Valuación Comercial y Demanda (Leonel Navarta)
 # ------------------------------------------------------------------------------
+def _ram_informada_para_grafo(valor) -> Optional[int]:
+    """Convierte la RAM informada con la misma validación de la versión anterior.
+
+    Un valor que `int()` no acepta ('16.0', 'ocho', una lista) se considera no informado —nunca se
+    redondea a una capacidad—, y un booleano o un decimal se convierten como antes.
+    """
+    if valor is None:
+        return None
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        return None
+
+
+def _anio_informado_para_grafo(valor) -> Optional[float]:
+    """Valida el año informado igual que la versión anterior (`float(anio)` en la aritmética).
+
+    Un año válido se transporta como número. Uno inválido corta la valuación con el mismo error de
+    antes: reemplazarlo por el año del procesador habilitaría una tasación favorable con un dato
+    que el aviso no dice.
+    """
+    if valor is None:
+        return None
+    return float(valor)
+
+
+def _hechos_procesador_sm2(datos: dict) -> tuple:
+    """Texto de procesador consultable y texto del modelo, tal como los extrajo el LLM.
+
+    El campo del procesador vale si trae algo distinto de 'null'/'none'; si viene vacío solo
+    queda el modelo, y la consulta decide si alcanza para identificar el componente.
+    """
+    procesador = str(datos.get("procesador") or "").strip()
+    modelo = str(datos.get("modelo") or "").strip()
+    if not procesador or procesador.lower() in ("null", "none"):
+        return "", modelo
+    return procesador, modelo
+
+
+def _mensaje_conocimiento_faltante_sm2(ref: dict, datos: dict, procesador: str, modelo: str,
+                                       ram_informada: Optional[int]) -> str:
+    """Redacta el error con la causa que resolvió el grafo (qué falta en la base de conocimiento)."""
+    clave = ref.get("motivo_clave")
+    if clave == "procesador_desconocido":
+        consultado = procesador or modelo
+        return (f"El procesador '{consultado}' no está en la base de conocimiento (Neo4j :Procesador).")
+    if clave == "linea_desconocida":
+        equipo = f"{datos.get('marca') or ''} {datos.get('modelo') or ''}".strip() or "sin marca"
+        return (f"La marca o línea del equipo ('{equipo}') no está en la base de conocimiento "
+                f"(Neo4j :Linea).")
+    if clave == "ram_informada_desconocida":
+        return (f"La capacidad de RAM informada ({ram_informada} GB) no está en la base de "
+                f"conocimiento (Neo4j :CapacidadRAM).")
+    if clave == "ram_tasada_desconocida":
+        return (f"La capacidad de RAM {ref.get('ram_final')} GB no está en la base de conocimiento "
+                f"(Neo4j :CapacidadRAM).")
+    raise RuntimeError(
+        "[ERROR INFERENCIA NEO4J] La consulta de valuación SM2 no informó qué conocimiento falta.")
+
+
+def _pendiente_valuacion_sm2(ref: dict, criterios: dict) -> tuple:
+    """Regla y dato faltante de una valuación pendiente, según la causa que resolvió el grafo."""
+    clave = ref.get("motivo_clave")
+    if clave == "procesador_no_informado":
+        return ("R3.3b: procesador no informado",
+                "Procesador del equipo (no figura en el aviso)")
+    if clave == "procesador_sin_muestras":
+        proc = ref.get("procesador") or {}
+        muestras = proc.get("n_muestras") or 0
+        minimo = int(criterios["min_muestras_mercado"])
+        return (f"R3.3b: {proc.get('nombre')} con {muestras} avisos relevados "
+                f"(< CE min_muestras_mercado) y sin generación anterior con datos",
+                f"Precio de mercado para {proc.get('nombre')} (hay {muestras} avisos relevados; "
+                f"se necesitan {minimo})")
+    if clave == "anio_desconocido":
+        return ("R3.3b: año de fabricación desconocido", "Año de fabricación del equipo")
+    raise RuntimeError(
+        "[ERROR INFERENCIA NEO4J] La valuación pendiente de SM2 no informó una causa conocida.")
+
+
 def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> dict:
     """
     Valuación por componentes (precios de mercado relevados) y riesgo/demanda difusos.
+    Los hechos del aviso se validan acá; la decisión de negocio (qué componente, qué RAM se
+    tasa, de dónde sale el año, el soporte de Windows 11, R2.4 y el estado) la resuelve la
+    consulta Cypher `inferir_valuacion_sm2_cypher`.
       - Procesador, línea o RAM informados que no existen en el grafo → ConocimientoFaltante (error).
       - Procesador no informado, año desconocido o procesador sin muestras de mercado suficientes
         → Verificacion_pendiente (falta de dato ≠ valor favorable).
     """
-    pendiente = lambda regla, dato: (traza["reglas"].append(f"{regla} → Verificacion_pendiente"),
-                                     {"estado": "Verificacion_pendiente", "dato_faltante": dato,
-                                      "vma_estimado_ars": 0})[1]
-
-    proc_txt = str(datos.get("procesador") or "").strip()
-    proc_desde_modelo = False
-    if not proc_txt or proc_txt.lower() in ("null", "none"):
-        # A veces el procesador viene dentro del modelo ("MacBook Air M1"): se prueba con el modelo
-        proc_txt = str(datos.get("modelo") or "").strip()
-        proc_desde_modelo = True
-        if not proc_txt:
-            return pendiente("R3.3b: procesador no informado", "Procesador del equipo (no figura en el aviso)")
-
-    # RAM final: la que queda después del plan de SM1 (si se amplía, la de CE ram_objetivo)
-    ram_objetivo = int(CE("ram_objetivo", traza))
-    ram = datos.get("ram_gb")
-    try:
-        ram = int(ram) if ram is not None else None
-    except (TypeError, ValueError):
-        ram = None
-    if ram is None:
-        ram_final = ram_objetivo
-        traza["datos_inferidos"].append(
-            f"RAM no informada: se tasa con la configuración de referencia ({ram_objetivo} GB, CE ram_objetivo)")
-    else:
-        ram_final = ram_objetivo if res_sm1.get("upgrades", {}).get("ram") else ram
-    hdd_a_ssd = bool(res_sm1.get("upgrades", {}).get("ssd"))
-
+    upgrades = res_sm1.get("upgrades") or {}
+    proc_txt, modelo_txt = _hechos_procesador_sm2(datos)
+    ram_informada = _ram_informada_para_grafo(datos.get("ram_gb"))
+    anio_avisado = datos.get("anio_fabricacion")
+    soporte_w11 = datos.get("soporte_windows_11")
+    soporte_w11 = None if soporte_w11 is None else bool(soporte_w11)
     texto_busqueda = " ".join(str(x) for x in (datos.get("marca"), datos.get("modelo"), texto) if x)
-    ref = consultar_mercado_componentes(proc_txt, texto_busqueda, ram, ram_final, hdd_a_ssd)
-    traza["referencia_mercado"] = {k: ref.get(k) for k in ("procesador", "generacion_anterior", "linea", "grupo", "ram")}
+
+    ref = inferir_valuacion_sm2_cypher(
+        procesador=proc_txt, modelo=modelo_txt, texto=texto_busqueda,
+        ram_informada=ram_informada, ram_ampliada=bool(upgrades.get("ram")),
+        hdd_a_ssd=bool(upgrades.get("ssd")),
+        anio_informado=_anio_informado_para_grafo(anio_avisado),
+        soporte_w11_informado=soporte_w11, traza=traza)
+    criterios = ref.get("criterios") or {}
     proc, linea, grupo = ref.get("procesador"), ref.get("linea"), ref.get("grupo")
 
-    # Lo que el aviso menciona y no está en la base de conocimiento → error explícito
-    if not proc and proc_desde_modelo:
-        return pendiente("R3.3b: procesador no informado", "Procesador del equipo (no figura en el aviso)")
-    if proc and proc_desde_modelo:
-        traza["datos_inferidos"].append(f"Procesador tomado del modelo '{proc_txt}': {proc['nombre']}")
-    if not proc:
-        raise ConocimientoFaltante(
-            f"El procesador '{proc_txt}' no está en la base de conocimiento (Neo4j :Procesador).")
-    if not linea:
-        equipo = f"{datos.get('marca') or ''} {datos.get('modelo') or ''}".strip() or "sin marca"
-        raise ConocimientoFaltante(
-            f"La marca o línea del equipo ('{equipo}') no está en la base de conocimiento (Neo4j :Linea).")
-    if ram is not None and not ref.get("ram_informada_existe"):
-        raise ConocimientoFaltante(
-            f"La capacidad de RAM informada ({ram} GB) no está en la base de conocimiento (Neo4j :CapacidadRAM).")
-    if not ref.get("ram"):
-        raise ConocimientoFaltante(
-            f"La capacidad de RAM {ram_final} GB no está en la base de conocimiento (Neo4j :CapacidadRAM).")
+    if proc_txt or modelo_txt:
+        traza["referencia_mercado"] = {k: ref.get(k) for k in ("procesador", "generacion_anterior",
+                                                             "linea", "grupo", "ram")}
+        if ref.get("ram_origen") == "referencia":
+            traza["datos_inferidos"].append(
+                f"RAM no informada: se tasa con la configuración de referencia "
+                f"({ref.get('ram_final')} GB, CE ram_objetivo)")
+    if proc and ref.get("procesador_origen") == "modelo":
+        traza["datos_inferidos"].append(f"Procesador tomado del modelo '{modelo_txt}': {proc['nombre']}")
 
-    # Procesador reconocido pero sin avisos suficientes para tener un precio de referencia
-    min_muestras = int(CE("min_muestras_mercado", traza))
+    # Lo que el aviso menciona y no está en la base de conocimiento → error explícito
+    if ref.get("estado") == "ConocimientoFaltante":
+        raise ConocimientoFaltante(
+            _mensaje_conocimiento_faltante_sm2(ref, datos, proc_txt, modelo_txt, ram_informada))
+    # Falta de dato: la consulta ya comprobó que no hay valor de mercado posible
+    if ref.get("estado") == "Verificacion_pendiente":
+        regla, dato = _pendiente_valuacion_sm2(ref, criterios)
+        traza["reglas"].append(f"{regla} → Verificacion_pendiente")
+        return {"estado": "Verificacion_pendiente", "dato_faltante": dato, "vma_estimado_ars": 0}
+    if ref.get("estado") != "Tasado":
+        raise RuntimeError(
+            "[ERROR INFERENCIA NEO4J] La consulta de valuación SM2 no devolvió un estado válido.")
+
     gen_ant = ref.get("generacion_anterior")
-    if proc.get("valor_ref_ars") is None and not gen_ant:
-        return pendiente(
-            f"R3.3b: {proc['nombre']} con {proc.get('n_muestras', 0)} avisos relevados (< CE min_muestras_mercado) "
-            f"y sin generación anterior con datos",
-            f"Precio de mercado para {proc['nombre']} (hay {proc.get('n_muestras', 0)} avisos relevados; "
-            f"se necesitan {min_muestras})")
     if gen_ant:
         traza["reglas"].append(
             f"R2.4: {proc['nombre']} sin muestras suficientes → valor de la generación anterior "
             f"{gen_ant['nombre']} (${gen_ant['valor_ref_ars']:,}, {gen_ant['n_muestras']} avisos)")
         traza["datos_inferidos"].append(
-            f"Valor de {proc['nombre']} tomado de {gen_ant['nombre']} (generación anterior, supuesto conservador R2.4)")
+            f"Valor de {proc['nombre']} tomado de {gen_ant['nombre']} (generación anterior, "
+            f"supuesto conservador R2.4)")
+    if ref.get("anio_origen") == "procesador" and ref.get("anio") is not None:
+        traza["datos_inferidos"].append(
+            f"Año estimado por el procesador {proc['nombre']} (Neo4j): {ref['anio']}")
+    if ref.get("w11_origen") == "procesador":
+        traza["datos_inferidos"].append(
+            f"Soporte de Windows 11 según el procesador {proc['nombre']}: {bool(ref['soporte_w11'])}")
+    elif ref.get("w11_origen") == "anio":
+        anio_nota = anio_avisado if ref.get("anio_origen") == "aviso" else ref.get("anio")
+        traza["datos_inferidos"].append(
+            f"Soporte de Windows 11 inferido por el año ({anio_nota}): {bool(ref['soporte_w11'])}")
+
     valor_proc = int(ref["valor_proc"])
-
-    # Año: aviso → generación del procesador (dato inferido)
-    anio = datos.get("anio_fabricacion")
-    if anio is None and proc.get("anio"):
-        anio = proc["anio"]
-        traza["datos_inferidos"].append(f"Año estimado por el procesador {proc['nombre']} (Neo4j): {anio}")
-    if anio is None:
-        return pendiente("R3.3b: año de fabricación desconocido", "Año de fabricación del equipo")
-    antiguedad = max(0.0, CE("anio_referencia", traza) - float(anio))
-
-    # Soporte de Windows 11: aviso → procesador → año ≥ CE anio_min_w11
-    win11 = datos.get("soporte_windows_11")
-    if win11 is None:
-        if proc.get("soporte_w11") is not None:
-            win11 = bool(proc["soporte_w11"])
-            traza["datos_inferidos"].append(f"Soporte de Windows 11 según el procesador {proc['nombre']}: {win11}")
-        else:
-            win11 = float(anio) >= CE("anio_min_w11", traza)
-            traza["datos_inferidos"].append(f"Soporte de Windows 11 inferido por el año ({anio}): {win11}")
-
+    antiguedad = float(ref["antiguedad"])
+    win11 = bool(ref["soporte_w11"])
     repuestos = float(grupo["indice_repuestos"])
     dias_rotacion = float(grupo["dias_promedio_venta"])
 
@@ -894,18 +1313,16 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
         raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM2-DEM.")
     demanda = res_dem[1]
 
-    # Criterios que usó la consulta de valuación (para la trazabilidad)
-    descuento = CE("descuento_negociacion", traza)
-    reval = 0
-    if hdd_a_ssd:
-        reval = int(CE("reval_ssd", traza))
+    descuento = float(criterios["descuento_negociacion"])
+    reval = int(ref.get("revalorizacion_ssd") or 0)
+    if upgrades.get("ssd"):
         traza["reglas"].append("R2.3: revalorización por upgrade a SSD (CE reval_ssd)")
     traza["reglas"].append(
         f"SM2 componentes: {proc['nombre']} (${valor_proc:,}) × {linea['nombre']} ({linea['factor_precio']}) "
-        f"× RAM {ram_final} GB ({ref['ram']['factor']}) − {descuento:.0f} % de negociación")
+        f"× RAM {ref['ram_final']} GB ({ref['ram']['factor']}) − {descuento:.0f} % de negociación")
 
     vma = int(ref["vma"])
-    print(f"      [Cypher Neo4j SM2] {proc['nombre']} · {linea['nombre']} · {ram_final} GB → VMA ${vma:,}", flush=True)
+    print(f"      [Cypher Neo4j SM2] {proc['nombre']} · {linea['nombre']} · {ref['ram_final']} GB → VMA ${vma:,}", flush=True)
     return {
         "estado": "Tasado",
         "procesador": proc["nombre"],
@@ -916,7 +1333,7 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
         "muestras_procesador": proc.get("n_muestras"),
         "factor_linea": linea["factor_precio"],
         "origen_factor_linea": linea.get("origen_factor"),
-        "ram_tasada_gb": ram_final,
+        "ram_tasada_gb": ref["ram_final"],
         "factor_ram": ref["ram"]["factor"],
         "valor_mercado_ars": int(round(ref["valor_mercado"], -3)),
         "descuento_negociacion_pct": descuento,
@@ -935,53 +1352,89 @@ def ejecutar_motor_sm2(datos: dict, res_sm1: dict, texto: str, traza: dict) -> d
 # ------------------------------------------------------------------------------
 # 6. Módulo SM3: Evaluación de la Operación y Decisión Final (Luciano Romero)
 # ------------------------------------------------------------------------------
+def registrar_criterios(criterios: list, traza: dict) -> None:
+    """
+    Registra en la traza los criterios que devolvió una consulta de inferencia, con la
+    misma forma que CE(): valor del grafo, id, unidad, versión y estado de validación.
+    """
+    for c in criterios or []:
+        traza["criterios_usados"][c["nombre"]] = {
+            k: c[k] for k in ("id", "valor", "unidad", "version", "estado")}
+
+def _numero_sm3(nombre: str, valor) -> float:
+    """
+    Lleva una entrada de SM3 al mismo dominio numérico que usaba la política anterior:
+    `int`, `float` y `bool` (que operaba como 0/1). Cualquier otro tipo falla ruidosamente,
+    en lugar de dejar que la consulta lo convierta en silencio.
+    """
+    if isinstance(valor, float):
+        return valor
+    if isinstance(valor, int):  # incluye bool, igual que la aritmética anterior
+        return float(valor)
+    raise TypeError(
+        f"[ERROR ENTRADA SM3] '{nombre}' debe ser numérico (int, float); se recibió {type(valor).__name__}.")
+
 def ejecutar_motor_sm3(precio: float, costo_rep: float, vma: float, n_interv: int,
                        riesgo: str, demanda: str, traza: dict) -> dict:
-    """Filtros crisp (R3.7, R3.8), margen requerido y conveniencia difusa en Neo4j."""
-    margen_neto = round(100.0 * (vma - precio - costo_rep) / vma, 1)
-    ratio_rep = round(costo_rep / vma, 2) if vma > 0 else 0.0
+    """
+    Evaluación de la operación (Luciano Romero). La aritmética, la cuantización decimal,
+    la política crisp (R3.7, R3.8, margen requerido base → R3.4 o R3.5 → R3.6), la
+    contraoferta y el mapeo de la categoría difusa a la decisión se infieren en Cypher
+    (app/inferencia_sm3.py).
+
+    Este adapter valida el dominio de entrada, registra la procedencia que devuelve el
+    grafo y arma la salida pública. No lee criterios, no redondea ni evalúa umbrales: no
+    calcula ni decide nada.
+    """
+    precio_num = _numero_sm3("precio", precio)
+    costo_num = _numero_sm3("costo_rep", costo_rep)
+    vma_num = _numero_sm3("vma", vma)
+    interv_num = _numero_sm3("n_interv", n_interv)
+
+    driver = obtener_driver_neo4j()
+    crisp = inferir_sm3_crisp_cypher(driver, NEO4J_DATABASE, precio_num, costo_num, vma_num,
+                                     interv_num, riesgo, demanda)
+    if not crisp:
+        raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM3 crisp.")
+    if crisp["division_por_cero"]:
+        # Mismo error observable que la política anterior (misma clase y mensaje): el grafo
+        # informa la división por cero y el adapter la traduce, sin redefinir la entrada.
+        raise ZeroDivisionError("division by zero")
+
+    # Procedencia y reglas, tal como las resolvió el grafo (mismo orden de aplicación).
+    registrar_criterios(crisp["criterios"], traza)
+    for regla in crisp["reglas_activadas"]:
+        traza["reglas"].append(regla)
+
     base_ind = {"precio_publicado": int(precio), "costo_reparacion": int(costo_rep), "vma_tasado": int(vma),
-                "margen_neto_pct": margen_neto, "ratio_reparacion": ratio_rep}
+                "margen_neto_pct": crisp["margen_neto"], "ratio_reparacion": crisp["ratio_reparacion"]}
 
-    if ratio_rep > CE("ratio_reparacion_max", traza):
-        traza["reglas"].append("R3.7: costo / VMA > CE ratio_reparacion_max → DescartarPorRiesgo")
-        return {"decision": "DescartarPorRiesgo", "regla_aplicada": "R3.7",
-                "motivo": f"La reparación (${costo_rep:,.0f}) supera el {CE('ratio_reparacion_max', traza):.0%} del VMA (${vma:,.0f}).",
-                "indicadores": base_ind}
+    # Filtros crisp: la decisión de descarte ya viene resuelta por el grafo.
+    if crisp["regla"] in ("R3.7", "R3.8"):
+        motivo = (f"La reparación (${costo_rep:,.0f}) supera el {crisp['ratio_max']:.0%} del VMA (${vma:,.0f})."
+                  if crisp["regla"] == "R3.7"
+                  else f"Riesgo de obsolescencia {riesgo} con demanda comercial {demanda} (inmovilización de capital).")
+        return {"decision": crisp["decision"], "regla_aplicada": crisp["regla"],
+                "motivo": motivo, "indicadores": base_ind}
 
-    if riesgo == "Alto" and demanda == "Baja":
-        traza["reglas"].append("R3.8: riesgo Alto y demanda Baja → DescartarPorRiesgo")
-        return {"decision": "DescartarPorRiesgo", "regla_aplicada": "R3.8",
-                "motivo": "Riesgo de obsolescencia Alto con demanda comercial Baja (inmovilización de capital).",
-                "indicadores": base_ind}
-
-    # Margen requerido: paso 0 base, paso 1 R3.4 o R3.5 (excluyentes), paso 2 R3.6
-    margen_req = CE("margen_base", traza)
-    if demanda == "Alta" and riesgo == "Bajo":
-        margen_req = CE("margen_alta_liquidez", traza)
-        traza["reglas"].append("R3.4: demanda Alta y riesgo Bajo → margen requerido = CE margen_alta_liquidez")
-    elif riesgo == "Alto":
-        margen_req = max(margen_req, CE("margen_riesgo_alto", traza))
-        traza["reglas"].append("R3.5: riesgo Alto → margen requerido = máx(margen, CE margen_riesgo_alto)")
-    if n_interv >= CE("umbral_intervenciones", traza):
-        margen_req += CE("prima_fallas", traza)
-        traza["reglas"].append("R3.6: intervenciones ≥ CE umbral_intervenciones → + CE prima_fallas")
-
-    contraoferta = max(0, round(vma - costo_rep - vma * margen_req / 100.0, -3))
-    brecha = round(margen_neto - margen_req, 1)
-    descuento = round(100.0 * (precio - contraoferta) / precio, 1) if contraoferta < precio else 0.0
-
+    # Conveniencia difusa SM3-CONV: Mamdani en Cypher, con la brecha y el descuento del grafo.
+    brecha, descuento = crisp["brecha"], crisp["descuento"]
     res = inferir_sm3_conv_cypher(brecha, descuento)
     if not res:
         raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM3-CONV.")
     score, categoria = res
-    decision = {"Comprar": "Comprar", "Negociar": "ComprarConOfertaMenor", "Descartar": "DescartarPorRiesgo"}[categoria]
     traza["reglas"].append(f"SM3-CONV difusa (brecha {brecha} pp, descuento {descuento} %) → {categoria} ({score})")
 
-    return {"decision": decision, "conveniencia_score": score, "categoria_difusa": categoria,
-            "indicadores": {**base_ind, "margen_requerido_pct": margen_req, "brecha_margen_pp": brecha,
+    resolucion = resolver_decision_sm3_cypher(driver, NEO4J_DATABASE, categoria, crisp["contraoferta"])
+    if not resolucion or not resolucion.get("decision"):
+        raise RuntimeError(
+            f"[ERROR INFERENCIA NEO4J] SM3-CONV no tiene decisión asociada a la categoría '{categoria}'.")
+
+    contraoferta = resolucion.get("contraoferta_sugerida_ars")
+    return {"decision": resolucion["decision"], "conveniencia_score": score, "categoria_difusa": categoria,
+            "indicadores": {**base_ind, "margen_requerido_pct": crisp["margen_req"], "brecha_margen_pp": brecha,
                             "descuento_requerido_pct": descuento,
-                            "contraoferta_sugerida_ars": int(contraoferta) if decision == "ComprarConOfertaMenor" else None}}
+                            "contraoferta_sugerida_ars": int(contraoferta) if contraoferta is not None else None}}
 
 
 # ------------------------------------------------------------------------------
@@ -999,7 +1452,7 @@ Campos del JSON:
 - "marca": marca comercial (string o null)
 - "modelo": modelo comercial (string o null)
 - "procesador": procesador copiado textual del aviso, sin completar modelos que no estén escritos (o null)
-- "precio_publicado": precio entero en pesos (ej: "$115.000" -> 115000) o null
+- "precio_publicado": precio entero en pesos copiado del aviso ("$1" -> 1, "$0" -> 0, "320.000 pesos" -> 320000); si no aparece, null. Nunca uses el precio del ejemplo ni un costo de reparación.
 - "anio_fabricacion": año entero (ej: 2020) o null
 - "salud_bateria_pct": entero 0-100 o null
 - "ciclos_bateria": entero o null
@@ -1084,7 +1537,11 @@ def generar_sintesis_gerencial_llm(resumen: dict) -> str:
     Genera la Síntesis General / Dictamen Ejecutivo utilizando el LLM de forma no determinista,
     basándose en el resumen de resultados simbólicos y difusos (SM1, SM2, SM3, fallas).
     En caso de contingencia o indisponibilidad del LLM, recurre a generar_dictamen_sintesis como respaldo.
+    Una verificación pendiente no se redacta con LLM: no hay números firmes y la redacción no
+    puede convertirla en una recomendación de compra.
     """
+    if resumen.get("decision") == "VerificacionPendiente":
+        return generar_dictamen_sintesis(resumen)
     resumen_json = json.dumps(resumen, ensure_ascii=False, indent=2)
     prompt_usuario = f"Resumen de evaluación para redactar la síntesis general ejecutiva:\n{resumen_json}"
     try:
@@ -1175,16 +1632,82 @@ def generar_dictamen_sintesis(resumen: dict) -> str:
     return "\n".join(lineas)
 
 
+# Clasificación Firme/Provisional (I12): manifiesto, reglas y condiciones son datos del
+# grafo. Python sólo cuenta los hechos de la traza y transporta el veredicto.
+CONSULTA_CLASIFICACION_DECISION = """
+CALL () {
+  OPTIONAL MATCH (vp:VersionPoliticas {etapa:'SM0-clasificacion', activa:true})
+  WITH collect(DISTINCT vp) AS hallados
+  WITH size(hallados) AS n, CASE WHEN size(hallados) = 1 THEN hallados[0] END AS vp
+  OPTIONAL MATCH (vp)-[:INCLUYE]->(rm:Regla)
+  WITH n, vp, rm ORDER BY rm.prioridad_inferencia
+  WITH n, vp, collect(rm) AS reglas, coalesce(vp.ids_requeridos, []) AS requeridos
+  WITH n, reglas, requeridos,
+       [i IN requeridos WHERE NOT any(m IN reglas WHERE m.id = i)] AS faltantes,
+       [m IN reglas WHERE m.estado_resultante IS NULL] AS sin_estado,
+       [m IN reglas WHERE NOT m.prioridad_inferencia IS :: INTEGER] AS sin_orden
+  RETURN [m IN reglas | {regla: m, orden: m.prioridad_inferencia,
+                         estado: m.estado_resultante}] AS reglas_clasificacion,
+    CASE WHEN n = 1 AND size(faltantes) = 0 AND size(reglas) = size(requeridos)
+              AND size(sin_estado) = 0 AND size(sin_orden) = 0 AND size(reglas) > 0
+         THEN [] ELSE ['configuración de la clasificación Firme/Provisional: manifiesto, reglas '
+                    + 'o estado resultante no válidos'] END AS problemas
+}
+WITH *, {reglas: reglas_clasificacion,
+         hechos: {criterios_sin_validar: $criterios_sin_validar,
+                  costos_sin_validar: $costos_sin_validar,
+                  datos_inferidos: $datos_inferidos,
+                  datos_pendientes: $datos_pendientes}} AS entrada
+""" + EVALUAR_CONDICIONES + """
+WITH * ORDER BY orden
+WITH problemas, collect({orden: orden, estado: datos.estado, filas: filas,
+                          cumplida: cumplida}) AS evaluadas
+WITH problemas, [e IN evaluadas WHERE e.cumplida] AS aplicables,
+     [e IN evaluadas WHERE any(f IN e.filas
+        WHERE NOT f.campo IN ['criterios_sin_validar', 'costos_sin_validar',
+                              'datos_inferidos', 'datos_pendientes'])] AS campos_ajenos
+WITH problemas, aplicables, campos_ajenos,
+     reduce(ganadora = null, e IN aplicables |
+            CASE WHEN ganadora IS NULL THEN e
+                 WHEN e.orden < ganadora.orden THEN e ELSE ganadora END) AS elegida
+RETURN elegida.estado AS estado_decision,
+       CASE WHEN size(problemas) = 0 AND size(campos_ajenos) = 0 AND elegida IS NOT NULL
+            THEN [] ELSE ['clasificación Firme/Provisional: ninguna regla aplicable, condición '
+                       + 'con un hecho no declarado o política incompleta'] END AS problemas_total
+"""
+
+
 def _estado_decision(traza: dict) -> dict:
-    """Firme solo si todos los criterios y costos usados están validados y no hubo datos inferidos ni pendientes."""
+    """Firme solo si todos los criterios y costos usados están validados y no hubo datos inferidos
+    ni pendientes.
+
+    La clasificación es una etapa del grafo (`SM0-clasificacion`): Python cuenta los hechos de
+    la traza, transporta el veredicto que resolvió el grafo y arma la lista de pendientes que
+    publica el dictamen. Una configuración incompleta corta con error explícito.
+    """
     provisionales = sorted(
         [f"{n} ({c['id']} {c.get('version', '')})" for n, c in traza["criterios_usados"].items() if c.get("estado") != "Validado"]
         + [f"costo {t} ({c['id']})" for t, c in traza["costos_usados"].items() if c.get("estado") != "Validado"])
-    firme = not provisionales and not traza["datos_inferidos"] and not traza["datos_pendientes"]
-    return {"estado_decision": "Firme" if firme else "Provisional", "criterios_pendientes": provisionales}
+    driver = obtener_driver_neo4j()
+    with driver.session(database=NEO4J_DATABASE) as s:
+        fila = s.run(CONSULTA_CLASIFICACION_DECISION,
+                     criterios_sin_validar=len([1 for c in traza["criterios_usados"].values()
+                                                if c.get("estado") != "Validado"]),
+                     costos_sin_validar=len([1 for c in traza["costos_usados"].values()
+                                             if c.get("estado") != "Validado"]),
+                     datos_inferidos=len(traza["datos_inferidos"]),
+                     datos_pendientes=len(traza["datos_pendientes"])).single()
+    clasificacion = dict(fila) if fila else {}
+    if clasificacion.get("problemas_total") or not clasificacion.get("estado_decision"):
+        raise RuntimeError(
+            "[ERROR INFERENCIA NEO4J] La clasificación Firme/Provisional no se pudo resolver desde "
+            "Neo4j (etapa SM0-clasificacion).")
+    return {"estado_decision": clasificacion["estado_decision"],
+            "criterios_pendientes": provisionales}
 
 
-def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -> dict:
+def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True,
+                                verificacion_tecnica: Optional[dict] = None) -> dict:
     """
     Pipeline completo neuro-simbólico:
       1. El LLM se encarga de parsear el JSON y extraer todas las fallas sin catalogar fallas críticas aisladas.
@@ -1192,6 +1715,11 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
       3. Toda la base de conocimiento (costos, criterios, modelos, reglas, bloqueos) se consulta en Neo4j.
       4. El sistema preserva y pone TODAS las fallas detectadas en el informe.
       5. Síntesis general ejecutiva redactada de forma no determinista con el LLM (con fallback determinístico).
+
+    `verificacion_tecnica` es opcional y la aporta el operador, no el aviso:
+    {"fuente": "<dónde y cómo se verificó el equipo>", "diagnosticos": ["bateria", ...]}.
+    Sólo esa declaración puede liberar una verificación pendiente; ningún campo del aviso
+    ni del LLM se interpreta como diagnóstico confirmado.
     """
     obtener_driver_neo4j()
     cargar_conocimiento(forzar=True)
@@ -1208,12 +1736,14 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
     datos = extraer_datos_llm(texto_publicacion)
     txt_lower = texto_publicacion.lower()
 
-    # Validación defensiva del precio contra el texto original
-    match_precio = re.search(r"\$\s*([0-9]{1,3}(?:\.[0-9]{3})+|[0-9]{5,8})", texto_publicacion)
-    if match_precio:
-        val_p = int(match_precio.group(1).replace(".", ""))
-        if datos.get("precio_publicado") is None or abs((datos.get("precio_publicado") or 0) - val_p) > 1000:
-            datos["precio_publicado"] = val_p
+    # El precio debe tener respaldo literal: manda el primer monto del aviso, sin tolerancias.
+    # Se admiten pesos con símbolo o unidad explícita y puntos como separadores de miles.
+    monto_ars = r"(?:[0-9]{1,3}(?:\.[0-9]{3})+|[0-9]+)"
+    match_precio = re.search(
+        rf"\$\s*(?P<simbolo>{monto_ars})|(?P<pesos>{monto_ars})\s+pesos\b",
+        texto_publicacion, flags=re.IGNORECASE)
+    monto_textual = (match_precio.group("simbolo") or match_precio.group("pesos")) if match_precio else None
+    datos["precio_publicado"] = int(monto_textual.replace(".", "")) if monto_textual is not None else None
 
     # Validación defensiva del procesador: el LLM a veces completa un modelo que no está en el aviso
     # (ej. "Ryzen 3" → "Ryzen 3 3250U"). Solo se conservan las palabras que aparecen en el texto original.
@@ -1271,22 +1801,27 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
         print("\n[Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...", flush=True)
 
     # R3.3: señal de bloqueo en el texto → verificación pendiente (no se descarta sin verificar)
-    senales_bloqueo = consultar_senales_bloqueo_en_grafo()
-    bloqueo_detectado = next((s for s in senales_bloqueo if s in txt_lower), None)
+    bloqueo = inferir_contexto_textual_cypher(texto_publicacion, "SM0-bloqueo")
 
-    if bloqueo_detectado:
-        traza["reglas"].append(f"R3.3: señal de bloqueo en el aviso ('{bloqueo_detectado}') → Verificacion_pendiente")
+    if bloqueo:
+        bloqueo_detectado = bloqueo["descripcion"]
+        traza["reglas"].append(f"{bloqueo['regla']}: señal de bloqueo en el aviso ('{bloqueo_detectado}') → Verificacion_pendiente")
         res_sm3 = {
-            "decision": "VerificacionPendiente",
-            "regla_aplicada": "R3.3",
-            "motivo": f"El aviso sugiere un posible bloqueo ('{bloqueo_detectado}'). Verificar desvinculación en persona antes del pago (R3.3).",
+            "decision": bloqueo["decision"],
+            "regla_aplicada": bloqueo["regla"],
+            "motivo": f"El aviso sugiere un posible bloqueo ('{bloqueo_detectado}'). Verificar desvinculación en persona antes del pago ({bloqueo['regla']}).",
             "indicadores": {"precio_publicado": int(precio)}
         }
     else:
-        # SM1 Técnico
-        res_sm1 = ejecutar_motor_sm1(datos, traza)
+        # SM1 Técnico: la inferencia del grafo decide; un estado pendiente no es inviabilidad.
+        try:
+            res_sm1 = ejecutar_motor_sm1(datos, traza, texto_publicacion, verificacion_tecnica)
+        except ConocimientoFaltante as e:
+            if verbose:
+                print(f"      [ERROR BASE DE CONOCIMIENTO] {e}")
+            return {"error": f"Base de conocimiento incompleta: {e}", "datos_extraidos": datos, "traza": traza}
 
-        if not res_sm1["es_viable"]:
+        if res_sm1["estado"] == "Inviable":
             res_sm2 = {"estado": "Omitido_Por_Inviabilidad", "vma_estimado_ars": 0}
             traza["reglas"].append("R3.2: dictamen técnico insalvable → DescartarPorInviabilidad")
             res_sm3 = {
@@ -1294,6 +1829,17 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True) -
                 "regla_aplicada": "R3.2",
                 "motivo": res_sm1["motivo"],
                 "indicadores": {"precio_publicado": int(precio), "costo_reparacion": 0, "vma_tasado": 0}
+            }
+        elif res_sm1["estado"] == "VerificacionPendiente":
+            # Sin diagnóstico técnico no se tasa ni se decide: no es un descarte ni una compra.
+            res_sm2 = {"estado": "Sin_evaluar", "vma_estimado_ars": 0}
+            if verbose:
+                print(f"      SM1: verificación pendiente → {res_sm1['motivo']}")
+            res_sm3 = {
+                "decision": "VerificacionPendiente",
+                "regla_aplicada": res_sm1.get("regla_aplicada") or "R3.3c",
+                "motivo": res_sm1["motivo"],
+                "indicadores": {"precio_publicado": int(precio)}
             }
         else:
             if verbose:
@@ -1488,39 +2034,70 @@ def _explicar(prompt: str, resultado: dict, respaldo: str) -> str:
 def enrutar_consulta(texto: str) -> dict:
     """System Prompt maestro: clasifica la consulta. Si la salida del LLM no es válida, usa una regla de respaldo."""
     validas = {"evaluacion_integral", "diagnostico_tecnico", "valuacion_comercial", "fuera_de_dominio"}
-    tiene_precio = bool(re.search(r"\$\s*\d|\d{3}\.\d{3}|\bpiden\b|\bprecio\b", texto.lower()))
+    r = {}
     try:
         r = _llm_json(PROMPT_MAESTRO_ENRUTAMIENTO, texto)
         intencion = str(r.get("intencion", "")).strip()
         if intencion in validas:
             # Regla de consistencia: un aviso con precio siempre pasa por los tres submódulos
-            if tiene_precio and intencion in ("diagnostico_tecnico", "valuacion_comercial"):
-                return {"intencion": "evaluacion_integral", "origen": "regla (el mensaje tiene precio)",
-                        "motivo": r.get("motivo")}
-            return {"intencion": intencion, "origen": "LLM", "motivo": r.get("motivo")}
-    except Exception:
-        pass
-    return {"intencion": "evaluacion_integral" if tiene_precio else "fuera_de_dominio",
+            if intencion in ("diagnostico_tecnico", "valuacion_comercial"):
+                precio = inferir_contexto_textual_cypher(texto, "SM0-precio")
+                if precio:
+                    return {"intencion": precio["decision"], "origen": "regla (el mensaje tiene precio)",
+                            "motivo": r.get("motivo")}
+            if intencion != "fuera_de_dominio":
+                return {"intencion": intencion, "origen": "LLM", "motivo": r.get("motivo")}
+    except (ValueError, TypeError, AttributeError):
+        # Sólo el formato inválido conserva el respaldo; los fallos de infraestructura se propagan.
+        r = {}
+    dominio = inferir_contexto_textual_cypher(texto, "SM0-dominio")
+    if dominio:
+        return {"intencion": dominio["decision"], "origen": "regla del grafo (dominio)",
+                "motivo": dominio["descripcion"]}
+    if r.get("intencion") == "fuera_de_dominio":
+        return {"intencion": "fuera_de_dominio", "origen": "LLM", "motivo": r.get("motivo")}
+    precio = inferir_contexto_textual_cypher(texto, "SM0-precio")
+    return {"intencion": precio["decision"] if precio else "fuera_de_dominio",
             "origen": "regla de respaldo", "motivo": "salida del enrutador no válida"}
 
 
-def consultar_sm1(texto: str, verbose: bool = True) -> dict:
-    """Flujo SM1 (diagnóstico técnico): extracción → reglas y difusa SM1 en Neo4j → explicación."""
+def consultar_sm1(texto: str, verbose: bool = True, verificacion_tecnica: Optional[dict] = None) -> dict:
+    """Flujo SM1 (diagnóstico técnico): extracción → reglas y difusa SM1 en Neo4j → explicación.
+
+    `verificacion_tecnica` es la evidencia del operador (fuente y diagnósticos confirmados).
+    """
     cargar_conocimiento(forzar=True)
     traza = nueva_traza()
     datos = _llm_json(PROMPT_EXTRACCION_SM1, texto)
-    res = ejecutar_motor_sm1(datos, traza)
-    resultado = {"submodulo": "SM1", "viable": res.get("es_viable"), "motivo": res.get("motivo"),
-                 "plan_reparacion": res.get("plan_reparacion"), "costo_total_ars": res.get("costo_total"),
+    try:
+        res = ejecutar_motor_sm1(datos, traza, texto, verificacion_tecnica)
+    except ConocimientoFaltante as e:
+        res = {"estado": "ErrorConocimiento", "error": str(e), "es_viable": None,
+               "plan_reparacion": [], "costo_total": 0}
+    resultado = {"submodulo": "SM1", "estado": res.get("estado"), "viable": res.get("es_viable"),
+                 "motivo": res.get("motivo"), "plan_reparacion": res.get("plan_reparacion"),
+                 "costo_total_ars": res.get("costo_total"),
+                 "verificacion_requerida": res.get("verificacion_requerida"),
                  "reglas": traza["reglas"], "datos_pendientes": traza["datos_pendientes"],
                  "datos_inferidos": traza["datos_inferidos"]}
-    plan = ", ".join(f"{t['tarea']} (${t['costo']:,})" for t in res.get("plan_reparacion", [])) or "ninguna reparación"
-    respaldo = (f"Diagnóstico: {res.get('motivo') or 'equipo reparable'}. Plan: {plan}. "
-                f"Costo total: ${res.get('costo_total', 0):,} ARS (costos provisionales).")
-    explicacion = _explicar(PROMPT_EXPLICACION_SM1, resultado, respaldo)
+    if res.get("estado") == "VerificacionPendiente":
+        plan, costo_mostrado = "pendiente de verificación", "sin determinar"
+        # Pendiente: no se redacta con el LLM para que no lo convierta en una recomendación de compra.
+        respaldo = ("Diagnóstico técnico pendiente de verificación: " + res.get("motivo", "") +
+                    " No conviene comprar ni reparar a ciegas hasta completar esa verificación.")
+        explicacion = respaldo
+    elif res.get("estado") == "ErrorConocimiento":
+        plan, costo_mostrado = "no disponible por conocimiento faltante", "sin determinar"
+        explicacion = f"No se pudo inferir el diagnóstico: {res.get('error')}."
+    else:
+        plan = ", ".join(f"{t['tarea']} (${t['costo']:,})" for t in res.get("plan_reparacion", [])) or "ninguna reparación"
+        costo_mostrado = f"${res.get('costo_total', 0):,} ARS"
+        respaldo = (f"Diagnóstico: {res.get('motivo') or 'equipo reparable'}. Plan: {plan}. "
+                    f"Costo total: ${res.get('costo_total', 0):,} ARS (costos provisionales).")
+        explicacion = _explicar(PROMPT_EXPLICACION_SM1, resultado, respaldo)
     if verbose:
         print("      Datos extraídos (SM1):", json.dumps(datos, ensure_ascii=False))
-        print(f"      Plan: {plan} | Costo: ${res.get('costo_total', 0):,} ARS")
+        print(f"      Plan: {plan} | Costo: {costo_mostrado}")
     return {"intencion": "diagnostico_tecnico", "datos_extraidos": datos, "sm1_tecnico": res,
             "traza": traza, "respuesta": explicacion}
 
@@ -1555,17 +2132,21 @@ def consultar_sm2(texto: str, verbose: bool = True) -> dict:
             "traza": traza, "respuesta": explicacion}
 
 
-def asistente_evaltic(texto: str, verbose: bool = True) -> dict:
-    """Punto de entrada único: enruta la consulta y ejecuta el o los submódulos que correspondan."""
+def asistente_evaltic(texto: str, verbose: bool = True,
+                      verificacion_tecnica: Optional[dict] = None) -> dict:
+    """Punto de entrada único: enruta la consulta y ejecuta el o los submódulos que correspondan.
+
+    `verificacion_tecnica` es la evidencia del operador sobre el diagnóstico técnico (opcional).
+    """
     ruta = enrutar_consulta(texto)
     if verbose:
         print(f"\n[Enrutador] Intención: {ruta['intencion']} ({ruta['origen']}) — {ruta.get('motivo') or ''}", flush=True)
     if ruta["intencion"] == "evaluacion_integral":
-        r = evaluar_publicacion_integral(texto, verbose=verbose)
+        r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
         r["intencion"] = "evaluacion_integral"
         r["respuesta"] = r.get("dictamen_gerencial") or r.get("error")
     elif ruta["intencion"] == "diagnostico_tecnico":
-        r = consultar_sm1(texto, verbose=verbose)
+        r = consultar_sm1(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
     elif ruta["intencion"] == "valuacion_comercial":
         r = consultar_sm2(texto, verbose=verbose)
     else:
@@ -1669,12 +2250,33 @@ def ejecutar_pruebas_enrutador():
         print(f"{'✔' if o_ == e_ else '✘'} {t:<48} → {o_:<20} (esperado {e_}) {d}")
     print(f"Enrutamiento correcto en {sum(1 for f in filas if f[1] == f[2])} de {len(filas)} consultas.\n")
 
+def _argumentos_cli(argumentos: List[str]) -> Tuple[str, Optional[dict]]:
+    """
+    Separa la evidencia técnica del operador del texto de la consulta.
+    Uso: python orquestador_evaltic.py --verificacion "<dónde y cómo se verificó>" \
+             --diagnostico bateria "<aviso o consulta>"
+    """
+    fuente, diagnosticos, texto, esperando = "", [], [], None
+    for argumento in argumentos:
+        if esperando == "fuente":
+            fuente, esperando = argumento, None
+        elif esperando == "diagnostico":
+            diagnosticos, esperando = diagnosticos + [argumento], None
+        elif argumento in ("--verificacion", "--diagnostico"):
+            esperando = "fuente" if argumento == "--verificacion" else "diagnostico"
+        else:
+            texto.append(argumento)
+    verificacion = {"fuente": fuente, "diagnosticos": diagnosticos} if fuente and diagnosticos else None
+    return " ".join(texto), verificacion
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--test":
         ejecutar_bateria_pruebas()
         ejecutar_pruebas_enrutador()
     elif len(sys.argv) > 1:
-        asistente_evaltic(" ".join(sys.argv[1:]), verbose=True)
+        texto_cli, verificacion_cli = _argumentos_cli(sys.argv[1:])
+        asistente_evaltic(texto_cli, verbose=True, verificacion_tecnica=verificacion_cli)
     else:
         print("EvalTIC — Asistente Inteligente (PG3)")
         print("Para ejecutar las pruebas: python orquestador_evaltic.py --test\n")

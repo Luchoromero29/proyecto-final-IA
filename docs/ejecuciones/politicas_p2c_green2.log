@@ -1,0 +1,20 @@
+test_el_ambito_de_la_condicion_manda (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_ambito_de_la_condicion_manda) ... ok
+test_el_artefacto_rechaza_una_configuracion_previa_distinta (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_artefacto_rechaza_una_configuracion_previa_distinta) ... ok
+test_el_campo_de_la_condicion_manda (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_campo_de_la_condicion_manda) ... ok
+test_el_comparador_almacenado_decide_la_intervencion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_comparador_almacenado_decide_la_intervencion) ... ok
+test_el_estado_resultante_ausente_falla_cerrado (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_ausente_falla_cerrado) ... ok
+test_el_estado_resultante_del_inviable_lo_declara_la_regla (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_del_inviable_lo_declara_la_regla) ... ok
+test_el_estado_resultante_del_pendiente_lo_declara_la_regla (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_del_pendiente_lo_declara_la_regla) ... ok
+test_el_estado_resultante_invalido_falla_cerrado (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_invalido_falla_cerrado) ... ok
+test_el_estado_resultante_no_se_reescribe_en_la_segunda_aplicacion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_estado_resultante_no_se_reescribe_en_la_segunda_aplicacion) ... ok
+test_el_operando_por_criterio_sale_del_grafo (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_operando_por_criterio_sale_del_grafo) ... ok
+test_el_vinculo_de_la_categoria_difusa_es_dato (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_el_vinculo_de_la_categoria_difusa_es_dato) ... ok
+test_la_configuracion_invalida_no_produce_un_plan_favorable (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_configuracion_invalida_no_produce_un_plan_favorable) ... ok
+test_la_segunda_aplicacion_no_cambia_la_proyeccion (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_la_segunda_aplicacion_no_cambia_la_proyeccion) ... ok
+test_los_grupos_combinan_or_dentro_y_and_entre_grupos (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_los_grupos_combinan_or_dentro_y_and_entre_grupos) ... ok
+test_una_condicion_de_otra_etapa_no_cambia_el_resultado_de_sm1 (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_una_condicion_de_otra_etapa_no_cambia_el_resultado_de_sm1) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 3.783s
+
+OK

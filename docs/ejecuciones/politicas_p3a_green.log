@@ -1,0 +1,11 @@
+test_configuracion_invalida_falla_con_el_error_existente (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_configuracion_invalida_falla_con_el_error_existente) ... ok
+test_el_comparador_guardado_en_el_grafo_cambia_el_filtro_publico (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_el_comparador_guardado_en_el_grafo_cambia_el_filtro_publico) ... ok
+test_el_criterio_enlazado_es_la_autoridad_del_umbral (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_el_criterio_enlazado_es_la_autoridad_del_umbral) ... ok
+test_politica_por_defecto_conserva_el_umbral_y_la_traza (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_politica_por_defecto_conserva_el_umbral_y_la_traza) ... ok
+test_seed_es_idempotente_y_un_conflicto_no_escribe (test_politicas_sm3_filtro_neo4j.FiltroR37EnGrafoTest.test_seed_es_idempotente_y_un_conflicto_no_escribe) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 5.641s
+
+OK
+exit=0

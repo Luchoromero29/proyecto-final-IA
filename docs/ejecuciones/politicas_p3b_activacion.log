@@ -1,0 +1,5 @@
+INICIO 2026-11-12T03:45:24.434407+00:00
+OBJETIVO bolt://127.0.0.1:17687 auth=None database=neo4j
+ANTES 34d1b156b024a40c65d8f18df0c107bcc2f4762046bbe04b58919ff6880633ea conteos 876 1983 19
+PRECOMMIT_VALIDADO primera= {'configuradas': 1, 'actualizadas': 1, 'errores': []} segunda= {'configuradas': 1, 'actualizadas': 0, 'errores': []} DESPUES 72b4b0ba9d15471e79880ac3a0daddfd12f8280923817061e0a2c4eeea6e9560
+COMMIT_OK: sólo dos propiedades nuevas en Regla R3.8; resto del grafo y restricciones idénticos.

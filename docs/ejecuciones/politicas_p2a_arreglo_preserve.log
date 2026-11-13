@@ -1,0 +1,18 @@
+test_bateria_crisp_usa_el_criterio_del_grafo_cuando_faltan_los_ciclos (test_sm1_neo4j.PoliticasMigradasTest.test_bateria_crisp_usa_el_criterio_del_grafo_cuando_faltan_los_ciclos) ... ok
+test_bateria_difusa_obligatoria_agrega_el_reemplazo_del_grafo (test_sm1_neo4j.PoliticasMigradasTest.test_bateria_difusa_obligatoria_agrega_el_reemplazo_del_grafo) ... ok
+test_bateria_sana_no_genera_reemplazo (test_sm1_neo4j.PoliticasMigradasTest.test_bateria_sana_no_genera_reemplazo) ... ok
+test_cargador_ausente_se_repone_y_el_campo_que_lo_incluye_manda (test_sm1_neo4j.PoliticasMigradasTest.test_cargador_ausente_se_repone_y_el_campo_que_lo_incluye_manda) ... ok
+test_hdd_se_reemplaza_por_ssd_y_el_ssd_no (test_sm1_neo4j.PoliticasMigradasTest.test_hdd_se_reemplaza_por_ssd_y_el_ssd_no) ... ok
+test_la_mano_de_obra_se_cobra_una_vez_y_no_cuenta_como_intervencion (test_sm1_neo4j.PoliticasMigradasTest.test_la_mano_de_obra_se_cobra_una_vez_y_no_cuenta_como_intervencion) ... ok
+test_los_datos_faltantes_quedan_como_pendientes_de_verificacion (test_sm1_neo4j.PoliticasMigradasTest.test_los_datos_faltantes_quedan_como_pendientes_de_verificacion) ... ok
+test_ram_bajo_el_objetivo_se_amplia_y_supera_el_objetivo_no (test_sm1_neo4j.PoliticasMigradasTest.test_ram_bajo_el_objetivo_se_amplia_y_supera_el_objetivo_no) ... ok
+test_temperatura_con_throttling_usa_la_caida_sintetica_del_grafo (test_sm1_neo4j.PoliticasMigradasTest.test_temperatura_con_throttling_usa_la_caida_sintetica_del_grafo) ... ok
+test_temperatura_fresca_no_pide_service_termico (test_sm1_neo4j.PoliticasMigradasTest.test_temperatura_fresca_no_pide_service_termico) ... ok
+test_temperatura_sin_dato_de_throttling_usa_la_caida_leve_y_lo_declara (test_sm1_neo4j.PoliticasMigradasTest.test_temperatura_sin_dato_de_throttling_usa_la_caida_leve_y_lo_declara) ... ok
+test_un_equipo_sin_fallas_ni_datos_faltantes_no_tiene_plan (test_sm1_neo4j.PoliticasMigradasTest.test_un_equipo_sin_fallas_ni_datos_faltantes_no_tiene_plan) ... ok
+test_una_misma_intervencion_no_se_repite (test_sm1_neo4j.PoliticasMigradasTest.test_una_misma_intervencion_no_se_repite) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 6.905s
+
+OK

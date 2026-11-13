@@ -1,0 +1,21 @@
+{
+  "destino": "scratch17687/authNone/neo4j",
+  "cargas_privadas": 1,
+  "codigo_runner": 2,
+  "antes": {
+    "sha256": "d68168fdb6ffcb23c35746500de778d4a6f724edb402e971a1e0d798640a9200",
+    "nodos": 932,
+    "relaciones": 2046,
+    "restricciones": 19,
+    "marcador": 1
+  },
+  "despues": {
+    "sha256": "d68168fdb6ffcb23c35746500de778d4a6f724edb402e971a1e0d798640a9200",
+    "nodos": 932,
+    "relaciones": 2046,
+    "restricciones": 19,
+    "marcador": 1
+  },
+  "grafo_intacto": true,
+  "codigo_proceso": 2
+}

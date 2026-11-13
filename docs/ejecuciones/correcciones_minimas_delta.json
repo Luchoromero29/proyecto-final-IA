@@ -1,0 +1,291 @@
+{
+  "nodos": [
+    {
+      "etiqueta": "Regla",
+      "id": "R-SM0-DOMINIO-NOTEBOOK",
+      "propiedades": {
+        "decision": "evaluacion_integral",
+        "requiere_catalogo": true,
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "PatronTexto",
+      "id": "PT-SM0-DOMINIO-NOTEBOOK",
+      "propiedades": {
+        "ambito": "SM0-dominio",
+        "patron": ".*\\b(notebook|laptop|computadora|port[aá]til)\\b.*",
+        "descripcion": "Aviso de computadora o notebook del catálogo",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "Regla",
+      "id": "R-SM0-BLOQUEO",
+      "propiedades": {
+        "decision": "VerificacionPendiente",
+        "regla_publica": "R3.3",
+        "requiere_catalogo": false,
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "PatronTexto",
+      "id": "PT-SM0-BLOQUEADA",
+      "propiedades": {
+        "ambito": "SM0-bloqueo",
+        "patron": ".*(?<!sin )(?<!no )(?<!no est[aá] )(?<!no tiene )(?<!no hay )\\bbloquead[oa]\\b.*",
+        "descripcion": "equipo bloqueado",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "PatronTexto",
+      "id": "PT-SM0-CUENTA",
+      "propiedades": {
+        "ambito": "SM0-bloqueo",
+        "patron": ".*(?<!sin )(?<!no )(?<!no est[aá] )(?<!no tiene )(?<!no hay )\\bcuenta\\s+(?:de\\s+(?:apple|icloud|google|microsoft)|(?:del?\\s+)?(?:dueño|propietario|anterior))\\b.*",
+        "descripcion": "cuenta de otro propietario",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "PatronTexto",
+      "id": "PT-SM0-CLAVE",
+      "propiedades": {
+        "ambito": "SM0-bloqueo",
+        "patron": ".*(?<!sin )(?<!no )(?<!no est[aá] )(?<!no tiene )(?<!no hay )\\b(?:clave\\s+de\\s+bios|bios\\s+con\\s+clave|contrase[nñ]a|icloud|mdm)\\b.*",
+        "descripcion": "clave o vinculación de seguridad",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "Regla",
+      "id": "R-SM1-TER-NEGADA",
+      "propiedades": {
+        "etapa": "SM1-TER-entrada",
+        "caida_pp": 0,
+        "inferido": false,
+        "motivo": "Evidencia de throttling informada",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta",
+        "valor_hecho": false,
+        "requiere_catalogo": false
+      }
+    },
+    {
+      "etiqueta": "Condicion",
+      "id": "CND-SM1-TER-NEGADA",
+      "propiedades": {
+        "campo": "throttling",
+        "operador": "=",
+        "valor": false,
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "Regla",
+      "id": "R-SM1-TER-AFIRMADA",
+      "propiedades": {
+        "etapa": "SM1-TER-entrada",
+        "inferido": false,
+        "motivo": "Evidencia de throttling informada",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta",
+        "valor_hecho": true,
+        "requiere_catalogo": false
+      }
+    },
+    {
+      "etiqueta": "Condicion",
+      "id": "CND-SM1-TER-AFIRMADA",
+      "propiedades": {
+        "campo": "throttling",
+        "operador": "=",
+        "valor": true,
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "Regla",
+      "id": "R-SM1-TER-AUSENTE",
+      "propiedades": {
+        "etapa": "SM1-TER-entrada",
+        "inferido": true,
+        "motivo": "Caída de frecuencia no informada: se toma la leve (CE caida_termica_sin_throttling)",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta",
+        "requiere_catalogo": false
+      }
+    },
+    {
+      "etiqueta": "Condicion",
+      "id": "CND-SM1-TER-AUSENTE",
+      "propiedades": {
+        "campo": "throttling",
+        "operador": "ausente",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "PatronTexto",
+      "id": "PT-SM1-TER-NEGADA",
+      "propiedades": {
+        "ambito": "SM1-TER-hechos",
+        "patron": ".*\\b(?:sin\\s+(?:thermal\\s+)?throttling|no\\s+(?:(?:tiene|presenta|hay)\\s+)?(?:thermal\\s+)?throttling)\\b.*",
+        "descripcion": "El texto niega explícitamente el throttling",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "FallaSintoma",
+      "id": "FS-RECALENTAMIENTO-SIN-DIAGNOSTICO",
+      "propiedades": {
+        "descripcion": "Recalentamiento o baja de frecuencia sin diagnóstico",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "PatronTexto",
+      "id": "PT-SIN-RECALENTAMIENTO",
+      "propiedades": {
+        "ambito": "SM1-diagnostico",
+        "tratamiento": "verificar",
+        "orden": 1,
+        "patron": ".*\\b(?<!no )(?:se\\s+recalienta|baja\\s+la\\s+frecuencia)\\b.*",
+        "descripcion": "Recalentamiento o baja de frecuencia sin diagnóstico",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "Regla",
+      "id": "R-SM0-PRECIO",
+      "propiedades": {
+        "decision": "evaluacion_integral",
+        "requiere_catalogo": false,
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    },
+    {
+      "etiqueta": "PatronTexto",
+      "id": "PT-SM0-PRECIO",
+      "propiedades": {
+        "ambito": "SM0-precio",
+        "patron": ".*(\\$\\s*\\d|\\d{3}\\.\\d{3}|\\bpiden\\b|\\bprecio\\b).*",
+        "descripcion": "El mensaje contiene precio",
+        "version": "correcciones-minimas-v1",
+        "estado_validacion": "Provisional",
+        "fuente": "Correcciones mínimas aprobadas por el operador; política Provisional, pendiente de validación experta"
+      }
+    }
+  ],
+  "relaciones": [
+    {
+      "origen": "PT-SM0-DOMINIO-NOTEBOOK",
+      "destino": "R-SM0-DOMINIO-NOTEBOOK",
+      "tipo": "ACTIVA",
+      "propiedades": {}
+    },
+    {
+      "origen": "PT-SM0-BLOQUEADA",
+      "destino": "R-SM0-BLOQUEO",
+      "tipo": "ACTIVA",
+      "propiedades": {}
+    },
+    {
+      "origen": "PT-SM0-CUENTA",
+      "destino": "R-SM0-BLOQUEO",
+      "tipo": "ACTIVA",
+      "propiedades": {}
+    },
+    {
+      "origen": "PT-SM0-CLAVE",
+      "destino": "R-SM0-BLOQUEO",
+      "tipo": "ACTIVA",
+      "propiedades": {}
+    },
+    {
+      "origen": "R-SM1-TER-NEGADA",
+      "destino": "CND-SM1-TER-NEGADA",
+      "tipo": "REQUIERE",
+      "propiedades": {}
+    },
+    {
+      "origen": "R-SM1-TER-AFIRMADA",
+      "destino": "CND-SM1-TER-AFIRMADA",
+      "tipo": "REQUIERE",
+      "propiedades": {}
+    },
+    {
+      "origen": "R-SM1-TER-AFIRMADA",
+      "destino": "CE-32",
+      "tipo": "USA_CRITERIO",
+      "propiedades": {}
+    },
+    {
+      "origen": "R-SM1-TER-AUSENTE",
+      "destino": "CND-SM1-TER-AUSENTE",
+      "tipo": "REQUIERE",
+      "propiedades": {}
+    },
+    {
+      "origen": "R-SM1-TER-AUSENTE",
+      "destino": "CE-31",
+      "tipo": "USA_CRITERIO",
+      "propiedades": {}
+    },
+    {
+      "origen": "PT-SM1-TER-NEGADA",
+      "destino": "R-SM1-TER-NEGADA",
+      "tipo": "ACTIVA",
+      "propiedades": {}
+    },
+    {
+      "origen": "PT-SIN-RECALENTAMIENTO",
+      "destino": "FS-RECALENTAMIENTO-SIN-DIAGNOSTICO",
+      "tipo": "EVIDENCIA_DE",
+      "propiedades": {}
+    },
+    {
+      "origen": "FS-RECALENTAMIENTO-SIN-DIAGNOSTICO",
+      "destino": "R3.3c",
+      "tipo": "ACTIVA",
+      "propiedades": {}
+    },
+    {
+      "origen": "PT-SM0-PRECIO",
+      "destino": "R-SM0-PRECIO",
+      "tipo": "ACTIVA",
+      "propiedades": {}
+    }
+  ]
+}

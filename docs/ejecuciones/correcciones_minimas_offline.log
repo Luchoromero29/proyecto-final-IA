@@ -1,0 +1,826 @@
+test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) ... 
+  test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-18') ... ERROR
+  test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-29') ... ERROR
+  test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-41') ... ERROR
+  test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-51') ... ERROR
+  test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-52') ... ERROR
+test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) ... 
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-03') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-06') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-07') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-08') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-09') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-10') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-11') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-12') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-13') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-15') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-16') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-22') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-23') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-26') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-28') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-31') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-32') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-34') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-35') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-37') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-38') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-39') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-42') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-43') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-44') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-45') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-46') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-48') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-49') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-53') ... ERROR
+  test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-58') ... ERROR
+test_el_fixture_devuelve_los_campos_de_la_consulta_publica (test_publicaciones_criticas.ContratoMercadoTest.test_el_fixture_devuelve_los_campos_de_la_consulta_publica) ... ok
+test_valor_proc_calca_al_procesador_y_queda_vacio_cuando_no_hay_precio (test_publicaciones_criticas.ContratoMercadoTest.test_valor_proc_calca_al_procesador_y_queda_vacio_cuando_no_hay_precio) ... ok
+test_cada_caso_declara_grupo_entrada_motivo_y_clasificacion (test_publicaciones_criticas.CorpusTest.test_cada_caso_declara_grupo_entrada_motivo_y_clasificacion) ... ok
+test_cada_expectativa_comprueba_algo_concreto (test_publicaciones_criticas.CorpusTest.test_cada_expectativa_comprueba_algo_concreto) ... ok
+test_expectativas_declaran_solo_claves_y_tipos_conocidos (test_publicaciones_criticas.CorpusTest.test_expectativas_declaran_solo_claves_y_tipos_conocidos) ... ok
+test_hay_casos_en_todos_los_grupos (test_publicaciones_criticas.CorpusTest.test_hay_casos_en_todos_los_grupos) ... ok
+test_incluye_el_ejemplo_literal_del_usuario (test_publicaciones_criticas.CorpusTest.test_incluye_el_ejemplo_literal_del_usuario) ... ok
+test_la_expectativa_en_vivo_no_depende_de_la_extraccion_simulada (test_publicaciones_criticas.CorpusTest.test_la_expectativa_en_vivo_no_depende_de_la_extraccion_simulada) ... ok
+test_las_sondas_no_tienen_expectativa_y_son_solo_en_vivo (test_publicaciones_criticas.CorpusTest.test_las_sondas_no_tienen_expectativa_y_son_solo_en_vivo) ... ok
+test_los_defectos_documentan_comportamiento_actual_y_expectativa_estricta (test_publicaciones_criticas.CorpusTest.test_los_defectos_documentan_comportamiento_actual_y_expectativa_estricta) ... ok
+test_tiene_al_menos_cuarenta_y_cinco_casos_con_ids_estables (test_publicaciones_criticas.CorpusTest.test_tiene_al_menos_cuarenta_y_cinco_casos_con_ids_estables) ... ok
+test_cada_defecto_informa_estado_abierto_o_reparado (test_publicaciones_criticas.DefectosConocidosTest.test_cada_defecto_informa_estado_abierto_o_reparado) ... ERROR
+test_ejemplo_del_usuario_no_consulta_el_catalogo_ni_tasa (test_publicaciones_criticas.FronterasExternasTest.test_ejemplo_del_usuario_no_consulta_el_catalogo_ni_tasa) ... ok
+test_el_llm_solo_extrae_y_redacta_no_tasa (test_publicaciones_criticas.FronterasExternasTest.test_el_llm_solo_extrae_y_redacta_no_tasa) ... ERROR
+test_falla_catastrofica_no_se_tasa (test_publicaciones_criticas.FronterasExternasTest.test_falla_catastrofica_no_se_tasa) ... ERROR
+test_el_descarte_por_r37_conserva_decision_motivo_e_indicadores (test_publicaciones_criticas.Sm3AdapterTest.test_el_descarte_por_r37_conserva_decision_motivo_e_indicadores) ... ok
+test_el_margen_requerido_llega_del_grafo_con_su_procedencia (test_publicaciones_criticas.Sm3AdapterTest.test_el_margen_requerido_llega_del_grafo_con_su_procedencia) ... ok
+test_la_contraoferta_solo_se_informa_al_negociar (test_publicaciones_criticas.Sm3AdapterTest.test_la_contraoferta_solo_se_informa_al_negociar) ... ok
+test_las_entradas_no_numericas_se_rechazan (test_publicaciones_criticas.Sm3AdapterTest.test_las_entradas_no_numericas_se_rechazan) ... ok
+test_los_booleanos_siguen_siendo_numeros_como_antes (test_publicaciones_criticas.Sm3AdapterTest.test_los_booleanos_siguen_siendo_numeros_como_antes) ... ok
+test_un_vma_cero_conserva_la_excepcion_de_la_politica_anterior (test_publicaciones_criticas.Sm3AdapterTest.test_un_vma_cero_conserva_la_excepcion_de_la_politica_anterior) ... ok
+test_un_vma_negativo_se_evalua_como_antes (test_publicaciones_criticas.Sm3AdapterTest.test_un_vma_negativo_se_evalua_como_antes) ... ok
+test_ayuda_documenta_servicios_y_banderas (test_probar_publicaciones.EjecutorTest.test_ayuda_documenta_servicios_y_banderas) ... ok
+test_caso_cumplido_sale_con_codigo_cero (test_probar_publicaciones.EjecutorTest.test_caso_cumplido_sale_con_codigo_cero) ... ok
+test_categoria_del_error_no_expone_el_cuerpo_privado (test_probar_publicaciones.EjecutorTest.test_categoria_del_error_no_expone_el_cuerpo_privado) ... ok
+test_comprobar_no_ignora_intencion_en (test_probar_publicaciones.EjecutorTest.test_comprobar_no_ignora_intencion_en)
+Regresión: una ejecución fuera de dominio no puede cumplir una expectativa en dominio. ... ok
+test_conteo_separa_cumplidos_fallidos_e_infraestructura (test_probar_publicaciones.EjecutorTest.test_conteo_separa_cumplidos_fallidos_e_infraestructura) ... ok
+test_decision_pendiente_solo_cuenta_si_esta_permitida (test_probar_publicaciones.EjecutorTest.test_decision_pendiente_solo_cuenta_si_esta_permitida) ... ok
+test_error_de_base_de_conocimiento_se_informa_como_infraestructura (test_probar_publicaciones.EjecutorTest.test_error_de_base_de_conocimiento_se_informa_como_infraestructura) ... ok
+test_expectativa_con_clave_desconocida_falla (test_probar_publicaciones.EjecutorTest.test_expectativa_con_clave_desconocida_falla) ... ok
+test_expectativa_con_tipo_de_resultado_desconocido_falla (test_probar_publicaciones.EjecutorTest.test_expectativa_con_tipo_de_resultado_desconocido_falla) ... ok
+test_expectativa_invalida_en_el_corpus_sale_con_codigo_dos_sin_llamar_al_motor (test_probar_publicaciones.EjecutorTest.test_expectativa_invalida_en_el_corpus_sale_con_codigo_dos_sin_llamar_al_motor) ... ok
+test_expectativa_valida_no_falla (test_probar_publicaciones.EjecutorTest.test_expectativa_valida_no_falla) ... ok
+test_falla_de_dominio_sale_con_codigo_uno (test_probar_publicaciones.EjecutorTest.test_falla_de_dominio_sale_con_codigo_uno) ... ok
+test_id_desconocido_sale_con_codigo_dos (test_probar_publicaciones.EjecutorTest.test_id_desconocido_sale_con_codigo_dos) ... ok
+test_infraestructura_nunca_cuenta_como_cumplido (test_probar_publicaciones.EjecutorTest.test_infraestructura_nunca_cuenta_como_cumplido) ... ok
+test_listado_por_defecto_no_importa_el_motor (test_probar_publicaciones.EjecutorTest.test_listado_por_defecto_no_importa_el_motor) ... ok
+test_no_expone_credenciales_de_las_urls_configuradas (test_probar_publicaciones.EjecutorTest.test_no_expone_credenciales_de_las_urls_configuradas) ... ok
+test_no_expone_la_salida_cruda_del_motor (test_probar_publicaciones.EjecutorTest.test_no_expone_la_salida_cruda_del_motor) ... ok
+test_respeta_via_integral_igual_que_las_pruebas_offline (test_probar_publicaciones.EjecutorTest.test_respeta_via_integral_igual_que_las_pruebas_offline) ... ok
+test_sonda_se_registra_sin_contar_como_cumplida (test_probar_publicaciones.EjecutorTest.test_sonda_se_registra_sin_contar_como_cumplida) ... ok
+test_verificar_informa_catalogo_sin_llamar_al_pipeline (test_probar_publicaciones.EjecutorTest.test_verificar_informa_catalogo_sin_llamar_al_pipeline) ... ok
+test_verificar_sin_catalogo_no_sugiere_recargas_peligrosas (test_probar_publicaciones.EjecutorTest.test_verificar_sin_catalogo_no_sugiere_recargas_peligrosas) ... ok
+
+======================================================================
+ERROR: test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-18')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 784, in test_los_casos_caracterizados_cumplen_el_comportamiento_documentado
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-29')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 784, in test_los_casos_caracterizados_cumplen_el_comportamiento_documentado
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-41')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 784, in test_los_casos_caracterizados_cumplen_el_comportamiento_documentado
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-51')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 784, in test_los_casos_caracterizados_cumplen_el_comportamiento_documentado
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_los_casos_caracterizados_cumplen_el_comportamiento_documentado (test_publicaciones_criticas.AceptacionTest.test_los_casos_caracterizados_cumplen_el_comportamiento_documentado) (caso='PC-52')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 784, in test_los_casos_caracterizados_cumplen_el_comportamiento_documentado
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-03')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-06')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-07')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-08')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-09')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-10')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-11')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-12')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-13')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-15')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-16')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-22')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-23')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-26')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-28')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-31')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-32')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-34')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-35')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-37')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-38')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-39')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-42')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-43')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-44')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-45')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-46')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-48')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-49')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-53')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_todos_los_casos_de_aceptacion_cumplen_su_espera (test_publicaciones_criticas.AceptacionTest.test_todos_los_casos_de_aceptacion_cumplen_su_espera) (caso='PC-58')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 776, in test_todos_los_casos_de_aceptacion_cumplen_su_espera
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_cada_defecto_informa_estado_abierto_o_reparado (test_publicaciones_criticas.DefectosConocidosTest.test_cada_defecto_informa_estado_abierto_o_reparado)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 799, in test_cada_defecto_informa_estado_abierto_o_reparado
+    resultado = _ejecutar(caso).resultado
+                ~~~~~~~~~^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_el_llm_solo_extrae_y_redacta_no_tasa (test_publicaciones_criticas.FronterasExternasTest.test_el_llm_solo_extrae_y_redacta_no_tasa)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 896, in test_el_llm_solo_extrae_y_redacta_no_tasa
+    ejecucion = _ejecutar(CASOS["PC-15"])
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+======================================================================
+ERROR: test_falla_catastrofica_no_se_tasa (test_publicaciones_criticas.FronterasExternasTest.test_falla_catastrofica_no_se_tasa)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 891, in test_falla_catastrofica_no_se_tasa
+    ejecucion = _ejecutar(CASOS["PC-10"])
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_publicaciones_criticas.py", line 658, in _ejecutar
+    resultado = oe.asistente_evaltic(caso["entrada"], verbose=False)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 2145, in asistente_evaltic
+    r = evaluar_publicacion_integral(texto, verbose=verbose, verificacion_tecnica=verificacion_tecnica)
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1870, in evaluar_publicacion_integral
+    res_sm3.update(_estado_decision(traza))
+                   ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/orquestador_evaltic.py", line 1692, in _estado_decision
+    with driver.session(database=NEO4J_DATABASE) as s:
+         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'unittest.mock.Mock' object does not support the context manager protocol (missed __exit__ method)
+
+----------------------------------------------------------------------
+Ran 45 tests in 0.175s
+
+FAILED (errors=39)

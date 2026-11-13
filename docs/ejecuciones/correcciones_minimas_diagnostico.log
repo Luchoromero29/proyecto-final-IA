@@ -1,0 +1,5 @@
+criterios [{"id": "CE-32", "nombre": "caida_termica_con_throttling", "valor": 20, "fuente": "Valor sintético usado por SM1-TER cuando el aviso informa throttling · reemplazar por una medición acordada con el experto"}, {"id": "CE-31", "nombre": "caida_termica_sin_throttling", "valor": 5, "fuente": "Valor sintético usado por SM1-TER cuando el aviso no informa caída de frecuencia · reemplazar por una medición acordada con el experto"}]
+acciones [{"categorias": ["Obligatoria", "Recomendada"], "tarea": "service_termico"}]
+termico {"temp": 68, "caida": 5, "resultado": [0.38, "Recomendada"]}
+termico {"temp": 68, "caida": 0, "resultado": [0.23, "No_Requerida"]}
+Sólo diagnóstico térmico dirigido; sin LLM, .env ni escrituras.

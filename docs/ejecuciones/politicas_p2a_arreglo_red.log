@@ -1,0 +1,16 @@
+test_una_condicion_de_otra_etapa_no_cambia_el_resultado_de_sm1 (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_una_condicion_de_otra_etapa_no_cambia_el_resultado_de_sm1) ... FAIL
+
+======================================================================
+FAIL: test_una_condicion_de_otra_etapa_no_cambia_el_resultado_de_sm1 (test_politicas_sm1_neo4j.AccionesRepresentadasTest.test_una_condicion_de_otra_etapa_no_cambia_el_resultado_de_sm1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/alvaro/Universidad/IA/Proyecto-IA-Final/app/tests/test_politicas_sm1_neo4j.py", line 158, in test_una_condicion_de_otra_etapa_no_cambia_el_resultado_de_sm1
+    self.assertEqual(antes["sm1_tecnico"], despues["sm1_tecnico"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'estado': 'Viable', 'es_viable': True, 'regla_aplica[684 chars]: []} != {'estado': 'ErrorConocimiento', 'error': 'la configur[357 chars]': 0}
+Diff is 1698 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 1.159s
+
+FAILED (failures=1)
