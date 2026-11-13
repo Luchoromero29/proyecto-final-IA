@@ -40,6 +40,7 @@ LOGS="$AQUI/docs/ejecuciones"
 # PG2 y mercado quedan excluidos a propósito.
 SEMILLAS="
 Grupo_20_PG3_diagnostico.cypher
+Grupo_20_PG3_patrones_redaccion.cypher
 Grupo_20_PG3_correcciones_minimas.cypher
 Grupo_20_PG3_politicas.cypher
 Grupo_20_PG3_politicas_sm1_acciones.cypher

@@ -106,6 +106,7 @@ El [bloque práctico](ejecuciones/politicas_bloque_activacion.log) agregó 39 no
 | PC44: síntoma sin diagnóstico | Se reconoce recalentamiento/baja de frecuencia y se conserva pendiente R3.3c, sin inferir reparación. Se alineó únicamente su expectativa con aprobación humana: VMA/costo cero y plan vacío. No se presenta como reparación realizada. |
 | PC48: error histórico | El ejecutor informa clase/categoría sin cuerpo privado. PC48 pasó en la última tanda; eso no demuestra cuál fue la causa de su RuntimeError anterior. |
 | Devolución PI4 SM1: datos ausentes | Ciclos de batería ausentes ya no se aplican en silencio: el supuesto se declara como nodo `SupuestoOperativo` en el grafo y la respuesta lo informa en la línea «Datos asumidos por el motor». La temperatura ausente sigue sin asumirse: queda pendiente. |
+| Casos integrados del PG3 (13/11/2026) | Los cinco casos daban 2 de 5. Causa: `sin_tratamiento` compara el texto libre de las fallas con los patrones del grafo, y una sola falla mal redactada anulaba el plan entero. Se agregaron patrones de redacción (batería que dura poco, service de limpieza, upgrade a SSD, y descarte de «sin soporte W11», «equipo antiguo», «upgrade de memoria», que son riesgo o plan y no fallas). Resultado: 5 de 5 y 4 de 4 en el enrutador, sin cambios de código. R3.3c sigue intacta: un síntoma desconocido sigue quedando pendiente. |
 
 El nuevo conocimiento comprende **17 nodos y 13 relaciones**. Se conservaron todas las
 entidades previas y restricciones; la segunda aplicación no produjo cambios.
@@ -151,6 +152,7 @@ Que un archivo sea idempotente no garantiza que sea seguro ejecutarlo sobre cual
 | [Grupo_20_PG3_politicas_bloque.cypher](../cypher/Grupo_20_PG3_politicas_bloque.cypher) | Márgenes, cuantizaciones, valuación, estados SM2 y clasificación SM0. |
 | [Grupo_20_PG3_correcciones_minimas.cypher](../cypher/Grupo_20_PG3_correcciones_minimas.cypher) | Dominio/precio, bloqueo contextual, mapeo térmico y síntoma PC44. |
 | [Grupo_20_PG3_supuestos_operativos.cypher](../cypher/Grupo_20_PG3_supuestos_operativos.cypher) | Supuestos operativos: qué asume el motor cuando falta un dato que participa de una regla (devolución de la cátedra PI4 SM1). |
+| [Grupo_20_PG3_patrones_redaccion.cypher](../cypher/Grupo_20_PG3_patrones_redaccion.cypher) | Redacciones del aviso que declaran una intervención conocida o que no son fallas. Sin ellos, una sola falla mal redactada anulaba el plan completo y forzaba VerificacionPendiente. |
 
 **No usar como migración aditiva el loader actual** [cargar_grafo.sh](../scripts/cargar_grafo.sh):
 siempre ejecuta el refresco de mercado y todavía no incluye todas estas políticas.
