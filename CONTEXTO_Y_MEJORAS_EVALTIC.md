@@ -2,7 +2,11 @@
 
 > **Documento histórico (9/11/2026).** Nació como handoff para portar la adaptación del cliente
 > LLM —OpenRouter/Nemotron, presupuesto de salida, validación de respuesta y razonamiento
-> desactivado— a otra versión del proyecto. Esas secciones (8 a 12) siguen vigentes.
+> desactivado— a otra versión del proyecto. Las secciones 8 a 12 son el núcleo vigente, con las
+> correcciones marcadas *[actualizado 13/11/2026]* donde el código cambió después.
+> Resumen de esos cambios: el cliente hoy también desactiva el razonamiento por la vía propia de
+> NVIDIA (`chat_template_kwargs.enable_thinking=false`), usa `temperature 0.1` y
+> `app/tests/test_llm_client.py` tiene **34** pruebas, no 10.
 > Lo que se hizo después y **este documento no refleja**:
 >
 > - el diagnóstico B2 en el grafo, con criterios expertos **CE-01 a CE-32** (acá se mencionan CE-01 a CE-20);
@@ -353,7 +357,7 @@ NEO4J_LOCAL_PASSWORD=YOUR_LOCAL_DATABASE_PASSWORD
 NEO4J_LOCAL_DATABASE=neo4j
 ```
 
-`openai` identifica el protocolo, no el proveedor de facturación. `consultar_llm` envía POST a `base_url.rstrip('/') + '/chat/completions'`, con mensajes system/user, temperature0.2 y autenticación Bearer. Para extracción agrega `response_format: {"type":"json_object"}`.
+`openai` identifica el protocolo, no el proveedor de facturación. `consultar_llm` envía POST a `base_url.rstrip('/') + '/chat/completions'`, con mensajes system/user, temperature 0.1 y autenticación Bearer. *[actualizado 13/11/2026: el documento decía `temperature0.2`; el código usa 0.1]*. Para extracción agrega `response_format: {"type":"json_object"}`.
 
 La carga de configuración intenta `.env` junto al orquestador y, en la estructura original, el de `PI4/` como alternativa. No depender de ese fallback en otro repositorio. Reiniciar Streamlit al cambiar la configuración.
 
@@ -426,6 +430,19 @@ if (urlparse(OPENAI_BASE_URL).hostname == "openrouter.ai"
 
 Aplica al cliente compartido: extracción JSON, síntesis de texto y cualquier otra llamada dirigida a ese modelo. No altera otros modelos/proveedores.
 
+*[actualizado 13/11/2026]* Existe además una **segunda vía, para NVIDIA directo**, que es la que
+usa la corrida real de los 61 casos. Aplica al host `integrate.api.nvidia.com` con el modelo
+`nvidia/nemotron-3.5-lightning-30b-a3b`:
+
+```python
+if host == NVIDIA_HOST and OPENAI_MODEL == NVIDIA_MODELO_SIN_RAZONAMIENTO:
+    payload["chat_template_kwargs"] = {"enable_thinking": False}
+```
+
+NVIDIA recibe el interruptor dentro de la plantilla de chat y **conserva el presupuesto del
+llamador**: no se aplica el piso de 4096 ni se toca `max_tokens`. Las dos condiciones son
+host+modelo exactos; el nombre del modelo no alcanza por sí solo en ninguno de los dos casos.
+
 **No existe todavía una opción genérica** `LLM_REASONING`, `OPENROUTER_REASONING` ni equivalente en el `.env` de esta copia. Tampoco se desactiva automáticamente el razonamiento de cualquier modelo por contener la palabra Nemotron.
 
 `reasoning.enabled=false` solicita desactivación real. `reasoning.exclude=true` o `include_reasoning=false` solo ocultan el razonamiento y **no equivalen** a desactivarlo. Verificar siempre la compatibilidad del modelo/proveedor; algunos tienen razonamiento obligatorio.
@@ -438,7 +455,11 @@ Se eligió Nemotron Lightning porque el catálogo indicaba razonamiento opcional
 
 ## 10. Pruebas y evidencia
 
-### Tests offline: `tests/test_llm_client.py`
+### Tests offline: `app/tests/test_llm_client.py`
+
+*[actualizado 13/11/2026: el documento decía `tests/test_llm_client.py` con 10 pruebas; hoy el
+archivo vive en `app/tests/` y tiene 34 métodos de prueba. Los 10 casos de abajo siguen siendo los
+que documenta este bloque.]*
 
 Invocan la función pública `consultar_llm`, con transporte mockeado y configuración de prueba, sin llamadas a API ni a Neo4j.
 
@@ -456,9 +477,13 @@ Casos cubiertos:
 10. Ollama conserva payload y presupuesto previos.
 
 ```bash
-./.venv/bin/python -m unittest discover -s tests -v
-./.venv/bin/python -m py_compile orquestador_evaltic.py app_web.py
+cd app && python -m unittest discover -s tests -v
+python -m py_compile orquestador_evaltic.py app_web.py
 ```
+
+*[actualizado 13/11/2026: el comando original era `./.venv/bin/python -m unittest discover -s tests`
+desde la raíz con `tests/` al mismo nivel que `orquestador_evaltic.py`; en este repositorio el
+paquete está en `app/`.]*
 
 Evidencia observada:
 
@@ -491,6 +516,7 @@ Síntesis: se usó el prompt real y un contexto **sintético** que indicaba desc
 | Piso4096 para OpenRouter, límites mayores preservados | Implementado y probado. |
 | Validación de estructura/texto y rechazo de length | Implementada y probada. |
 | Desactivar razonamiento de Nemotron Lightning en OpenRouter | Implementado con condición específica host+modelo, probado offline y real. |
+| Desactivar razonamiento de Nemotron en NVIDIA directo | *[actualizado 13/11/2026]* Implementado con `chat_template_kwargs.enable_thinking=false` y sin piso de tokens; es la vía de la corrida real de los 61 casos. |
 | Presupuestos configurables separados por etapa | **Propuesta**, no implementada. |
 | Toggle genérico de razonamiento por proveedor/modelo | **Propuesta**, no implementada. |
 | Error amigable específico para429 o saneamiento de todos los errores HTTP | **Propuesta**, no implementada. |
@@ -541,7 +567,7 @@ En la copia de trabajo, buscar **símbolos**, no depender de números de línea 
 - `ejecutar_motor_sm1`, `ejecutar_motor_sm2`, `ejecutar_motor_sm3`: lógica de dominio.
 - `inferir_sm1_bat_cypher`, `inferir_sm1_ter_cypher`, `inferir_sm2_rie_cypher`, `inferir_sm2_dem_cypher`, `inferir_sm3_conv_cypher`: consultas difusas.
 - `PRECIOS_REFERENCIA_NUEVO`, `COSTOS_COMPONENTES`: catálogos Python.
-- `tests/test_llm_client.py`:10tests del cliente.
+- `app/tests/test_llm_client.py`: 34 pruebas del cliente *[actualizado 13/11/2026: antes decía 10]*.
 - `README.md`: arranque y sección OpenRouter.
 - Ambos archivos `Grupo_20_PG2_U1_*.cypher`: esquema, carga/reglas y consultas.
 
