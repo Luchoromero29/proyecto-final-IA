@@ -70,6 +70,8 @@ cypher/Grupo_20_PG3_mercado.cypher        componentes, líneas, RAM, avisos, cos
 cypher/Grupo_20_PG2_U1_consultas.cypher   consultas de ejemplo
 datos/relevamiento_mercado.csv            333 avisos de Mercado Libre (9/11/2026), seed del PG3
 scripts/cargar_grafo.sh                   carga automática usado por el contenedor neo4j-init
+scripts/base_mejoras.sh                   respaldo, copia y aplicación aditiva de las mejoras
+scripts/reporte_casos.py                  genera docs/PRUEBAS_PUBLICACIONES.md
 docs/                                     entregables PG3 y PI4 (ver docs/README.md)
 docker-compose.yml · Dockerfile · *.bat   entorno local (Neo4j + init + app + Ollama opcional)
 ```
