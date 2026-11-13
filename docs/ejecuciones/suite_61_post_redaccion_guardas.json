@@ -1,0 +1,19 @@
+{
+  "corrida": "suite_61_post_redaccion",
+  "fecha": "2026-11-13",
+  "base": "neo4j-evaltic (la original promovida)",
+  "huella": "c22a9f580b1cc66e5c8684b9187c457961dfe72c7f112eb5c15d8b417cbd0099",
+  "nodos_relaciones": "nodos/relaciones: 940 2052",
+  "tanda": {
+    "intentados": 61,
+    "completados": 61,
+    "cumplen": 55,
+    "fallan": 0,
+    "sondas": 6,
+    "infra": 0,
+    "exit": 0
+  },
+  "comparacion": "idéntica a la tanda del 13/11 previa a los patrones de redacción: 55/0/6/0",
+  "cambios_desde_la_tanda_anterior": "cypher/Grupo_20_PG3_patrones_redaccion.cypher (7 patrones nuevos o ampliados)",
+  "nota": "el grafo cambió por la semilla; la tanda mide el comportamiento del motor sobre esa base"
+}

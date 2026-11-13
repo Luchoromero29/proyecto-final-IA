@@ -6,10 +6,10 @@
 
 ## Última corrida registrada
 
-- **Log**: `integracion_copia_mejoras_61.log`
+- **Log**: `suite_61_post_redaccion.log`
 - **Resultado**: Casos intentados: 61 · completados: 61 · cumplen: 55 · fallan: 0 · sondas: 6 · infra: 0
 - **Proveedor LLM**: openai · modelo nvidia/nemotron-3.5-lightning-30b-a3b · host integrate.api.nvidia.com
-- **Base usada**: Local Offline (Docker) · host evaltic-neo4j-mejoras
+- **Base usada**: Local Offline (Docker) · host neo4j
 
 Las sondas no se cuentan como aprobadas ni fallidas: son casos sin expectativa
 acordada y se revisan a mano (ver el final de este documento).
