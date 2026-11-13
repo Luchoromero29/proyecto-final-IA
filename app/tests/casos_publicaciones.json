@@ -817,9 +817,9 @@
        "thermal_throttling": true,
        "fallas": []
      },
-     "espera": {"resultado": "decision", "plan_incluye": ["térmic"]},
-     "espera_offline": {"costo_total": 50000},
-     "por_que_critico": "Sin grados pero con throttling declarado, el motor tiene que pedir service térmico: es el caso típico de aviso con 'calienta' y sin termómetro."},
+     "espera": {"resultado": "pendiente", "decision": "VerificacionPendiente", "regla": "R3.3c", "vma": 0, "plan_excluye": ["térmic"]},
+     "espera_offline": {"costo_total": 0},
+     "por_que_critico": "Contrato aprobado: recalentamiento y baja de frecuencia sin diagnóstico requieren verificación R3.3c; no se deduce una reparación térmica ni su costo."},
     {"id": "PC-45", "grupo": "fallas", "clasificacion": "aceptacion", "verificacion": "offline_y_vivo",
      "titulo": "Temperatura alta con throttling",
      "entrada": "Dell Inspiron 15 año 2020 i5 10ma gen, $200.000, 8GB RAM, SSD, calienta a 95°C con cuelgues.",

@@ -1,0 +1,12 @@
+{
+  "antes_sha256": "7ddde337694a58e45320d2c0967148af2fb5f224486aebc62247ae9d0912e19d",
+  "despues_sha256": "d68168fdb6ffcb23c35746500de778d4a6f724edb402e971a1e0d798640a9200",
+  "nodos": 932,
+  "relaciones": 2046,
+  "restricciones": 19,
+  "delta_nodos": 17,
+  "delta_relaciones": 13,
+  "segunda_aplicacion": 0,
+  "backup": "/home/alvaro/Universidad/IA/Proyecto-IA-Final/_respaldo_original/correcciones-minimas.5qsu483w",
+  "seed_sha256": "35c31b8bce910e469451ec702ac35cef20a85604be5f2d5cc0222900ddccaa1c"
+}

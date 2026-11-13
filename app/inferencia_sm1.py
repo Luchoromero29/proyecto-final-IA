@@ -94,6 +94,7 @@ CALL () {
     UNWIND $evidencias AS ev
     MATCH (pt:PatronTexto)
     WHERE ev.texto =~ pt.patron
+      AND (pt.ambito IS NULL OR pt.ambito = 'SM1-diagnostico')
       AND (ev.origen = 'falla' OR pt.tratamiento IN ['inviable', 'verificar'])
     OPTIONAL MATCH (pt)-[:ACTIVA]->(r:Regla)
     OPTIONAL MATCH (pt)-[:APLICA_INTERVENCION]->(:Intervencion)-[:SE_COSTEA_CON]->(c:CostoReparacion)

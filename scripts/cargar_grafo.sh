@@ -5,7 +5,7 @@
 #   3) Grupo_20_PG3_diagnostico.cypher     (siempre; sólo agrega conocimiento de diagnóstico SM1)
 # OJO: este loader NO es una migración aditiva. Para aplicar sólo el diagnóstico sobre datos de
 # trabajo hace falta un procedimiento operador-safe con respaldo verificado (ver
-# docs/DIAGNOSTICO_TECNICO.md).
+# docs/ESTADO_CONSOLIDADO_MEJORAS.md).
 set -e
 URI="bolt://neo4j:7687"
 AUTH="-u neo4j -p ${NEO4J_PASSWORD:-evaltic2026}"

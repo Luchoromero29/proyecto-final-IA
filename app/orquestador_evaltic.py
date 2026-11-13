@@ -137,22 +137,62 @@ def obtener_driver_neo4j():
 # ==============================================================================
 
 def consultar_senales_bloqueo_en_grafo() -> list:
-    """Consulta en Neo4j mediante Cypher tipos y descripciones de bloqueo cargados en el grafo."""
-    driver = obtener_driver_neo4j()
-    senales = ["icloud", "bloqueada", "bloqueado", "cuenta", "clave de bios", "contraseña", "bios con clave", "mdm"]
-    if not driver:
-        return senales
+    """Vocabulario descriptivo del conocimiento, nunca instancias de casos :Bloqueo."""
+    with obtener_driver_neo4j().session(database=NEO4J_DATABASE) as session:
+        return [r["descripcion"] for r in session.run(
+            "MATCH (p:PatronTexto {ambito:'SM0-bloqueo'}) RETURN p.descripcion AS descripcion")]
+
+
+def inferir_contexto_textual_cypher(texto: str, ambito: str):
+    """Aplica patrones y consecuencias declarados en el grafo; no decide por palabras locales."""
     try:
-        with driver.session(database=NEO4J_DATABASE) as session:
-            q = "MATCH (b:Bloqueo) RETURN collect(DISTINCT toLower(b.tipo)) AS tipos"
-            rec = session.run(q).single()
-            if rec and rec["tipos"]:
-                for t in rec["tipos"]:
-                    if t and t not in senales:
-                        senales.append(t)
-    except Exception:
-        pass
-    return senales
+        with obtener_driver_neo4j().session(database=NEO4J_DATABASE) as session:
+            fila = session.run("""
+                OPTIONAL MATCH (l:Linea)
+                WITH collect(l.patron) AS catalogo
+                MATCH (p:PatronTexto {ambito:$ambito})-[:ACTIVA]->(r:Regla)
+                WITH catalogo, collect({patron:p, regla:r}) AS configuracion
+                WITH configuracion, [c IN configuracion
+                     WHERE $texto =~ c.patron.patron
+                       AND (c.regla.requiere_catalogo <> true OR
+                            any(p IN catalogo WHERE $texto =~ p))] AS coincidencias
+                RETURN size(configuracion) AS configurados,
+                       [c IN coincidencias | {decision:c.regla.decision,
+                        valor_hecho:c.regla.valor_hecho, regla:c.regla.regla_publica,
+                        descripcion:c.patron.descripcion}][0] AS coincidencia
+                """, texto=" ".join(texto.lower().split()), ambito=ambito).single()
+    except Exception as exc:
+        raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia de contexto textual.") from exc
+    if not fila or not fila["configurados"]:
+        raise ConocimientoFaltante(f"Faltan patrones y reglas del ámbito '{ambito}' en Neo4j.")
+    return fila["coincidencia"]
+
+
+def inferir_caida_termica_cypher(throttling, traza: dict) -> float:
+    """Resuelve los tres estados del hecho mediante condiciones y criterios del grafo."""
+    try:
+        with obtener_driver_neo4j().session(database=NEO4J_DATABASE) as session:
+            filas = list(session.run("""
+                MATCH (r:Regla {etapa:'SM1-TER-entrada'})-[:REQUIERE]->(c:Condicion)
+                WHERE (c.operador = '=' AND $throttling = c.valor)
+                   OR (c.operador = 'ausente' AND $throttling IS NULL)
+                OPTIONAL MATCH (r)-[:USA_CRITERIO]->(ce:CriterioExperto)
+                RETURN coalesce(ce.valor,r.caida_pp) AS caida, r.inferido AS inferido,
+                       r.motivo AS motivo, ce{.id,.nombre,.valor,.unidad,.version,
+                       estado:ce.estado_validacion} AS criterio
+                """, throttling=throttling))
+    except Exception as exc:
+        raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia de entrada térmica.") from exc
+    if len(filas) != 1 or filas[0]["caida"] is None:
+        raise ConocimientoFaltante("Falta un mapeo térmico único y completo en Neo4j.")
+    fila = filas[0]
+    if fila["criterio"]:
+        criterio = dict(fila["criterio"])
+        nombre = criterio.pop("nombre")
+        traza["criterios_usados"][nombre] = criterio
+    if fila["inferido"]:
+        traza["datos_inferidos"].append(fila["motivo"])
+    return float(fila["caida"])
 
 
 def inferir_sm1_bat_cypher(salud: float, ciclos: float) -> tuple:
@@ -984,11 +1024,12 @@ def ejecutar_motor_sm1(datos: dict, traza: dict, texto: str = "",
     # Temperatura: difusa si hay temperatura; crisp si sólo se informa throttling.
     # Las caídas sintéticas son criterios del grafo (CE-31 / CE-32), no constantes de Python.
     temp, throttling = _numero(datos.get("temperatura_cpu_c")), _booleano(datos.get("thermal_throttling"))
+    negacion_termica = inferir_contexto_textual_cypher(texto, "SM1-TER-hechos")
+    if negacion_termica is not None:
+        throttling = negacion_termica["valor_hecho"]
+        datos["thermal_throttling"] = throttling
     if temp is not None:
-        if throttling is None:
-            traza["datos_inferidos"].append(
-                "Caída de frecuencia no informada: se toma la leve (CE caida_termica_sin_throttling)")
-        caida = CE("caida_termica_con_throttling" if throttling else "caida_termica_sin_throttling", traza)
+        caida = inferir_caida_termica_cypher(throttling, traza)
         res = inferir_sm1_ter_cypher(temp, caida)
         if not res:
             raise RuntimeError("[ERROR INFERENCIA NEO4J] Falló la inferencia SM1-TER.")
@@ -1760,15 +1801,15 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True,
         print("\n[Paso 2/4] Evaluación con reglas, criterios y catálogo de componentes de Neo4j...", flush=True)
 
     # R3.3: señal de bloqueo en el texto → verificación pendiente (no se descarta sin verificar)
-    senales_bloqueo = consultar_senales_bloqueo_en_grafo()
-    bloqueo_detectado = next((s for s in senales_bloqueo if s in txt_lower), None)
+    bloqueo = inferir_contexto_textual_cypher(texto_publicacion, "SM0-bloqueo")
 
-    if bloqueo_detectado:
-        traza["reglas"].append(f"R3.3: señal de bloqueo en el aviso ('{bloqueo_detectado}') → Verificacion_pendiente")
+    if bloqueo:
+        bloqueo_detectado = bloqueo["descripcion"]
+        traza["reglas"].append(f"{bloqueo['regla']}: señal de bloqueo en el aviso ('{bloqueo_detectado}') → Verificacion_pendiente")
         res_sm3 = {
-            "decision": "VerificacionPendiente",
-            "regla_aplicada": "R3.3",
-            "motivo": f"El aviso sugiere un posible bloqueo ('{bloqueo_detectado}'). Verificar desvinculación en persona antes del pago (R3.3).",
+            "decision": bloqueo["decision"],
+            "regla_aplicada": bloqueo["regla"],
+            "motivo": f"El aviso sugiere un posible bloqueo ('{bloqueo_detectado}'). Verificar desvinculación en persona antes del pago ({bloqueo['regla']}).",
             "indicadores": {"precio_publicado": int(precio)}
         }
     else:
@@ -1993,19 +2034,30 @@ def _explicar(prompt: str, resultado: dict, respaldo: str) -> str:
 def enrutar_consulta(texto: str) -> dict:
     """System Prompt maestro: clasifica la consulta. Si la salida del LLM no es válida, usa una regla de respaldo."""
     validas = {"evaluacion_integral", "diagnostico_tecnico", "valuacion_comercial", "fuera_de_dominio"}
-    tiene_precio = bool(re.search(r"\$\s*\d|\d{3}\.\d{3}|\bpiden\b|\bprecio\b", texto.lower()))
+    r = {}
     try:
         r = _llm_json(PROMPT_MAESTRO_ENRUTAMIENTO, texto)
         intencion = str(r.get("intencion", "")).strip()
         if intencion in validas:
             # Regla de consistencia: un aviso con precio siempre pasa por los tres submódulos
-            if tiene_precio and intencion in ("diagnostico_tecnico", "valuacion_comercial"):
-                return {"intencion": "evaluacion_integral", "origen": "regla (el mensaje tiene precio)",
-                        "motivo": r.get("motivo")}
-            return {"intencion": intencion, "origen": "LLM", "motivo": r.get("motivo")}
-    except Exception:
-        pass
-    return {"intencion": "evaluacion_integral" if tiene_precio else "fuera_de_dominio",
+            if intencion in ("diagnostico_tecnico", "valuacion_comercial"):
+                precio = inferir_contexto_textual_cypher(texto, "SM0-precio")
+                if precio:
+                    return {"intencion": precio["decision"], "origen": "regla (el mensaje tiene precio)",
+                            "motivo": r.get("motivo")}
+            if intencion != "fuera_de_dominio":
+                return {"intencion": intencion, "origen": "LLM", "motivo": r.get("motivo")}
+    except (ValueError, TypeError, AttributeError):
+        # Sólo el formato inválido conserva el respaldo; los fallos de infraestructura se propagan.
+        r = {}
+    dominio = inferir_contexto_textual_cypher(texto, "SM0-dominio")
+    if dominio:
+        return {"intencion": dominio["decision"], "origen": "regla del grafo (dominio)",
+                "motivo": dominio["descripcion"]}
+    if r.get("intencion") == "fuera_de_dominio":
+        return {"intencion": "fuera_de_dominio", "origen": "LLM", "motivo": r.get("motivo")}
+    precio = inferir_contexto_textual_cypher(texto, "SM0-precio")
+    return {"intencion": precio["decision"] if precio else "fuera_de_dominio",
             "origen": "regla de respaldo", "motivo": "salida del enrutador no válida"}
 
 

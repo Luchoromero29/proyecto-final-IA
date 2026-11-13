@@ -9,8 +9,8 @@
 // ningún conflicto escribe, y en ese caso escribe el bloque completo. Ante
 // conflicto no escribe nada y la segunda aplicación devuelve actualizadas = 0.
 //
-// Qué agrega, y nada más (allowlist completa en
-// docs/ejecuciones/politicas_bloque_implementacion.md):
+// Qué agrega, y nada más (resumen en docs/ESTADO_CONSOLIDADO_MEJORAS.md;
+// la declaración exacta se conserva en esta consulta):
 //   - Cinco manifiestos técnicos VersionPoliticas (`SM3-margen`, `SM3-calculo`,
 //     `SM2-valuacion`, `SM2-estado`, `SM0-clasificacion`) con INCLUYE a sus
 //     reglas o pasos de cálculo.

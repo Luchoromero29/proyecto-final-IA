@@ -46,7 +46,7 @@ La difusa SM3-CONV se sigue evaluando con `inferir_sm3_conv_cypher` del orquesta
 #      al par (medio al par). Si el valor ya es múltiplo exacto del cuanto, se devuelve tal
 #      cual, sin pasar por la división en punto flotante.
 #
-# Verificado contra `round()` de Python (ver docs/DECISION_NEO4J.md) con importes,
+# Verificado contra `round()` de Python (ver docs/ESTADO_CONSOLIDADO_MEJORAS.md) con importes,
 # ratios, subnormales y magnitudes grandes hasta 1,7e308. El atajo ULP >= cuanto evita
 # la pérdida de dígitos y el overflow que expusieron los primeros ensayos. Las matrices
 # cubren valores y fronteras, no constituyen una prueba exhaustiva de todos los doubles.

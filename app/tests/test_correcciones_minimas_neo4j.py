@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""Regresiones públicas del bloque mínimo sobre transacciones que se revierten.
+
+Sólo scratch marcado; sin .env ni proveedor real. El LLM se simula para separar
+extracción de inferencia, pero las reglas y consultas usan Neo4j de verdad.
+La corrida real de61es otro proceso de la misma fase final, no estos dobles.
+"""
+import copy
+import json
+import unittest
+from contextlib import contextmanager, redirect_stdout, redirect_stderr
+from io import StringIO
+from unittest import mock
+
+import test_sm3_neo4j as base
+import test_publicaciones_criticas as corpus
+from scripts.probar_publicaciones import _comprobar
+
+setUpModule = base.setUpModule
+tearDownModule = base.tearDownModule
+
+
+class DriverTransaccion:
+    def __init__(self, tx):
+        self.tx = tx
+
+    @contextmanager
+    def session(self, database=None):
+        yield self.tx
+
+
+class CorreccionesMinimasTest(unittest.TestCase):
+    def setUp(self):
+        self.sesion = base._driver.session(database=base.BASE_PRUEBAS)
+        self.addCleanup(self.sesion.close)
+        self.tx = self.sesion.begin_transaction()
+        self.addCleanup(self.tx.rollback)
+        self.parche = mock.patch.object(base.oe, "obtener_driver_neo4j",
+                                        lambda: DriverTransaccion(self.tx))
+        self.parche.start()
+        self.addCleanup(self.parche.stop)
+        base.oe._CONOCIMIENTO = None
+
+    def _publico(self, ident, texto=None, datos=None, verificacion=None):
+        caso = corpus.CASOS[ident]
+        extraccion = copy.deepcopy(datos if datos is not None else caso["extraccion_llm"])
+        llm = corpus._llm_falso(extraccion, caso.get("intencion_router", "evaluacion_integral"))
+        salida, errores = StringIO(), StringIO()
+        with mock.patch.object(base.oe, "consultar_llm", side_effect=llm), \
+                redirect_stdout(salida), redirect_stderr(errores):
+            resultado = base.oe.asistente_evaltic(texto or caso["entrada"], verbose=False,
+                                                verificacion_tecnica=verificacion)
+        self.assertEqual("", errores.getvalue())
+        return resultado
+
+    def test_fallos_reportados_cumplen_su_contrato_acordado(self):
+        for ident in ("PC-01", "PC-15", "PC-17", "PC-44", "PC-48", "PC-50"):
+            with self.subTest(caso=ident):
+                resultado = self._publico(ident)
+                self.assertEqual([], _comprobar(resultado, corpus.CASOS[ident]["espera"]))
+                if ident == "PC-44":
+                    self.assertEqual(0, resultado["sm1_tecnico"]["costo_total"])
+                    self.assertEqual([], resultado["sm1_tecnico"]["plan_reparacion"])
+
+    def test_conserva_positivos_precio_y_procesador(self):
+        for ident in ("PC-07", "PC-14", "PC-19", "PC-20", "PC-29", "PC-30", "PC-49"):
+            with self.subTest(caso=ident):
+                resultado = self._publico(ident)
+                self.assertEqual([], _comprobar(resultado, corpus.CASOS[ident]["espera"]))
+
+    def test_marca_de_impresora_no_basta_y_error_remoto_no_es_fuera_de_dominio(self):
+        with mock.patch.object(base.oe, "_llm_json", return_value={"intencion": "fuera_de_dominio"}):
+            self.assertEqual("fuera_de_dominio",
+                             base.oe.enrutar_consulta("Vendo impresora HP")["intencion"])
+        with mock.patch.object(base.oe, "_llm_json",
+                               side_effect=RuntimeError("[ERROR API REMOTA] respuesta privada")):
+            with self.assertRaises(RuntimeError):
+                base.oe.enrutar_consulta("computadora asus, anda joya")
+
+    def test_error_de_consulta_no_se_oculta_como_falta_de_dominio(self):
+        with mock.patch.object(base.oe, "_llm_json", return_value={"intencion": "fuera_de_dominio"}), \
+                mock.patch.object(base.oe, "obtener_driver_neo4j", side_effect=ConnectionError("privado")):
+            with self.assertRaisesRegex(RuntimeError, r"\[ERROR INFERENCIA NEO4J\]"):
+                base.oe.enrutar_consulta("computadora asus, anda joya")
+
+    def test_precio_y_submodulos_sueltos_conservan_el_enrutamiento(self):
+        with mock.patch.object(base.oe, "_llm_json", return_value={"intencion": "diagnostico_tecnico"}):
+            self.assertEqual("evaluacion_integral",
+                             base.oe.enrutar_consulta(corpus.CASOS["PC-15"]["entrada"])["intencion"])
+            self.assertEqual("diagnostico_tecnico",
+                             base.oe.enrutar_consulta("Mi notebook no prende")["intencion"])
+        with mock.patch.object(base.oe, "_llm_json", return_value={"intencion": "valuacion_comercial"}):
+            self.assertEqual("valuacion_comercial", base.oe.enrutar_consulta(
+                "Cuánto vale una ThinkPad i5 10ma gen")["intencion"])
+
+    def test_el_mapeo_termico_se_consume_del_grafo_sin_confundir_ausencia(self):
+        for hecho, esperado in ((False, 0), (True, 20), (None, 5)):
+            with self.subTest(hecho=hecho):
+                self.assertEqual(esperado, base.oe.inferir_caida_termica_cypher(
+                    hecho, base.oe.nueva_traza()))
+        datos = copy.deepcopy(corpus.CASOS["PC-15"]["extraccion_llm"])
+        datos["thermal_throttling"] = True
+        resultado = self._publico("PC-15", datos=datos)
+        self.assertIs(False, resultado["datos_extraidos"]["thermal_throttling"])
+        self.assertEqual(0, resultado["sm1_tecnico"]["costo_total"])
+        self.tx.run("MATCH(r:Regla {id:'R-SM1-TER-NEGADA'}) SET r.caida_pp=5").consume()
+        resultado = self._publico("PC-15")
+        self.assertTrue(any(p["clave"] == "service_termico"
+                            for p in resultado["sm1_tecnico"]["plan_reparacion"]))
+
+    def test_consecuencia_de_bloqueo_sale_del_grafo_y_negacion_no_oculta_otra_senal(self):
+        self.tx.run("MATCH(r:Regla {id:'R-SM0-BLOQUEO'}) SET r.regla_publica='R3.3-prueba'").consume()
+        resultado = self._publico("PC-49")
+        self.assertEqual("R3.3-prueba", resultado["sm3_financiero"]["regla_aplicada"])
+        self.assertTrue(resultado["sm3_financiero"]["motivo"].endswith("(R3.3-prueba)."))
+        resultado = self._publico("PC-50", corpus.CASOS["PC-50"]["entrada"]
+                                   + " Pero queda la cuenta de Apple del dueño anterior.")
+        self.assertEqual("VerificacionPendiente", resultado["sm3_financiero"]["decision"])
+
+    def test_sintoma_solo_se_libera_con_evidencia_separada_del_operador(self):
+        datos = copy.deepcopy(corpus.CASOS["PC-17"]["extraccion_llm"])
+        datos["fallas"] = ["se apaga sola"]
+        texto = "Acer Aspire 5 año 2020 i5 10ma gen, $150.000, 8GB RAM, SSD, se apaga sola."
+        resultado = self._publico("PC-17", texto, datos)
+        self.assertEqual("R3.3c", resultado["sm3_financiero"]["regla_aplicada"])
+        self.assertEqual([], resultado["sm1_tecnico"]["plan_reparacion"])
+        self.assertEqual(0, resultado["sm1_tecnico"]["costo_total"])
+        resultado = self._publico("PC-17", texto, datos,
+                                  {"fuente": "verificación presencial", "diagnosticos": ["bateria"]})
+        self.assertEqual("Viable", resultado["sm1_tecnico"]["estado"])
+        self.assertTrue(any(p["clave"] == "bateria"
+                            for p in resultado["sm1_tecnico"]["plan_reparacion"]))
+
+    def test_falta_de_politica_no_se_oculta_con_vocabulario_python(self):
+        self.tx.run("MATCH(:PatronTexto {ambito:'SM0-dominio'})-[r:ACTIVA]->() DELETE r").consume()
+        with mock.patch.object(base.oe, "_llm_json", return_value={"intencion": "fuera_de_dominio"}):
+            with self.assertRaises(base.oe.ConocimientoFaltante):
+                base.oe.enrutar_consulta("computadora asus, anda joya")
+
+
+if __name__ == "__main__":
+    unittest.main()

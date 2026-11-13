@@ -98,7 +98,49 @@ CONOCIMIENTO_FALSO = {
                        "descripcion": DESCRIPCIONES[tarea], "version": "prueba", "estado": "Validado"}
                for tarea in COSTOS_PRUEBA},
 }
-SENALES_BLOQUEO_FALSAS = ["icloud", "bloqueada", "bloqueado", "cuenta", "clave de bios", "mdm"]
+DELTA_MINIMO = json.loads((RAIZ / "docs/ejecuciones/correcciones_minimas_delta.json").read_text())
+NODOS_MINIMOS = {n["id"]: n["propiedades"] for n in DELTA_MINIMO["nodos"]}
+
+
+def _contexto_textual_falso(texto, ambito):
+    """Doble del transporte; los patrones de conocimiento se leen del artefacto declarado."""
+    texto = " ".join(texto.lower().split())
+    for nodo in DELTA_MINIMO["nodos"]:
+        p = nodo["propiedades"]
+        if p.get("ambito") != ambito or not re.fullmatch(p["patron"], texto):
+            continue
+        destino = next(r["destino"] for r in DELTA_MINIMO["relaciones"]
+                       if r["origen"] == nodo["id"] and r["tipo"] == "ACTIVA")
+        regla = NODOS_MINIMOS[destino]
+        if regla.get("requiere_catalogo") and not any(
+                marca in texto for marca in ("asus", "acer", "lenovo", "dell", "hp", "apple")):
+            continue
+        return {"decision": regla.get("decision"), "valor_hecho": regla.get("valor_hecho"),
+                "regla": regla.get("regla_publica"), "descripcion": p["descripcion"]}
+    return None
+
+
+def _caida_termica_falsa(throttling, traza):
+    for nodo in DELTA_MINIMO["nodos"]:
+        r = nodo["propiedades"]
+        if r.get("etapa") != "SM1-TER-entrada":
+            continue
+        condicion = next(e["destino"] for e in DELTA_MINIMO["relaciones"]
+                         if e["origen"] == nodo["id"] and e["tipo"] == "REQUIERE")
+        c = NODOS_MINIMOS[condicion]
+        if not ((c["operador"] == "ausente" and throttling is None)
+                or (c["operador"] == "=" and c["valor"] is throttling)):
+            continue
+        criterio = next((e["destino"] for e in DELTA_MINIMO["relaciones"]
+                         if e["origen"] == nodo["id"] and e["tipo"] == "USA_CRITERIO"), None)
+        if r["inferido"]:
+            traza["datos_inferidos"].append(r["motivo"])
+        if criterio:
+            nombre = {"CE-31": "caida_termica_sin_throttling",
+                      "CE-32": "caida_termica_con_throttling"}[criterio]
+            return oe.CE(nombre, traza)
+        return r["caida_pp"]
+    raise AssertionError("Falta el mapeo térmico del fixture")
 
 # ------------------------------------------------------------------------------
 # Inferencia de SM1: el catálogo de patrones vive en el grafo
@@ -114,6 +156,9 @@ PATRONES_SM1_PRUEBA = (
     ("PT-CAT-PISTA-ROTA", "inviable", r"pista\s+rota", "Pista de placa rota", None, 1, None),
     ("PT-CAT-SULFATACION", "inviable", r"sulfataci", "Sulfatación por derrame", None, 1, None),
     ("PT-CAT-INSALVABLE", "inviable", r"insalvable", "Falla declarada insalvable", None, 1, None),
+    ("PT-SIN-RECALENTAMIENTO", "verificar", r"\b(?<!no )(?:se\s+recalienta|baja\s+la\s+frecuencia)\b",
+     "Recalentamiento o baja de frecuencia sin diagnóstico", None, 1,
+     ("FS-RECALENTAMIENTO-SIN-DIAGNOSTICO", "Recalentamiento o baja de frecuencia sin diagnóstico")),
     ("PT-SIN-NO-PRENDE", "verificar", r"\bno\s+prende\b", "No prende", None, 1, ("FS-NO-PRENDE", "No prende")),
     ("PT-SIN-NO-CARGA", "verificar", r"\bno\s+carga\b", "No carga", None, 1, ("FS-NO-CARGA", "No carga")),
     ("PT-SIN-SE-APAGA", "verificar", r"\bse\s+apaga(\s+sola|\s+solo)?\b", "Se apaga sola", None, 1,
@@ -590,9 +635,20 @@ class Ejecucion:
 
 def _ejecutar(caso):
     """Ejecuta el pipeline público con las fronteras externas simuladas."""
-    with mock.patch.object(oe, "obtener_driver_neo4j", return_value=mock.Mock()), \
+    driver = mock.MagicMock()
+
+    def clasificacion_simulada(consulta, **hechos):
+        if consulta != oe.CONSULTA_CLASIFICACION_DECISION:
+            raise AssertionError("Consulta externa no simulada por la fixture.")
+        fila = {"problemas_total": 0,
+                "estado_decision": "Provisional" if any(hechos.values()) else "Firme"}
+        return mock.Mock(single=mock.Mock(return_value=fila))
+
+    driver.session.return_value.__enter__.return_value.run.side_effect = clasificacion_simulada
+    with mock.patch.object(oe, "obtener_driver_neo4j", return_value=driver), \
             mock.patch.object(oe, "cargar_conocimiento", return_value=CONOCIMIENTO_FALSO), \
-            mock.patch.object(oe, "consultar_senales_bloqueo_en_grafo", return_value=SENALES_BLOQUEO_FALSAS), \
+            mock.patch.object(oe, "inferir_contexto_textual_cypher", side_effect=_contexto_textual_falso), \
+            mock.patch.object(oe, "inferir_caida_termica_cypher", side_effect=_caida_termica_falsa), \
             mock.patch.object(oe, "consultar_resolucion_sm1", side_effect=_resolucion_sm1_falsa), \
             mock.patch.object(oe, "inferir_valuacion_sm2_cypher", side_effect=_valuacion_falsa) as mercado, \
             mock.patch.object(oe, "inferir_sm1_bat_cypher", side_effect=_sm1_bat_falso), \
