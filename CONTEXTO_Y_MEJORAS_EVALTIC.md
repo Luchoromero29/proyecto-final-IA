@@ -477,13 +477,14 @@ Casos cubiertos:
 10. Ollama conserva payload y presupuesto previos.
 
 ```bash
-cd app && python -m unittest discover -s tests -v
-python -m py_compile orquestador_evaltic.py app_web.py
+python -m unittest discover -s app/tests -v
+python -m py_compile app/orquestador_evaltic.py app/app_web.py
 ```
 
-*[actualizado 13/11/2026: el comando original era `./.venv/bin/python -m unittest discover -s tests`
-desde la raíz con `tests/` al mismo nivel que `orquestador_evaltic.py`; en este repositorio el
-paquete está en `app/`.]*
+*[actualizado 13/11/2026: se corre desde la raíz del repositorio. El documento original decía
+`./.venv/bin/python -m unittest discover -s tests`, con `tests/` al mismo nivel que
+`orquestador_evaltic.py`. Acá los módulos viven en `app/` y varios importan `app.tests.*` y
+`scripts.*`: ejecutarlo con `cd app` falla con cuatro errores de importación.]*
 
 Evidencia observada:
 

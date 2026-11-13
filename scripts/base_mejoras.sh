@@ -43,6 +43,7 @@ Grupo_20_PG3_diagnostico.cypher
 Grupo_20_PG3_correcciones_minimas.cypher
 Grupo_20_PG3_politicas.cypher
 Grupo_20_PG3_politicas_sm1_acciones.cypher
+Grupo_20_PG3_supuestos_operativos.cypher
 Grupo_20_PG3_politicas_sm1_estado.cypher
 Grupo_20_PG3_politicas_sm3_filtro.cypher
 Grupo_20_PG3_politicas_sm3_riesgo_demanda.cypher

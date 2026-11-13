@@ -195,6 +195,30 @@ def inferir_caida_termica_cypher(throttling, traza: dict) -> float:
     return float(fila["caida"])
 
 
+def inferir_supuesto_cypher(campo: str):
+    """Devuelve el supuesto operativo que el grafo declara para un dato no informado.
+
+    El texto sale de :SupuestoOperativo, no de Python: si el grafo no lo declara, no se
+    informa nada y el motor sigue sin explicitar la condición.
+    """
+    driver = obtener_driver_neo4j()
+    if not driver:
+        return None
+    try:
+        with driver.session(database=NEO4J_DATABASE) as session:
+            fila = session.run(
+                "MATCH (c:Condicion {campo:$campo})-[:ASUME]->(s:SupuestoOperativo) "
+                "RETURN s.texto AS texto, s.id AS id, s.estado_validacion AS estado LIMIT 1",
+                campo=campo,
+            ).single()
+    except Exception:
+        return None
+    if not fila or not fila["texto"]:
+        return None
+    estado = f", {fila['estado']}" if fila["estado"] else ""
+    return f"{fila['texto']} [supuesto {fila['id']}{estado}]"
+
+
 def inferir_sm1_bat_cypher(salud: float, ciclos: float) -> tuple:
     """Infiere necesidad de reemplazo de batería mediante Cypher en Neo4j."""
     driver = obtener_driver_neo4j()
@@ -630,7 +654,8 @@ def cargar_conocimiento(forzar: bool = False) -> dict:
 def nueva_traza() -> dict:
     """Traza de la evaluación: qué datos, criterios, costos y reglas intervinieron."""
     return {"reglas": [], "criterios_usados": {}, "costos_usados": {},
-            "datos_inferidos": [], "datos_pendientes": [], "referencia_mercado": None}
+            "datos_inferidos": [], "datos_pendientes": [], "datos_asumidos": [],
+            "referencia_mercado": None}
 
 
 def CE(nombre: str, traza: dict) -> float:
@@ -1079,6 +1104,13 @@ def ejecutar_motor_sm1(datos: dict, traza: dict, texto: str = "",
         "costo_id": fila["costo_id"], "costo_version": fila["costo_version"],
         "costo_estado": fila["costo_estado"],
     } for fila in resolucion["plan"]]
+
+    # Supuesto operativo declarado en el grafo: el motor no inventa un número de ciclos.
+    # Si la batería entra al plan sin ese dato, la respuesta informa la condición.
+    if ciclos is None and any(item["clave"] == "bateria" for item in plan):
+        supuesto = inferir_supuesto_cypher("ciclos")
+        if supuesto:
+            traza["datos_asumidos"].append(supuesto)
 
     # Procedencia: criterios y costos que el grafo usó quedan visibles en la traza.
     for fila in resolucion["plan"]:
@@ -1628,6 +1660,8 @@ def generar_dictamen_sintesis(resumen: dict) -> str:
 
     if resumen.get("datos_a_verificar"):
         lineas.append(f"• Datos pendientes de validación en taller: {'; '.join(resumen['datos_a_verificar'])}.")
+    if resumen.get("datos_asumidos"):
+        lineas.append(f"• Datos asumidos por el motor: {'; '.join(resumen['datos_asumidos'])}.")
 
     return "\n".join(lineas)
 
@@ -1894,10 +1928,14 @@ def evaluar_publicacion_integral(texto_publicacion: str, verbose: bool = True,
             "demanda": res_sm2.get("demanda_comercial")
         },
         "sm3": res_sm3.get("indicadores", {}),
-        "datos_a_verificar": traza["datos_pendientes"]
+        "datos_a_verificar": traza["datos_pendientes"],
+        "datos_asumidos": traza.get("datos_asumidos", [])
     }
 
     dictamen = generar_sintesis_gerencial_llm(resumen_dictamen)
+    if traza.get("datos_asumidos"):
+        dictamen = ((dictamen or "").rstrip() + "\n• Datos asumidos por el motor: "
+                    + "; ".join(traza["datos_asumidos"]) + ".")
 
     if verbose:
         print("\n" + "-" * 80)
@@ -2079,7 +2117,8 @@ def consultar_sm1(texto: str, verbose: bool = True, verificacion_tecnica: Option
                  "costo_total_ars": res.get("costo_total"),
                  "verificacion_requerida": res.get("verificacion_requerida"),
                  "reglas": traza["reglas"], "datos_pendientes": traza["datos_pendientes"],
-                 "datos_inferidos": traza["datos_inferidos"]}
+                 "datos_inferidos": traza["datos_inferidos"],
+                 "datos_asumidos": traza.get("datos_asumidos", [])}
     if res.get("estado") == "VerificacionPendiente":
         plan, costo_mostrado = "pendiente de verificación", "sin determinar"
         # Pendiente: no se redacta con el LLM para que no lo convierta en una recomendación de compra.
@@ -2094,10 +2133,18 @@ def consultar_sm1(texto: str, verbose: bool = True, verificacion_tecnica: Option
         costo_mostrado = f"${res.get('costo_total', 0):,} ARS"
         respaldo = (f"Diagnóstico: {res.get('motivo') or 'equipo reparable'}. Plan: {plan}. "
                     f"Costo total: ${res.get('costo_total', 0):,} ARS (costos provisionales).")
+        if traza.get("datos_asumidos"):
+            respaldo += " Datos asumidos por el motor: " + "; ".join(traza["datos_asumidos"]) + "."
         explicacion = _explicar(PROMPT_EXPLICACION_SM1, resultado, respaldo)
+    # El supuesto no depende de lo que redacte el LLM: si el grafo lo declara y se usó, se informa.
+    if traza.get("datos_asumidos"):
+        explicacion = ((explicacion or "").rstrip() + "\nDatos asumidos por el motor: "
+                       + "; ".join(traza["datos_asumidos"]) + ".")
     if verbose:
         print("      Datos extraídos (SM1):", json.dumps(datos, ensure_ascii=False))
         print(f"      Plan: {plan} | Costo: {costo_mostrado}")
+        if traza.get("datos_asumidos"):
+            print("      Datos asumidos:", "; ".join(traza["datos_asumidos"]), flush=True)
     return {"intencion": "diagnostico_tecnico", "datos_extraidos": datos, "sm1_tecnico": res,
             "traza": traza, "respuesta": explicacion}
 

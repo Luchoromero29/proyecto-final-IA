@@ -62,6 +62,31 @@ class CorreccionesMinimasTest(unittest.TestCase):
                     self.assertEqual(0, resultado["sm1_tecnico"]["costo_total"])
                     self.assertEqual([], resultado["sm1_tecnico"]["plan_reparacion"])
 
+    def test_supuesto_de_ciclos_se_informa_cuando_falta_el_dato(self):
+        """Devolución de la cátedra: el supuesto está en el grafo y la explicación lo informa.
+
+        Con salud por debajo de CE-01 y sin ciclos, la regla crisp cobra el reemplazo: el
+        motor no inventa un número de ciclos, lo declara como supuesto operativo del grafo.
+        Con los ciclos informados no hay supuesto que informar.
+        """
+        hechos = {"salud_bateria_pct": 60, "ciclos_bateria": None, "ram_gb": 8, "tipo_disco": "SSD",
+                  "pantalla_danada": False, "teclado_danado": False, "cargador_incluido": True,
+                  "temperatura_cpu_c": None, "thermal_throttling": None, "fallas": []}
+        resultado = self._publico("PC-15", texto="Batería al 60%, 8GB y SSD. ¿Qué hay que reparar?",
+                                  datos=hechos, verificacion=None)
+        claves = [t["clave"] for t in resultado["sm1_tecnico"].get("plan_reparacion", [])]
+        self.assertIn("bateria", claves)
+        asumidos = resultado["traza"].get("datos_asumidos", [])
+        self.assertTrue(asumidos, "el supuesto declarado en el grafo no llegó a la traza")
+        self.assertIn("SUP-SM1-BAT-CICLOS", asumidos[0])
+        self.assertIn("Datos asumidos", resultado["respuesta"])
+
+        con_ciclos = dict(hechos, ciclos_bateria=900)
+        resultado2 = self._publico("PC-15", texto="Batería al 60% con 900 ciclos, 8GB y SSD. ¿Qué reparar?",
+                                   datos=con_ciclos, verificacion=None)
+        self.assertEqual([], resultado2["traza"].get("datos_asumidos", []))
+        self.assertNotIn("Datos asumidos", resultado2["respuesta"])
+
     def test_conserva_positivos_precio_y_procesador(self):
         for ident in ("PC-07", "PC-14", "PC-19", "PC-20", "PC-29", "PC-30", "PC-49"):
             with self.subTest(caso=ident):
