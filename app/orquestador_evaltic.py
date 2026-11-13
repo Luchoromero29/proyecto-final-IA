@@ -195,12 +195,21 @@ def inferir_caida_termica_cypher(throttling, traza: dict) -> float:
     return float(fila["caida"])
 
 
+class SupuestoNoVerificado(RuntimeError):
+    """El supuesto operativo no se pudo leer del grafo.
+
+    No es "el grafo no declara supuesto": es un fallo de lectura. Se degrada de forma
+    explícita —el dictamen sale y el dato queda como pendiente—, nunca en silencio ni
+    abortando toda la evaluación técnica por una consulta auxiliar.
+    """
+
+
 def inferir_supuesto_cypher(campo: str):
     """Devuelve el supuesto operativo que el grafo declara para un dato no informado.
 
     El texto sale de :SupuestoOperativo, no de Python: si el grafo no lo declara, no se
-    informa nada. Un fallo de la consulta no se puede confundir con "no hay supuesto":
-    se propaga como error de inferencia, igual que el resto de SM1.
+    informa nada. Un fallo de la consulta no se confunde con "no hay supuesto": se señala
+    con `SupuestoNoVerificado` y quien llama decide cómo degradarlo.
     """
     try:
         with obtener_driver_neo4j().session(database=NEO4J_DATABASE) as session:
@@ -210,8 +219,8 @@ def inferir_supuesto_cypher(campo: str):
                 campo=campo,
             ).single()
     except Exception as exc:
-        raise RuntimeError(
-            "[ERROR INFERENCIA NEO4J] Falló la consulta de supuestos operativos.") from exc
+        raise SupuestoNoVerificado(
+            "Falló la consulta de supuestos operativos.") from exc
     if not fila or not fila["texto"]:
         return None
     estado = f", {fila['estado']}" if fila["estado"] else ""
@@ -654,7 +663,7 @@ def nueva_traza() -> dict:
     """Traza de la evaluación: qué datos, criterios, costos y reglas intervinieron."""
     return {"reglas": [], "criterios_usados": {}, "costos_usados": {},
             "datos_inferidos": [], "datos_pendientes": [], "datos_asumidos": [],
-            "referencia_mercado": None}
+            "supuesto_no_verificado": None, "referencia_mercado": None}
 
 
 def CE(nombre: str, traza: dict) -> float:
@@ -1105,11 +1114,19 @@ def ejecutar_motor_sm1(datos: dict, traza: dict, texto: str = "",
     } for fila in resolucion["plan"]]
 
     # Supuesto operativo declarado en el grafo: el motor no inventa un número de ciclos.
-    # Si la batería entra al plan sin ese dato, la respuesta informa la condición.
+    # Si la batería entra al plan sin ese dato, la respuesta informa la condición. Si el
+    # supuesto no se puede leer, el dictamen sale igual y el dato queda como pendiente.
     if ciclos is None and any(item["clave"] == "bateria" for item in plan):
-        supuesto = inferir_supuesto_cypher("ciclos")
-        if supuesto:
-            traza["datos_asumidos"].append(supuesto)
+        try:
+            supuesto = inferir_supuesto_cypher("ciclos")
+        except SupuestoNoVerificado:
+            aviso = ("No se pudo verificar el supuesto de ciclos de batería declarado en el "
+                     "grafo: confirmar los ciclos antes de decidir")
+            traza["datos_pendientes"].append(aviso)
+            traza["supuesto_no_verificado"] = aviso
+        else:
+            if supuesto:
+                traza["datos_asumidos"].append(supuesto)
 
     # Procedencia: criterios y costos que el grafo usó quedan visibles en la traza.
     for fila in resolucion["plan"]:
@@ -2135,6 +2152,10 @@ def consultar_sm1(texto: str, verbose: bool = True, verificacion_tecnica: Option
     if traza.get("datos_asumidos"):
         explicacion = ((explicacion or "").rstrip() + "\nDatos asumidos por el motor: "
                        + "; ".join(traza["datos_asumidos"]) + ".")
+    # Degradación explícita: si el supuesto no se pudo leer, se dice, y el dictamen no cae.
+    if traza.get("supuesto_no_verificado"):
+        explicacion = ((explicacion or "").rstrip() + "\nDatos pendientes: "
+                       + traza["supuesto_no_verificado"] + ".")
     if verbose:
         print("      Datos extraídos (SM1):", json.dumps(datos, ensure_ascii=False))
         print(f"      Plan: {plan} | Costo: {costo_mostrado}")

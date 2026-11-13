@@ -98,6 +98,27 @@ class CorreccionesMinimasTest(unittest.TestCase):
         self.assertEqual([], resultado3["traza"].get("datos_asumidos", []))
         self.assertNotIn("Datos asumidos", resultado3["respuesta"])
 
+    def test_supuesto_ilegible_degrada_sin_abortar(self):
+        """Si el supuesto no se puede leer, el dictamen sale igual y el dato queda pendiente.
+
+        Revisión nativa: quitar el silencio no puede costar la degradación elegante. El
+        fallo de una consulta auxiliar no aborta la evaluación técnica completa.
+        """
+        hechos = {"salud_bateria_pct": 60, "ciclos_bateria": None, "ram_gb": 8, "tipo_disco": "SSD",
+                  "pantalla_danada": False, "teclado_danado": False, "cargador_incluido": True,
+                  "temperatura_cpu_c": None, "thermal_throttling": None, "fallas": []}
+        llm = lambda sp, uc, *a, **k: json.dumps(hechos) if "json" in sp.lower() else "reemplazo de bateria."
+        with mock.patch.object(base.oe, "consultar_llm", side_effect=llm), \
+                mock.patch.object(base.oe, "inferir_supuesto_cypher",
+                                  side_effect=base.oe.SupuestoNoVerificado("falló la consulta")):
+            resultado = base.oe.consultar_sm1(
+                "Batería al 60% y sin ciclos informados. ¿Qué hay que reparar?", verbose=False)
+        claves = [t["clave"] for t in resultado["sm1_tecnico"].get("plan_reparacion", [])]
+        self.assertIn("bateria", claves, "el dictamen tiene que salir aunque el supuesto no se lea")
+        self.assertEqual([], resultado["traza"]["datos_asumidos"])
+        self.assertTrue(resultado["traza"]["supuesto_no_verificado"])
+        self.assertIn("No se pudo verificar el supuesto de ciclos", resultado["respuesta"])
+
     def test_conserva_positivos_precio_y_procesador(self):
         for ident in ("PC-07", "PC-14", "PC-19", "PC-20", "PC-29", "PC-30", "PC-49"):
             with self.subTest(caso=ident):
