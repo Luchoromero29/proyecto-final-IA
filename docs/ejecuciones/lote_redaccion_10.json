@@ -1,0 +1,245 @@
+[
+ {
+  "id": "L1",
+  "texto": "Vendo Lenovo IdeaPad 3 2021 Ryzen 5, piden $280.000. La batería no aguanta ni media hora, se calienta cuando la exigís. 8GB de RAM, SSD 256GB. Pantalla y teclado bien, con cargador.",
+  "resultado": "evaluacion_integral",
+  "estado": "Viable",
+  "decision": null,
+  "costo": 145000,
+  "vma": 769000,
+  "plan": [
+   [
+    "bateria",
+    75000
+   ],
+   [
+    "service_termico",
+    30000
+   ],
+   [
+    "mano_de_obra",
+    40000
+   ]
+  ],
+  "pendientes": [
+   "Salud de batería (verificar en la revisión)",
+   "Temperatura bajo carga (prueba de estrés)"
+  ],
+  "error": null
+ },
+ {
+  "id": "L2",
+  "texto": "HP Pavilion 2020 i5 10ma gen, $250.000. Batería al 38%, no retiene la carga. Le hace falta una limpieza de cooler porque levanta temperatura. 4GB de RAM, disco mecánico de 1TB.",
+  "resultado": "evaluacion_integral",
+  "estado": "Viable",
+  "decision": null,
+  "costo": 230000,
+  "vma": 660000,
+  "plan": [
+   [
+    "bateria",
+    75000
+   ],
+   [
+    "service_termico",
+    30000
+   ],
+   [
+    "ram_upgrade",
+    40000
+   ],
+   [
+    "ssd_upgrade",
+    45000
+   ],
+   [
+    "mano_de_obra",
+    40000
+   ]
+  ],
+  "pendientes": [
+   "Temperatura bajo carga (prueba de estrés)"
+  ],
+  "error": null
+ },
+ {
+  "id": "L3",
+  "texto": "Acer Aspire 3 2022 i3 11na gen, $230.000. Anduvo bien pero habría que cambiarle el disco por un SSD y ampliarle la memoria a 8GB. Batería al 90%, temperaturas normales.",
+  "resultado": "evaluacion_integral",
+  "estado": "VerificacionPendiente",
+  "decision": null,
+  "costo": 0,
+  "vma": 0,
+  "plan": [],
+  "pendientes": [
+   "Falla sin tratamiento conocido en el grafo: 'debe cambiarse el disco por ssd' (verificar y completar el conocimiento)"
+  ],
+  "error": null
+ },
+ {
+  "id": "L4",
+  "texto": "Dell Latitude 2018 i5 8va gen, $180.000. Equipo de oficina, ya está viejo y no tiene soporte para Windows 11. Batería al 45% con 1100 ciclos, 8GB RAM y SSD.",
+  "resultado": "evaluacion_integral",
+  "estado": "Viable",
+  "decision": null,
+  "costo": 115000,
+  "vma": 402000,
+  "plan": [
+   [
+    "bateria",
+    75000
+   ],
+   [
+    "mano_de_obra",
+    40000
+   ]
+  ],
+  "pendientes": [
+   "Temperatura bajo carga (prueba de estrés)"
+  ],
+  "error": null
+ },
+ {
+  "id": "L5",
+  "texto": "Notebook Lenovo ThinkPad E14 2021, $320.000. El cooler hace un ruido raro y a veces levanta temperatura. 16GB RAM, SSD 512GB, batería al 88%, con cargador.",
+  "resultado": "evaluacion_integral",
+  "estado": "VerificacionPendiente",
+  "decision": null,
+  "costo": 0,
+  "vma": 0,
+  "plan": [],
+  "pendientes": [
+   "Falla sin tratamiento conocido en el grafo: 'ruido raro en cooler' (verificar y completar el conocimiento)"
+  ],
+  "error": null
+ },
+ {
+  "id": "L6",
+  "texto": "Samsung Notebook 9 2019 i7 8va, $300.000. Todo funciona perfecto, batería al 92%, 8GB y SSD 256GB, con cargador original.",
+  "resultado": "evaluacion_integral",
+  "estado": "Viable",
+  "decision": null,
+  "costo": 0,
+  "vma": 766000,
+  "plan": [],
+  "pendientes": [
+   "Temperatura bajo carga (prueba de estrés)"
+  ],
+  "error": null
+ },
+ {
+  "id": "L7",
+  "texto": "Asus Vivobook 2020 Ryzen 3, $200.000. La batería se muere rápido, la pantalla tiene una mancha y el teclado anda mal. 4GB RAM, HDD.",
+  "resultado": "evaluacion_integral",
+  "estado": "Viable",
+  "decision": null,
+  "costo": 415000,
+  "vma": 508000,
+  "plan": [
+   [
+    "bateria",
+    75000
+   ],
+   [
+    "ram_upgrade",
+    40000
+   ],
+   [
+    "ssd_upgrade",
+    45000
+   ],
+   [
+    "pantalla",
+    160000
+   ],
+   [
+    "teclado",
+    55000
+   ],
+   [
+    "mano_de_obra",
+    40000
+   ]
+  ],
+  "pendientes": [
+   "Salud de batería (verificar en la revisión)",
+   "Temperatura bajo carga (prueba de estrés)"
+  ],
+  "error": null
+ },
+ {
+  "id": "L8",
+  "texto": "computadora",
+  "resultado": "fuera_de_dominio",
+  "estado": null,
+  "decision": null,
+  "costo": null,
+  "vma": null,
+  "plan": [],
+  "pendientes": null,
+  "error": null
+ },
+ {
+  "id": "L9",
+  "texto": "Lenovo ThinkPad T14 2021 i5 11na, $380.000. Le falta el cargador y la batería está hinchada. Por lo demás impecable, 16GB y SSD.",
+  "resultado": "evaluacion_integral",
+  "estado": "Viable",
+  "decision": null,
+  "costo": 150000,
+  "vma": 741000,
+  "plan": [
+   [
+    "bateria",
+    75000
+   ],
+   [
+    "cargador",
+    35000
+   ],
+   [
+    "mano_de_obra",
+    40000
+   ]
+  ],
+  "pendientes": [
+   "Salud de batería (verificar en la revisión)",
+   "Temperatura bajo carga (prueba de estrés)"
+  ],
+  "error": null
+ },
+ {
+  "id": "L10",
+  "texto": "HP 250 G8 2021 Celeron N4020, $150.000. Batería al 70%, 4GB de RAM, disco mecánico. Necesita service general y limpieza.",
+  "resultado": "evaluacion_integral",
+  "estado": "Viable",
+  "decision": null,
+  "costo": 230000,
+  "vma": 328000,
+  "plan": [
+   [
+    "bateria",
+    75000
+   ],
+   [
+    "service_termico",
+    30000
+   ],
+   [
+    "ram_upgrade",
+    40000
+   ],
+   [
+    "ssd_upgrade",
+    45000
+   ],
+   [
+    "mano_de_obra",
+    40000
+   ]
+  ],
+  "pendientes": [
+   "Temperatura bajo carga (prueba de estrés)"
+  ],
+  "error": null
+ }
+]
