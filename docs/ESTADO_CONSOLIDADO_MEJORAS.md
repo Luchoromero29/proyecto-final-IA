@@ -2,20 +2,23 @@
 
 Este documento reúne las mejoras anteriores y las correcciones mínimas más recientes,
 con sus archivos, evidencia y pendientes. La estrategia elegida por el operador fue
-**copiar la base actual y actualizar esa copia**, y esa integración **se ejecutó el
-13/11/2026** con el procedimiento reproducible `scripts/base_mejoras.sh`. La original
-de trabajo quedó **sin modificar** (814 nodos, 1905 relaciones, 19 restricciones, huella
-`364ab2d5…`). La copia nueva quedó con 931 nodos y 2046 relaciones, huella `cf1a70d5…`.
+**copiar la base actual y actualizar esa copia**, y el 13/11/2026 el procedimiento
+reproducible `scripts/base_mejoras.sh` la ejecutó en tres tiempos: respaldo verificado de
+la original, copia independiente actualizada con las ocho semillas aditivas, y una vez
+validada la copia, **promoción de la base original** con respaldo previo obligatorio.
+La original pasó de 814 nodos y 1905 relaciones a **931 y 2046**, huella `cf1a70d5…`,
+idéntica a la de la copia. El respaldo inmediatamente anterior a esa escritura es
+`_respaldo_original/20261113-0126-pre-promocion`, sha256 `4ab2417c…`.
 
 ## 1. Resumen de situación
 
 | Parte | Estado registrado |
 |---|---|
 | Código | Rama `mejoras/politicas-sm1-estado`. El bloque mínimo del código sigue con cambios locales sin commit; esta unidad sólo registró el script de integración y su evidencia. |
-| Base original/de trabajo | PG2 y actualización histórica del catálogo a 333 avisos. No recibió el diagnóstico B2 ni las nuevas semillas de políticas/correcciones, y sigue así: no se le aplicó nada. |
+| Base original/de trabajo | PG2, actualización histórica del catálogo a 333 avisos y, desde el 13/11/2026, las ocho semillas aditivas del bloque (diagnóstico B2, correcciones mínimas y políticas). Pasó de 814 nodos y 1905 relaciones a 931 y 2046; huella `cf1a70d5…`. |
 | Base aislada de pruebas | Diagnóstico, políticas anteriores y correcciones nuevas aplicadas. Último snapshot: 932 nodos, 2046 relaciones, 19 restricciones y marcador de pruebas único. |
-| Nueva copia de trabajo | **Creada y actualizada el 13/11/2026**: contenedor `evaltic-neo4j-mejoras` (bolt `127.0.0.1:7688`), volumen `proyecto-ia-final_neo4j_mejoras`, restaurada del respaldo de la base actual. 931 nodos y 2046 relaciones; las relaciones coinciden exactamente con las del scratch y el nodo de diferencia es su marcador `EntornoPruebas`. |
-| Respaldo | `_respaldo_original/20261113-0050/neo4j_data.tar.gz`, sha256 `3131c0de…`, restaurado con éxito en el volumen nuevo: la copia arrancó desde ese respaldo con la huella idéntica a la original. |
+| Nueva copia de trabajo | **Creada el 13/11/2026 y ya idéntica a la original promovida**: contenedor `evaltic-neo4j-mejoras` (bolt `127.0.0.1:7688`), volumen `proyecto-ia-final_neo4j_mejoras`. 931 nodos y 2046 relaciones. Queda como gemela de comparación y respaldo caliente, no como base pendiente de promoción. |
+| Respaldo | Dos respaldos verificados: `_respaldo_original/20261113-0050/` (estado previo a todo, sha256 `3131c0de…`) y `_respaldo_original/20261113-0126-pre-promocion/` (inmediatamente anterior a escribir la original, sha256 `4ab2417c…`). El primero se restauró con éxito en el volumen de la copia. |
 | Validación | Comprobaciones determinísticas: pasaron. Tanda real sobre la copia (13/11/2026): 55/55 expectativas automáticas, 0 incumplimientos, 6 sondas, 0 infraestructura. |
 | Conocimiento experto | Provisional; estas ejecuciones no constituyen una validación de Matías Romero. |
 
@@ -168,6 +171,7 @@ original. No usa PG2 ni `Grupo_20_PG3_mercado.cypher`.
 | Motivo R3.3 | Un test dirigido con grafo real, exit0 | Corrección posterior al hallazgo independiente, sin repetir su tanda. |
 | Tanda real previa (scratch) | 61 intentados, 60 completados; 54 cumplen, 0 incumplen, 6 sondas, 1 infraestructura; exit2 | PC26 sin acreditar por ConnectionError al invocar la API remota. No era 55/55. |
 | **Integración en la copia (13/11/2026)** | **61 intentados, 61 completados; 55 cumplen, 0 incumplen, 6 sondas, 0 infraestructura; exit0** | Primera corrida real sin errores de infraestructura: PC26 quedó acreditado. Sobre la nueva copia de trabajo, no sobre el scratch. |
+| **Promoción sobre la original (13/11/2026)** | Respaldo previo, ocho semillas aditivas, reinicio y verificación: 814→931 nodos, 1905→2046 relaciones, huella `cf1a70d5…` | La original quedó con contenido **equivalente a la copia**: mismo sha256 sobre etiquetas+propiedades de cada nodo y sobre tipo+propiedades+extremos de cada relación. La tanda de 61 no se repitió sobre la original; es esa equivalencia la que transfiere la evidencia. |
 
 La tanda sobre la copia cumplió **55/55 expectativas automáticas con 0 infraestructura**, incluidas
 PC01/15/17/26/44/48/50 según el contrato acordado. NVIDIA fue el proveedor real (`nvidia/nemotron-3.5-lightning-30b-a3b`),
@@ -220,8 +224,9 @@ Corpus y detalle: [casos_publicaciones.json](../app/tests/casos_publicaciones.js
 - Resolver los pendientes funcionales declarados, como R1.4 `NoAmpliable` y R3.1b, sin incluirlos
   por sorpresa en esta integración. No se declara B2 global ni todo el sistema experto cerrado.
 - Obtener validación experta del conocimiento provisional.
-- La integración en la copia **ya se ejecutó** (ver §1, §4 y §6). Queda pendiente decidir cuándo la
-  aplicación pasa a consumir la copia y qué se hace con la base original: nada de eso se hizo acá.
+- La integración y la promoción **ya se ejecutaron** (ver §1, §4 y §6). Queda pendiente decidir qué pasa
+  con la copia gemela y si se conserva como entorno de comparación, y homologar el procedimiento en las
+  bases de los otros integrantes del grupo.
 
 La representación de políticas es parcial. Las condiciones expresan campo, operador, valor o
 referencia a criterio experto; se conserva OR dentro de cada grupo y AND entre grupos.
@@ -244,6 +249,9 @@ Ejecutado el 13/11/2026 con `scripts/base_mejoras.sh`. Estado de cada paso:
    `bolt://127.0.0.1:7688`. Falta decidir cuándo los consumidores pasan a la copia; no se hizo.
 5. **Comprobación consolidada antes de cambiar la aplicación** — hecha sobre la copia: preflight verde y
    tanda completa de 61 casos con 55/55 y 0 infraestructura.
+6. **Promover la original** — hecho el mismo día con `sh scripts/base_mejoras.sh promover`, que respalda
+   antes de escribir y aborta si no puede. La original quedó equivalente a la copia, verificada por
+   digesto de contenido, no sólo por conteos.
 
 Sigue pendiente lo que este procedimiento no resuelve: la validación experta del conocimiento
 provisional, los pendientes funcionales declarados (R1.4 `NoAmpliable`, R3.1b) y la decisión de

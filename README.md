@@ -267,21 +267,40 @@ de actualización.
 ### Copiar la base y aplicar sólo las mejoras aditivas
 
 Las semillas de diagnóstico (B2), de políticas y de correcciones mínimas son aditivas: no requieren
-recalibrar el mercado ni volver a ejecutar el PG2. El procedimiento es duplicar la base de trabajo y
-actualizar la copia, nunca la original:
+recalibrar el mercado ni volver a ejecutar el PG2. `scripts/base_mejoras.sh` las aplica en orden y no
+escribe nada sin respaldo previo:
 
 ```bash
 sh scripts/base_mejoras.sh respaldo      # tar del volumen + sha256; detiene el original unos segundos
 RESPALDO_FUENTE=_respaldo_original/<fecha> sh scripts/base_mejoras.sh copiar
 sh scripts/base_mejoras.sh actualizar    # las 8 semillas aditivas, en orden, sobre la copia
 sh scripts/base_mejoras.sh verificar     # original vs copia, y el conocimiento aplicado
+sh scripts/base_mejoras.sh promover      # respalda y aplica las 8 semillas sobre la base original
 ```
 
 La copia es el contenedor `evaltic-neo4j-mejoras` (bolt `127.0.0.1:7688`, browser `127.0.0.1:7475`) con su
-propio volumen `proyecto-ia-final_neo4j_mejoras`. `copiar` restaura el respaldo en un volumen nuevo, así que
-también comprueba que el respaldo sirve, y aborta si la huella del grafo no coincide con la original.
-`actualizar` es idempotente: una segunda pasada deja nodos y relaciones iguales. Para bajar la copia
-conservando su volumen: `sh scripts/base_mejoras.sh detener`.
+propio volumen `proyecto-ia-final_neo4j_mejoras`. `copiar` restaura el respaldo en un volumen nuevo, así
+que también comprueba que el respaldo sirve, y aborta si la huella del grafo no coincide con la original.
+`actualizar` es idempotente: una segunda pasada deja nodos y relaciones iguales. `promover` es la única
+orden que escribe en la original: respalda primero, aplica las semillas y verifica el conocimiento
+resultante. Para bajar la copia conservando su volumen: `sh scripts/base_mejoras.sh detener`.
+
+La base de este repositorio ya quedó promovida el 13/11/2026 (931 nodos y 2046 relaciones). Volver a
+correr `promover` no cambia nada, porque las semillas son idempotentes.
+
+**Para los otros integrantes del grupo.** Cada uno lo corre en su propia máquina. El volumen del
+original se detecta solo desde el contenedor; los destinos de la copia se cambian por variable de
+entorno cuando ya existe otro contenedor o volumen con ese nombre:
+
+```bash
+COPIA_CONT=evaltic-mejoras-luciano COPIA_VOL=luciano_mejoras \
+COPIA_PUERTO_BOLT=7698 COPIA_PUERTO_HTTP=7485 sh scripts/base_mejoras.sh copiar
+sh scripts/base_mejoras.sh actualizar
+sh scripts/base_mejoras.sh promover
+```
+
+Necesita Docker en marcha y un shell POSIX: en Windows, Git Bash. La contraseña sale de
+`NEO4J_PASSWORD`, con `evaltic2026` por defecto. No se ejecutan PG2 ni el refresco de mercado.
 
 Para correr la app o los casos contra la copia, apuntá el consumidor a `bolt://127.0.0.1:7688`
 (`NEO4J_LOCAL_URI`). Y no la apuntes al `neo4j-init`: ese servicio recarga el mercado sobre la base del
