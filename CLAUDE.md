@@ -26,6 +26,10 @@ cypher/Grupo_20_PG3_mercado.cypher       componentes, líneas, RAM, avisos, cost
 cypher/Grupo_20_PG2_U1_consultas.cypher  consultas de ejemplo
 datos/relevamiento_mercado.csv           333 avisos de Mercado Libre (9 y 10/11/2026); seed que carga el PG3 con LOAD CSV
 scripts/cargar_grafo.sh      lo ejecuta el contenedor neo4j-init (LF obligatorio)
+scripts/base_mejoras.sh      respaldo, copia y aplicación aditiva de las mejoras (ver docs/ESTADO_CONSOLIDADO_MEJORAS.md)
+scripts/reporte_casos.py     genera docs/PRUEBAS_PUBLICACIONES.md desde el corpus y el último log
+cypher/Grupo_20_PG3_diagnostico.cypher, ..._correcciones_minimas.cypher, ..._politicas*.cypher   semillas aditivas de conocimiento
+CONTEXTO_Y_MEJORAS_EVALTIC.md   handoff del cliente LLM (OpenRouter/Nemotron) para portar a otra versión
 docker-compose.yml, Dockerfile, *.bat, LEVANTAR.md, docs/ (informes)
 ```
 
@@ -106,7 +110,12 @@ Evaluación integral (`evaluar_publicacion_integral`):
 - [x] Evidencia funcional B2: ejecución en Cypher, verificación independiente y 184 pruebas en Neo4j aislado.
 - [ ] B2 arquitectura: representación parcial de políticas ya implementada y probada en aislamiento;
       cobertura vigente y pendientes en `docs/ESTADO_CONSOLIDADO_MEJORAS.md`.
-- [ ] B2 despliegue (T2P): vía segura para aplicar sólo el seed aditivo a la base original y repetir 61 publicaciones reales.
+- [x] B2 despliegue (T2P): la base original recibió las semillas aditivas con `scripts/base_mejoras.sh promover`,
+      previo respaldo verificado. La copia y la original quedaron equivalentes por digesto de contenido.
+- [x] Tanda real de los 61 casos sobre la base actualizada: 55/55 expectativas automáticas, 0 incumplimientos,
+      6 sondas, 0 infraestructura. Detalle por caso en `docs/PRUEBAS_PUBLICACIONES.md`; estado y pendientes en
+      `docs/ESTADO_CONSOLIDADO_MEJORAS.md`.
+- [ ] Sondas sin expectativa acordada: PC-27, PC-36, PC-40, PC-47, PC-59, PC-60 (qué decidir en `docs/PRUEBAS_PUBLICACIONES.md`).
 - [ ] B3: interpretar señales de bloqueo por contexto; no confundirlo con el diagnóstico B2.
 - [ ] qwen2.5:1.5b extrae mal a veces (completa procesadores, mete positivos en fallas); alternativa: Groq.
 
